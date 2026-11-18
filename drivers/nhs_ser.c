@@ -447,8 +447,10 @@ typedef struct {
  *                to be an integer, which could not express, for example,
  *                the 12.8V of a lithium iron phosphate battery. The
  *                driver multiplies it by the number of batteries that the
- *                voltage reading covers to get battery.voltage.nominal and
- *                battery.charge; it also enters the runtime estimate.
+ *                voltage reading covers to get battery.charge, and by the
+ *                number of batteries in series in the bank to get
+ *                battery.voltage.nominal; it also enters the runtime
+ *                estimate.
  *                ups.conf: vbat. UNKNOWN device: DEFAULTBATV.
  *
  * bat_series     How the batteries are wired to each other. It is a plain
@@ -462,7 +464,11 @@ typedef struct {
  *                24V. Used for battery.current.total, the current of the
  *                whole bank: in series it is the current through one
  *                battery, in parallel that current times the number of
- *                batteries. ups.conf: battery_series, for a unit whose
+ *                batteries. Used also for battery.voltage and
+ *                battery.voltage.nominal, the voltage of the whole bank:
+ *                in series it is the voltage of one battery times the
+ *                number of batteries, in parallel the voltage of one
+ *                battery. ups.conf: battery_series, for a unit whose
  *                batteries were wired differently from the factory set.
  *                UNKNOWN device: DEFAULTBATSER, in series, which is how
  *                116 of the 118 products whose sheet gives the bank
@@ -1297,7 +1303,7 @@ static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tem
 	 * derived here (the voltage of the whole bank, measured and nominal)
 	 * are worked out in interpret_pkt_data(), which is where the ratings
 	 * and the ups.conf settings they depend on are known; the reasons are
-	 * written there, at "experimental.nhs.data.battery_tension".
+	 * written there, at "Voltage of the whole bank".
 	 */
 
 	if (debug_pkt_data) {
@@ -3112,8 +3118,10 @@ static void interpret_pkt_data(void) {
 	float         vpower = 0;
 	long          bcharge = 0;
 	unsigned int  battery_units = 0;    /* batteries covered by the voltage reading */
-	unsigned int  bank_units = 0;       /* batteries in series in the bank (packet diagnostics) */
+	unsigned int  bank_units = 0;       /* batteries in series in the bank */
 	float         battery_nominal = 0;  /* nominal voltage of that reading, V */
+	float         bank_volts = 0;       /* measured voltage of the whole bank, V */
+	float         bank_nominal = 0;     /* nominal voltage of the whole bank, V */
 	double        battery_full = 0;     /* reading that counts as 100% of charge, V */
 	double        battery_empty = 0;    /* reading that counts as 0% of charge, V */
 	float         abat = 0;             /* A through each battery, published */
@@ -3572,6 +3580,118 @@ static void interpret_pkt_data(void) {
 	battery_nominal = vbat * (float)battery_units;
 
 	/*
+	 * Voltage of the whole bank, measured and nominal: what
+	 * battery.voltage and battery.voltage.nominal publish.
+	 *
+	 * WHAT WAS HERE
+	 *
+	 * battery.voltage was the reading exactly as the UPS sends it, and
+	 * battery.voltage.nominal the nominal voltage of that reading. Most
+	 * NHS units report the voltage of ONE battery whatever the size of
+	 * the bank, so a LASER SENOIDAL 2600VA GII with two batteries in
+	 * series published
+	 *
+	 *   battery.voltage: 13.60
+	 *   battery.voltage.nominal: 12.00
+	 *   battery.packs: 2
+	 *
+	 * while its own front panel showed "Bateria = 027,2V". The user who
+	 * tested PR #3836 on that unit pointed it out: the UPS is a 24V unit,
+	 * not a 12V one.
+	 *
+	 * WHY IT WAS WRONG
+	 *
+	 * It was a lack of correct understanding, on my part, of how NUT
+	 * works. I took battery.voltage as "the number that the UPS sends".
+	 * In NUT a variable name has one meaning for every driver, and it is
+	 * the driver that has to turn what its device sends into that
+	 * meaning. docs/nut-names.txt says so before its tables:
+	 *
+	 *   "Developers should use the names recorded here, with dstate
+	 *    functions and data mappings provided in NUT drivers for
+	 *    interactions with power devices."
+	 *
+	 * and its table "battery: Any battery details" has:
+	 *
+	 *   Name                      Description                        Example
+	 *   battery.voltage           Battery voltage (V)                24.84
+	 *   battery.voltage.nominal   Nominal battery voltage (V)        024
+	 *   battery.packs             Number of internal battery packs   1
+	 *
+	 * That is the voltage of the battery set as a whole, 24.84V beside a
+	 * nominal of 24V, not of one of its parts. The manual of another
+	 * driver removes any doubt about a device like ours. In
+	 * docs/man/nutdrv_qx.txt, at "override.battery.packs":
+	 *
+	 *   "Some devices "natively" report just a part of the total battery
+	 *    voltage (...) For instance, if battery.voltage.nominal is 24 V,
+	 *    but it reports a battery.voltage of around 2 V, the number of
+	 *    battery.packs to correct this reading would be 12."
+	 *
+	 * and at "battery_voltage_reports_one_pack":
+	 *
+	 *   "If this flag is set, most of the subdrivers (...) adjust their
+	 *    ultimately reported battery.voltage value as a multiple of
+	 *    battery.packs and "native" battery.voltage. (...) Note this is
+	 *    primarily useful for consistent diagnostics and graphing of the
+	 *    numbers, and should not impact the "guesstimation" of
+	 *    battery.charge and/or battery.runtime"
+	 *
+	 * So for NUT the reading of one battery is "a part of the total
+	 * battery voltage", something to be corrected, and battery.voltage is
+	 * the total. A client that draws a graph, raises an alert on a
+	 * threshold or compares battery.voltage with battery.voltage.nominal
+	 * expects that from any driver.
+	 *
+	 * The history, for the record. My first version, in November 2024,
+	 * did publish the reading times the number of batteries. Shortly
+	 * after I changed it to the plain reading, while correcting other
+	 * battery calculations. When "vbat" was sorted out (see "Battery
+	 * electric info" above) the reading was kept as it came for a reason
+	 * that was real: the product sheets have banks wired in parallel,
+	 * where multiplying by the number of batteries is wrong. But the
+	 * answer to that was to learn the wiring, not to give the variable a
+	 * meaning of my own. The driver has known the wiring since bat_series
+	 * ("battery_series" in ups.conf) was added, and the bank voltage was
+	 * already worked out from it for the packet diagnostics
+	 * (experimental.nhs.data.battery_tension). It just was not what got
+	 * published.
+	 *
+	 * WHAT IS PUBLISHED NOW
+	 *
+	 *   in series    volts of one battery * number of batteries
+	 *   in parallel  volts of one battery
+	 *
+	 * where the volts of one battery are the reading over the number of
+	 * batteries it covers (measured) or vbat (nominal). The unit above
+	 * now publishes 27.20 and 24.00, as its panel does.
+	 *
+	 * The bank is never taken as having fewer batteries in series than
+	 * the reading covers. That keeps right a unit that reports a pair,
+	 * and while the number of batteries is not known yet (0) it makes the
+	 * driver publish the reading as it came instead of 0V.
+	 *
+	 * WHAT DOES NOT CHANGE
+	 *
+	 * battery.charge, battery.current and battery.runtime. They work on
+	 * the voltage of one battery and on battery_nominal, the nominal
+	 * voltage of the reading, exactly as before: it is the "should not
+	 * impact" of the text quoted above.
+	 *
+	 * LIMIT
+	 *
+	 * A bank that mixes both ways, strings in series that are then wired
+	 * in parallel, is not described by a setting that only says "series"
+	 * or "parallel". There the result follows the number of batteries
+	 * that the UPS reports, or "numbatteries".
+	 */
+	bank_units = ups.bat_series ? numbat : 1;
+	if (bank_units < battery_units)
+		bank_units = battery_units;
+	bank_volts = (lastpktdata.vdcmed_real / (float)battery_units) * (float)bank_units;
+	bank_nominal = vbat * (float)bank_units;
+
+	/*
 	 * Battery charge, in percent.
 	 *
 	 * WHAT WAS HERE
@@ -3658,7 +3778,8 @@ static void interpret_pkt_data(void) {
 	if (bcharge < 0)
 		bcharge = 0;
 	dstate_setinfo("battery.charge", "%ld", bcharge);
-	dstate_setinfo("battery.voltage", "%0.2f", lastpktdata.vdcmed_real);
+	/* The whole bank, not the reading: see "Voltage of the whole bank" above. */
+	dstate_setinfo("battery.voltage", "%0.2f", (double)bank_volts);
 	dstate_setinfo("battery.temperature", "%ld", lrint(round(lastpktdata.tempmed_real)));
 
 	/*
@@ -3757,8 +3878,8 @@ static void interpret_pkt_data(void) {
 	/* FIXME: Move nominal and other static settings to upsdrv_initinfo()
 	 *  or at worst to interpret_pkt_hwinfo() */
 	dstate_setinfo("battery.packs", "%u", numbat);
-	/* Nominal voltage of what battery.voltage reports, worked out above. */
-	dstate_setinfo("battery.voltage.nominal", "%0.2f", (double)battery_nominal);
+	/* Nominal voltage of what battery.voltage reports, the whole bank. */
+	dstate_setinfo("battery.voltage.nominal", "%0.2f", (double)bank_nominal);
 	/*
 	 * A capacity of 0 is "not known" (it is what the UNKNOWN device holds),
 	 * so battery.capacity and, below, battery.runtime are left out rather
@@ -3769,8 +3890,31 @@ static void interpret_pkt_data(void) {
 	 * which would shut the protected systems down for no reason.
 	 */
 	if (ah > 0) {
+		/*
+		 * battery.capacity.nominal was the capacity times the power
+		 * factor: 94.50 for batteries of 105Ah on a unit set to 0.9. I
+		 * wrote it that way in the first version, and the figure means
+		 * nothing. It comes from the same lack of understanding of how
+		 * NUT works that is described above, at "Voltage of the whole
+		 * bank": I used the variable for a figure of my own instead of
+		 * looking up what its name stands for. docs/nut-names.txt, table
+		 * "battery: Any battery details":
+		 *
+		 *   Name                       Description                     Example
+		 *   battery.capacity           Battery capacity (Ah)           7.2
+		 *   battery.capacity.nominal   Nominal battery capacity (Ah)   8.0
+		 *
+		 * Both are a capacity in Ah, and a power factor has no place in
+		 * either. The nominal one is what the battery is rated for and
+		 * the other what it holds when full: drivers/ecoflow-hid.c, for
+		 * example, maps them to the DesignCapacity and to the
+		 * FullChargeCapacity of the device. The NHS protocol carries
+		 * neither, so the only capacity the driver has is the rated one,
+		 * from the product sheet or from "ah", and both variables
+		 * publish it.
+		 */
 		dstate_setinfo("battery.capacity", "%u", ah);
-		dstate_setinfo("battery.capacity.nominal", "%0.2f", (float)ah * pf);
+		dstate_setinfo("battery.capacity.nominal", "%u", ah);
 	}  /* end if */
 	dstate_setinfo("battery.runtime.low", "%d", 30);
 
@@ -3992,7 +4136,10 @@ static void interpret_pkt_data(void) {
 
 		/*
 		 * Voltage of the whole bank: battery_tension is the measured one
-		 * and nominaltension the nominal one.
+		 * and nominaltension the nominal one. They are the same two values
+		 * that battery.voltage and battery.voltage.nominal publish, kept
+		 * here under their old names; how they are worked out, and why,
+		 * is written above, at "Voltage of the whole bank".
 		 *
 		 * Both used to be worked out while the packet was decoded, as the
 		 * reading (or vbat) times the number of batteries reported by the
@@ -4000,15 +4147,7 @@ static void interpret_pkt_data(void) {
 		 * fell behind as the rest of the driver was corrected: they
 		 * ignored "numbatteries" from ups.conf, took every bank as wired
 		 * in series, and took the reading as the voltage of one battery
-		 * even on a unit that reports a pair. They now come from the same
-		 * values the published variables use:
-		 *
-		 *   in series    volts of one battery * number of batteries
-		 *   in parallel  volts of one battery
-		 *
-		 * where the volts of one battery are the reading over the number
-		 * of batteries it covers (measured) or vbat (nominal). A number of
-		 * batteries that is not known yet gives 0, as elsewhere.
+		 * even on a unit that reports a pair.
 		 *
 		 * Two other values lived beside them and are gone:
 		 *
@@ -4020,9 +4159,8 @@ static void interpret_pkt_data(void) {
 		 *  - timeremain was declared, printed and published but never
 		 *    calculated: it was always 0. The estimate is battery.runtime.
 		 */
-		bank_units = ups.bat_series ? numbat : 1;
-		dstate_setinfo("experimental.nhs.data.battery_tension", "%0.2f", (double)(lastpktdata.vdcmed_real / (float)battery_units) * (double)bank_units);
-		dstate_setinfo("experimental.nhs.data.nominaltension", "%0.2f", (double)vbat * (double)bank_units);
+		dstate_setinfo("experimental.nhs.data.battery_tension", "%0.2f", (double)bank_volts);
+		dstate_setinfo("experimental.nhs.data.nominaltension", "%0.2f", (double)bank_nominal);
 		dstate_setinfo("experimental.nhs.data.statusval", "%u", lastpktdata.statusval);
 		for (i = 0; i < 8; i++) {
 			/* Reusing variable */
@@ -4282,12 +4420,58 @@ void upsdrv_initups(void) {
 
 	/* Process optional configuration flags that may
 	 * impact HW init methods (debug them or not)
+	 *
+	 * WHAT WAS HERE
+	 *
+	 * These three are flags: upsdrv_makevartable() declares them with
+	 * VAR_FLAG and docs/man/nhs_ser.txt presents each one as an
+	 * "Optional flag". A flag is a line of ups.conf with just its name
+	 * and nothing after it:
+	 *
+	 *   debug_pkt_raw
+	 *
+	 * They were read here with getval(). That is a mistake that slipped
+	 * through unnoticed, by me and by everyone who looked at this driver,
+	 * since the flags were added in November 2024, while the driver was
+	 * being reviewed for inclusion in NUT (PR #2692).
+	 *
+	 * WHY IT WAS WRONG
+	 *
+	 * The section "addvar, getval and testvar" of docs/new-drivers.txt
+	 * tells the two functions apart:
+	 *
+	 *   "The getval() method allows to get the user-provided string
+	 *    value (or NULL -- but it is hard to tell apart if the option
+	 *    was not specified or no value was assigned). The testvar()
+	 *    method allows to check if the option name was specified (even
+	 *    if without a value), so is better suited for flags."
+	 *
+	 * A flag has no value, so getval() returned NULL, the three tests
+	 * below were never true and the packet diagnostics stayed off.
+	 * Nothing showed the mistake: the NUT core still published
+	 * driver.flag.debug_pkt_raw as "enabled", and the only sign was that
+	 * the packet bytes were missing from the log. The diagnostics turned
+	 * on only for whoever happened to write a value after the name
+	 * (debug_pkt_raw = 1), which is not how a flag is written.
+	 *
+	 * It came to light in the tests of PR #3836: a user was asked for the
+	 * packet bytes of a LASER SENOIDAL 2600VA GII, added the three lines
+	 * exactly as the manual says and sent a log with no bytes in it.
+	 *
+	 * WHAT IS HERE NOW
+	 *
+	 * testvar(). As with every flag in NUT, what counts is that the line
+	 * is there; the same section describes flags as "true if mentioned
+	 * and false if not (any assigned value would be ignored, if not
+	 * rejected by configuration parser)". So debug_pkt_raw = 0 also turns
+	 * the diagnostics on: to turn a flag off, remove its line or comment
+	 * it out.
 	 */
-	if (getval("debug_pkt_raw"))
+	if (testvar("debug_pkt_raw"))
 		debug_pkt_raw = 1;
-	if (getval("debug_pkt_data"))
+	if (testvar("debug_pkt_data"))
 		debug_pkt_data = 1;
-	if (getval("debug_pkt_hwinfo"))
+	if (testvar("debug_pkt_hwinfo"))
 		debug_pkt_hwinfo = 1;
 
 	/* Validate the complete serial configuration before accessing the device. */

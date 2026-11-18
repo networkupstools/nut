@@ -93,8 +93,11 @@ the driver at startup.
 Capacity of each battery, in Ampere-hour (a positive integer). It is always
 the capacity of ONE battery, however many there are and whether they are
 wired in series or in parallel (see *numbatteries* and *battery_series*).
-When neither this setting nor the model data provides a capacity, the
-driver does not publish `battery.capacity` nor `battery.runtime`.
+The capacity is published in `battery.capacity` and in
+`battery.capacity.nominal`. When neither this setting nor the model data
+provides one, the driver publishes neither of them, nor `battery.runtime`.
+Earlier versions published in `battery.capacity.nominal` the capacity
+multiplied by the power factor, a figure with no meaning.
 
 *va*='num'::
 Nominal power in VA. Needed for models whose code the driver does not
@@ -194,7 +197,10 @@ the models and takes the others as wired in series, which is how nearly
 every NHS model is built. Set it when the batteries of your unit were
 wired differently from the factory set. It is used for
 `battery.current.total`: in series the bank carries the current of one
-battery, in parallel that current times the number of batteries.
+battery, in parallel that current times the number of batteries. It is
+also used for `battery.voltage` and `battery.voltage.nominal`, the voltage
+of the whole bank: in series the voltage of one battery times the number
+of batteries, in parallel the voltage of one battery.
 
 *overload_perc*='num'::
 Load, in percent of the nominal power, above which the driver reports the
@@ -239,11 +245,19 @@ batteries were replaced by another kind, together with *numbatteries* and
 *ah*, and it accepts decimals (for example 12.8 for a lithium iron
 phosphate battery). Depending on the model, the
 UPS reports the voltage of a single battery or of a set of them, and the
-driver tells which from the reading itself: `battery.voltage` is the
-reading as reported, `battery.voltage.nominal` is this value times the
-number of batteries that the reading covers, and `battery.charge` places
-the reading on a scale drawn from that nominal voltage (see the note
-below).
+driver tells which from the reading itself. `battery.voltage` and
+`battery.voltage.nominal` are the measured and the nominal voltage of the
+whole bank, which is what the front panel of the UPS shows: for batteries
+in series, the voltage of one battery times their number (see
+*numbatteries* and *battery_series*). `battery.charge` places the reading
+on a scale drawn from the nominal voltage of what the reading covers (see
+the note below).
+
+NOTE: Earlier versions published in `battery.voltage` the reading as the
+UPS sends it. Most NHS units report one battery whatever the size of the
+bank, so a unit with two batteries in series showed 13.60 where its panel
+shows 27.2V, beside a nominal voltage of 12V for a 24V bank. Graphs and
+alerts based on `battery.voltage` will show a step after the update.
 
 NOTE: `battery.charge` is an estimate from the battery voltage, since the
 UPS does not report a charge. It is a straight scale from 0% at 10.5V for
@@ -288,6 +302,11 @@ Optional flag to enable debug logging of data packet decoding.
 
 *debug_pkt_hwinfo*::
 Optional flag to enable debug logging of hwinfo packet decoding.
+
+NOTE: These three are flags: each one is a line with just its name in the
+UPS section of `ups.conf`, with no value after it. Earlier versions only
+turned the diagnostics on when a value was assigned (for example
+`debug_pkt_data = 1`), which is not how a flag is written.
 
 AUTHORS
 -------

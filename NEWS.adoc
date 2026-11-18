@@ -391,6 +391,24 @@ https://github.com/networkupstools/nut/milestone/13
       decimals now (for example 12.8), for units whose batteries were
       replaced by another kind; it used to be truncated to an integer, and
       `battery.voltage.nominal` is published with two decimals accordingly.
+    * `battery.voltage` and `battery.voltage.nominal` now report the voltage
+      of the whole bank, measured and nominal, which is what these names
+      mean in NUT and what the front panel of the UPS shows. Most units
+      send the voltage of one battery whatever the size of the bank, and
+      the driver published that reading as it came: a unit with two
+      batteries in series showed 13.60 where its panel shows 27.2V. For
+      batteries in series the voltage of one battery is now multiplied by
+      their number (see `numbatteries` and `battery_series`).
+      `battery.charge`, `battery.current` and `battery.runtime` are not
+      affected. Graphs and alerts based on `battery.voltage` will show a
+      step after the update.
+    * `battery.capacity.nominal` is now the capacity in Ah, the same value
+      as `battery.capacity`. It used to be that capacity multiplied by the
+      power factor, a figure with no meaning.
+    * The `debug_pkt_raw`, `debug_pkt_data` and `debug_pkt_hwinfo` flags
+      now work when written as flags, with just their name. They were
+      read as values, so the packet diagnostics only turned on when a
+      value was assigned to them (for example `debug_pkt_data = 1`).
     * `battery.charge` is now a scale from 0% at 10.5V for each 12V battery
       to 100% at 12.6V, following `vbat` in proportion. The previous value
       was the reading as a percentage of the nominal voltage, which only
