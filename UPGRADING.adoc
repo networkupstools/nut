@@ -105,6 +105,10 @@ Changes from 2.8.5 to 2.8.6
   with an explanation (and not proceed with insecure start-up like it could
   do before). [issue #3331, PR #3435]
 
+- Scripts running `upslog -d <count>` in the foreground with a positive count
+  now receive a failure status if any sample write or flush reports an error,
+  even if later samples succeed. Check the diagnostic for the affected destination.
+
 - Enabled support for `nutauth.conf` files to provide credentials and/or
   SSL settings in clients which previously only did best-effort attempts at
   secure communications without an individual certificate, and only anonymously
