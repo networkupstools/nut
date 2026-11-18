@@ -162,7 +162,7 @@ DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service ifplugd.
 DEPREQ_NET_FULL_SYSTEMD="Wants"
 DEPSVC_NET_LOCAL_SYSTEMD="network.target"
 DEPREQ_NET_LOCAL_SYSTEMD="Wants"
-# For dependency of one driver on anoter (clone*, dummy, failover):
+# For dependency of one driver on another (clone*, dummy, failover):
 DEPREQ_DRV_LOCAL_SYSTEMD="Wants"
 SVCNAMESEP_SYSTEMD="@"
 SVCNAME_SYSTEMD="nut-driver"
@@ -182,7 +182,7 @@ DEPSVC_NET_FULL_SMF="svc:/network/physical svc:/milestone/name-services"
 DEPREQ_NET_FULL_SMF="optional_all"
 DEPSVC_NET_LOCAL_SMF="svc:/network/loopback:default"
 DEPREQ_NET_LOCAL_SMF="optional_all"
-# For dependency of one driver on anoter (clone*, dummy, failover):
+# For dependency of one driver on another (clone*, dummy, failover):
 DEPREQ_DRV_LOCAL_SMF="require_any"
 SVCNAMESEP_SMF=":"
 SVCNAME_SMF="svc:/system/power/nut-driver"
@@ -243,6 +243,8 @@ UPSLIST_SVCS=""
 
 # Framework-specific implementations are generally hooked here:
 hook_registerInstance=""
+hook_configureInstance=""
+hook_startInstance=""
 hook_unregisterInstance=""
 hook_refreshSupervizor=""
 hook_listInstances=""
@@ -262,6 +264,8 @@ hook_restart_drv=""
 case "${SERVICE_FRAMEWORK-}" in
     smf)
         hook_registerInstance="smf_registerInstance"
+        hook_configureInstance="smf_configureInstance"
+        hook_startInstance="smf_startInstance"
         hook_unregisterInstance="smf_unregisterInstance"
         hook_refreshSupervizor="smf_refreshSupervizor"
         hook_listInstances="smf_listInstances"
@@ -280,6 +284,8 @@ case "${SERVICE_FRAMEWORK-}" in
         ;;
     systemd)
         hook_registerInstance="systemd_registerInstance"
+        hook_configureInstance="systemd_configureInstance"
+        hook_startInstance="systemd_startInstance"
         hook_unregisterInstance="systemd_unregisterInstance"
         hook_refreshSupervizor="systemd_refreshSupervizor"
         hook_listInstances="systemd_listInstances"
@@ -298,6 +304,8 @@ case "${SERVICE_FRAMEWORK-}" in
         ;;
     selftest)
         hook_registerInstance="selftest_NOOP"
+        hook_configureInstance="selftest_NOOP"
+        hook_startInstance="selftest_NOOP"
         hook_unregisterInstance="selftest_NOOP"
         hook_refreshSupervizor="selftest_NOOP"
         hook_listInstances="selftest_NOOP"
@@ -336,12 +344,16 @@ common_isFiled() {
     return 1
 }
 
-common_isRegistered() {
-    [ "${#UPSLIST_SVCS}" != 0 ] && \
-    for UPSS in $UPSLIST_SVCS ; do
-        [ "$1" = "$UPSS" ] && return 0
-        [ "`$hook_validInstanceName \"$1\"`" = "$UPSS" ] && return 0
-    done
+common_registeredInstance() {
+    # Registration tries the section name before its MD5 fallback.
+    [ -n "$2" ] || return 1
+    case " $2 " in
+        *" $1 "*) printf '%s\n' "$1"; return 0 ;;
+    esac
+    _HASHED="`$hook_validInstanceName \"$1\"`" && [ -n "$_HASHED" ] || return 1
+    case " $2 " in
+        *" $_HASHED "*) printf '%s\n' "$_HASHED"; return 0 ;;
+    esac
     return 1
 }
 
@@ -749,6 +761,7 @@ upsconf_getDriverMedia() {
             esac
             ;;
         *clone*|failover) # Talk to another driver via local socket/pipe:
+            CURR_PORT="`upsconf_getPort \"$1\"`" || CURR_PORT=""
             printf '%s\n%s\n' "$CURR_DRV" "drivers=${CURR_PORT}" ; return ;;
         # FIXME: other modbus? sysfs like INA219? GPIO? Other local devices?
         *)  printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
@@ -761,21 +774,40 @@ upsconf_getMedia() {
     return 0
 }
 
-upsconf_list_dev_drv_socket_checksum() {
-    # NOTE: Output column order matters, it is parsed e.g. to check
-    # for driver-on-driver dependencies when adding services
-    upslist_readFile_once && [ "${#UPSLIST_FILE}" != 0 ] \
-        || { log_warn "No devices detected in '$UPSCONF'" ; return 1 ; }
-    # Use the section-driver-port subset
-    if [ x"${AVOID_REPARSE}" != xyes ] ; then
-        upslist_normalizeFile_once || return    # Propagate errors upwards
-    fi
-    for _DEV in $UPSLIST_FILE ; do
-        _DRV="`upsconf_getDriver \"${_DEV}\"`"
-        _MD5="`upsconf_getSection_MD5 \"${_DEV}\"`"
-        printf '%s\t%s\t%s\t%s\n' "${_DEV}" "${_DRV}" "${_DRV}-${_DEV}" "${_MD5}"
+upsconf_driver_dependencies() (
+    # $1 = dependent device, $2 = media, $3/$4 = service prefix/suffix
+    # A local dummy proxy references a section. Clone and failover use
+    # socket names; both the driver and the section may contain dashes.
+    set -f
+    _DEPS=""
+    for _DEP in `printf '%s\n' "$2" | $SED -e 's/^[^=]*=//' -e 's/,/ /g'`; do
+        _DETAIL=""
+        for _DEV in $UPSLIST_FILE; do
+            [ "$_DEV" != "$1" ] || continue
+            case "$2" in
+                drivers=*)
+                    case "$_DEP" in
+                        *-"$_DEV")
+                            _DRV="`upsconf_getDriver \"$_DEV\"`" || continue
+                            [ "$_DEP" = "${_DRV}-${_DEV}" ] || {
+                                _DETAIL=" (section '$_DEV' uses driver '$_DRV')"
+                                continue
+                            } ;;
+                        *) continue ;;
+                    esac ;;
+                *) [ "$_DEP" = "$_DEV" ] || continue ;;
+            esac
+            _INST="`common_registeredInstance \"$_DEV\" \"$REGISTERED_INSTANCES\"`" || {
+                _DETAIL=" (section '$_DEV' has no registered instance)"
+                continue
+            }
+            _DEPS="${_DEPS}${_DEPS:+ }$3${_INST}$4"
+            continue 2
+        done
+        log_warn "No configured driver service for dependency '$_DEP' of '$1'$_DETAIL"
     done
-}
+    printf '%s\n' "$_DEPS"
+)
 
 upsconf_debug() {
     _DRV="`upsconf_getDriver \"$1\"`"
@@ -836,10 +868,39 @@ smf_registerInstance() {
       fi
       /usr/sbin/svccfg -s nut-driver add "$SVCINST" || return ; }
     log_info "Added instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'"
+}
 
+smf_setDependency() {
+    # $1 = target FMRI, $2 = property group, $3 = grouping, $4 = entities
+    GROUPING="${3:-optional_all}"
+    SAVED_ENTITIES=""
+    if [ "$5" = existing ]; then
+        SAVED_ENTITIES="`/usr/bin/svcprop -p \"$2/entities\" \"$1\" 2>/dev/null`"
+        if [ "$4" = "$SAVED_ENTITIES" ]; then
+            [ -n "$4" ] || return 0
+            [ "$GROUPING" != "`/usr/bin/svcprop -p \"$2/grouping\" \"$1\" 2>/dev/null`" ] || return 0
+        fi
+    fi
+    if [ -z "$4" ]; then
+        [ -n "$SAVED_ENTITIES" ] || return 0
+        /usr/sbin/svccfg -s "$1" delpg "$2" || return
+    else
+        [ -n "$SAVED_ENTITIES" ] || /usr/sbin/svccfg -s "$1" addpg "$2" dependency || return
+        # SMF needs separate arguments for the parentheses and each FMRI.
+        /usr/sbin/svccfg -s "$1" setprop "$2/grouping" = astring: "$GROUPING" && \
+        /usr/sbin/svccfg -s "$1" setprop "$2/restart_on" = astring: refresh && \
+        /usr/sbin/svccfg -s "$1" setprop "$2/type" = astring: service && \
+        /usr/sbin/svccfg -s "$1" setprop "$2/entities" = fmri: "(" $4 ")" || return
+    fi
+    DEPS_CHANGED=yes
+}
+
+smf_configureInstance() {
+    DEVICE="$1"
+    SVCINST="$2"
     DEPSVC=""
     DEPREQ=""
-    _MED="`upsconf_getMedia \"$DEVICE\"`"
+    _MED="$4"
     case "${_MED}" in
         usb|usb,*)
             DEPSVC="$DEPSVC_USB_SMF"
@@ -857,72 +918,42 @@ smf_registerInstance() {
         *)  log_warn "WARNING: Unexpected NUT media type ignored: '${_MED}'" ;;
     esac
 
-    case "${_MED}" in
+    TARGET_FMRI="nut-driver:$SVCINST"
+    DRIVER_DEPS=""
+    DRIVER_REQ="${DEPREQ_DRV_FULL_SMF:-$DEPREQ_DRV_LOCAL_SMF}"
+    case "$_MED" in
         drivers=*|*,drivers=*)
-            OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
-            # Not double-quoting here to iterate the string tokens:
-            for DEPDRV in `echo "${_MED}" | $SED -e 's/^drivers=//' -e 's/^.*,drivers=//' -e 's/,/ /g'` ; do
-                case "${DEPDRV}" in
-                    *-*) # May be "drivername-upsname", where either sub-string
-                         # may have dashes inside too; try to find the right one:
-                         OTHERDEV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $1 }'`" && \
-                         OTHERDRV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $2 }'`" && \
-                         [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
-                         [ x"${OTHERDEV}" != x"${DEVICE}" ] \
-                         || {
-                             for OTHERDEV in $UPSLIST_FILE ; do
-                                case "${DEPDRV}" in
-                                    *-"${OTHERDEV}")
-                                        OTHERDRV="'`echo \"${OTHERLIST}\" | awk '($1 == \"'\"${OTHERDEV}\"'\") { print $2 }'`'" || OTHERDRV="<N/A>"
-                                        log_warn "Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}"
-                                        ;;
-                                esac
-                             done
-                             OTHERDEV=""
-                             OTHERDRV=""
-                            }
-                        ;;
-                    *)  OTHERDEV="${DEPDRV}" ;;
-                esac
-                if [ x"${OTHERDEV}" != x ] && (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
-                    DEPSVC="$DEPSVC ${SVCNAME_SMF}${SVCNAMESEP_SMF}`smf_validInstanceName ${OTHERDEV}`"
-                else
-                    log_warn "Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it"
-                fi
-            done
-            if [ x"`echo \"$DEPSVC\" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SMF" ; fi
-            ;;
+            DRIVER_DEPS="`upsconf_driver_dependencies \"$DEVICE\" \"$_MED\" \"$SVCNAME_SMF$SVCNAMESEP_SMF\" \"\"`" ;;
+    esac
+    DEPS_CHANGED=no
+    case "$_MED" in
+        drivers=*)
+            smf_setDependency "$TARGET_FMRI" nut-driver-enumerator-generated "$DRIVER_REQ" "$DRIVER_DEPS" "$3" || return ;;
+        *)
+            smf_setDependency "$TARGET_FMRI" nut-driver-enumerator-generated "$DEPREQ" "$DEPSVC" "$3" || return
+            # A proxy's network and driver requirements use different groups.
+            case "$_MED" in
+                *,drivers=*) smf_setDependency "$TARGET_FMRI" nut-driver-enumerator-generated-drivers "$DRIVER_REQ" "$DRIVER_DEPS" "$3" || return ;;
+            esac ;;
     esac
 
-    TARGET_FMRI="nut-driver:$SVCINST"
-    if [ -n "$DEPSVC" ]; then
-        [ -n "$DEPREQ" ] || DEPREQ="optional_all"
-        log_info "Adding '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'..."
-
-        # NOTE: it seems (at least as of Solaris 11) that the fmri: definition
-        #  below (especially when there are many dependency FMRI's) must be a
-        #  multi-token list with parentheses, not a single quoted string.
-        DEPPG="nut-driver-enumerator-generated"
-        RESTARTON="refresh"
-        /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$DEPPG" dependency && \
-        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/grouping = astring: "$DEPREQ" && \
-        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/restart_on = astring: "$RESTARTON" && \
-        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/type = astring: service && \
-        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "(" $DEPSVC ")" && \
-        log_info "OK: Defined the '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'" || log_error "FAILED to define the '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'"
+    if [ "$3" = existing ]; then
+        [ "$DEPS_CHANGED" = no ] || /usr/sbin/svcadm refresh "$TARGET_FMRI"
+        return $?
     fi
 
-    smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 \"$DEVICE\"`"
     # Save original device (config section) name to speed up some searches
-    smf_setSavedDeviceName "$SVCINST" "$DEVICE"
+    smf_setSavedDeviceName "$SVCINST" "$DEVICE" || return
     smf_setDocLink "$SVCINST" "$DEVICE"
+    smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 \"$DEVICE\"`" || return
 
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
-    if [ "$AUTO_START" = yes ] ; then
-        /usr/sbin/svcadm clear "${TARGET_FMRI}" 2>/dev/null || true
-        /usr/sbin/svcadm enable "${TARGET_FMRI}" || return
-        log_info "Started instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'"
-    fi
+}
+
+smf_startInstance() {
+    /usr/sbin/svcadm clear "nut-driver:$1" 2>/dev/null || true
+    /usr/sbin/svcadm enable "nut-driver:$1" || return
+    log_info "Started instance: 'nut-driver:$1'"
 }
 smf_unregisterInstance() {
     log_info "Removing instance: 'nut-driver:$1' ..."
@@ -1099,31 +1130,51 @@ systemd_validInstanceName() {
 systemd_validInstanceSuffixName() {
     echo "$1" | $SED -e 's,^.*@,,' -e 's,\.service$,,'
 }
+systemd_enableLiteralInstance() (
+    # systemctl may silently enable an escaped unit name. The drop-in
+    # directory and the saved device mapping must use the same instance.
+    LC_ALL=C
+    export LC_ALL
+    case "$1" in *[!a-zA-Z0-9_.:-]*) return 1 ;; esac
+    /bin/systemctl enable "nut-driver@$1.service"
+)
+
+systemd_isMasked() {
+    case "`/bin/systemctl is-enabled \"nut-driver@$1.service\" 2>/dev/null`" in
+        masked|masked-runtime) return 0 ;;
+    esac
+    return 1
+}
+
 systemd_registerInstance() {
-    # Instance is registered by device section name; ultimate name in systemd may differ
     DEVICE="$1"
     SVCINST="$1"
-    /bin/systemctl enable 'nut-driver@'"$DEVICE".service || \
-    { if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | $EGREP "^nut-driver@${DEVICE}.service$"; then
-        log_warn "SKIP: Unit 'nut-driver@${DEVICE}.service' seems deliberately masked"
-        return 0
-      fi
-      log_warn "RETRY with validInstanceName of '$1'"
-      SVCINST="`systemd_validInstanceName \"$1\"`" && \
-      /bin/systemctl enable 'nut-driver@'"$SVCINST".service || {
-        RES=$?
-        if /bin/systemctl list-unit-files | awk '$2 == "masked" {print $1}' | $EGREP "^nut-driver@${SVCINST}.service$"; then
-          log_warn "SKIP: Unit 'nut-driver@${SVCINST}.service' seems deliberately masked"
-          return 0
+    if ! systemd_enableLiteralInstance "$DEVICE"; then
+        if systemd_isMasked "$DEVICE"; then
+            log_warn "Skipping masked unit 'nut-driver@$DEVICE.service'"
+            SVCINST=""
+            return 0
         fi
-        return $RES
+        SVCINST="`systemd_validInstanceName \"$DEVICE\"`" || return
+        /bin/systemctl enable "nut-driver@$SVCINST.service" || {
+            RES=$?
+            if systemd_isMasked "$SVCINST"; then
+                log_warn "Skipping masked unit 'nut-driver@$SVCINST.service'"
+                SVCINST=""
+                return 0
+            fi
+            return $RES
         }
-      }
+    fi
     log_info "Enabled instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'"
+}
 
+systemd_configureInstance() {
+    DEVICE="$1"
+    SVCINST="$2"
     DEPSVC=""
     DEPREQ=""
-    _MED="`upsconf_getMedia \"$DEVICE\"`"
+    _MED="$4"
     case "${_MED}" in
         usb|usb,*)
             DEPSVC="$DEPSVC_USB_SYSTEMD"
@@ -1143,67 +1194,44 @@ systemd_registerInstance() {
         *)  log_warn "Unexpected NUT media type ignored: '${_MED}'" ;;
     esac
 
-    case "${_MED}" in
+    DRIVER_DEPS=""
+    case "$_MED" in
         drivers=*|*,drivers=*)
-            OTHERLIST="`upsconf_list_dev_drv_socket_checksum`" || OTHERLIST=""
-            # Not double-quoting here to iterate the string tokens:
-            for DEPDRV in `echo "${_MED}" | $SED 's/^drivers=//' -e 's/^.*,drivers=//' -e 's/,/ /g'` ; do
-                case "${DEPDRV}" in
-                    *-*) # May be "drivername-upsname", where either sub-string
-                         # may have dashes inside too; try to find the right one:
-                         OTHERDEV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $1 }'`" && \
-                         OTHERDRV="`echo \"${OTHERLIST}\" | awk '($3 == \"'\"${DEPDRV}\"'\") { print $2 }'`" && \
-                         [ x"${DEPDRV}" = x"${OTHERDRV}-${OTHERDEV}" ] && \
-                         [ x"${OTHERDEV}" != x"${DEVICE}" ] \
-                         || {
-                             for OTHERDEV in $UPSLIST_FILE ; do
-                                case "${DEPDRV}" in
-                                    *-"${OTHERDEV}")
-                                        OTHERDRV="'`echo \"${OTHERLIST}\" | awk '($1 == \"'\"${OTHERDEV}\"'\") { print $2 }'`'" || OTHERDRV="<N/A>"
-                                        log_warn "Device ${DEVICE} depends on another as '${DEPDRV}', but the other possible device '${OTHERDEV}' uses an unexpected driver: ${OTHERDRV}"
-                                        ;;
-                                esac
-                             done
-                             OTHERDEV=""
-                             OTHERDRV=""
-                            }
-                        ;;
-                    *)  OTHERDEV="${DEPDRV}" ;;
-                esac
-                if [ x"${OTHERDEV}" != x ] && (echo "$OTHERLIST" | $EGREP "^${OTHERDEV}\t") >/dev/null ; then
-                    DEPSVC="$DEPSVC ${SVCNAME_SYSTEMD}${SVCNAMESEP_SYSTEMD}`systemd_validInstanceName ${OTHERDEV}`"
-                else
-                    log_warn "Device ${DEVICE} depends on another ${DEPDRV} but we did not find a config section for it"
-                fi
-            done
-            if [ x"`echo \"$DEPSVC\" | tr -d ' '`" != x ] ; then DEPREQ="$DEPREQ_DRV_FULL_SYSTEMD" ; fi
-            ;;
+            DRIVER_DEPS="`upsconf_driver_dependencies \"$DEVICE\" \"$_MED\" \"$SVCNAME_SYSTEMD$SVCNAMESEP_SYSTEMD\" \".service\"`" ;;
     esac
-
-    if [ -n "$DEPSVC" ]; then
-        [ -n "$DEPREQ" ] || DEPREQ="#Wants"
-        log_info "Adding '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'..."
+    DROPIN="${SYSTEMD_CONFPATH}/nut-driver@$SVCINST.service.d/nut-driver-enumerator-generated.conf"
+    if [ -n "$DEPSVC$DRIVER_DEPS" ]; then
+        # Requirements accumulate in systemd. Keep the policy for each class
+        # even when a local proxy needs both networking and a backing driver.
+        UNIT_DEPS="`[ -z \"$DEPSVC\" ] || printf '%s=%s\n' \"${DEPREQ:-#Wants}\" \"$DEPSVC\"
+            [ -z \"$DRIVER_DEPS\" ] || printf '%s=%s\n' \"${DEPREQ_DRV_FULL_SYSTEMD:-${DEPREQ_DRV_LOCAL_SYSTEMD:-#Wants}}\" \"$DRIVER_DEPS\"
+            printf 'After=%s%s%s\n' \"$DEPSVC\" \"${DEPSVC:+${DRIVER_DEPS:+ }}\" \"$DRIVER_DEPS\"`"
+        if [ "$3" = existing ] && [ -f "$DROPIN" ] && \
+            [ "$UNIT_DEPS" = "`$SED '1,/^Description=/d' \"$DROPIN\"`" ]; then
+            return 0
+        fi
         mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$SVCINST.service.d" && \
-        cat > "${SYSTEMD_CONFPATH}/nut-driver@$SVCINST.service.d/nut-driver-enumerator-generated.conf" <<EOF
+        cat > "$DROPIN" <<EOF
 # Customization generated `date -u` by nut-driver-enumerator for NUT device '$DEVICE'
 # DO NOT EDIT: This file would be removed or overwritten by that service
 [Unit]
 Description=Network UPS Tools - device driver for NUT device '$DEVICE'
-${DEPREQ}=${DEPSVC}
-After=${DEPSVC}
+${UNIT_DEPS}
 EOF
-        [ $? = 0 ] && log_info "OK: Defined the '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'" || log_error "FAILED to define the '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'"
+        [ $? = 0 ] || { log_error "Failed to write dependencies to '$DROPIN'"; return 1; }
+    elif [ "$3" = existing ]; then
+        rm -f "$DROPIN" || return
     fi
 
-    systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 \"$DEVICE\"`"
-    systemd_setSavedDeviceName "$SVCINST" "$DEVICE"
+    [ "$3" != existing ] || return 0
+    systemd_setSavedDeviceName "$SVCINST" "$DEVICE" || return
     systemd_setDocLink "$SVCINST" "$DEVICE"
+    systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 \"$DEVICE\"`" || return
+}
 
-    if [ "$AUTO_START" = yes ] ; then
-        systemd_refreshSupervizor || log_warn "Somehow managed to fail systemd_refreshSupervizor()"
-        $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
-        log_info "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'"
-    fi
+systemd_startInstance() {
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl start --no-block "nut-driver@$1.service" || return
+    log_info "Started instance: 'nut-driver@$1'"
 }
 systemd_unregisterInstance() {
     log_info "Removing instance: 'nut-driver@$1' ..."
@@ -1494,14 +1522,52 @@ upslist_addSvcs() {
     # sections - is attained by removing the old service instance elsewhere and
     # recreating it here, since any data could change including the dependency
     # list, etc.
-    for UPSF in $UPSLIST_FILE ; do
-        if common_isRegistered "$UPSF" ; then
-            true
-        else
-            log_info "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..."
-            $hook_registerInstance "$UPSF"
+    # Collect the actual instance names before configuring dependencies.
+    # A clone can sort before its source, which may need a hashed name.
+    LISTED_INSTANCES="`printf '%s' \"$UPSLIST_SVCS\" | tr '\n' ' '`"
+    REGISTERED_INSTANCES=""
+    set --
+    for UPSF in $UPSLIST_FILE; do
+        # A stopped, disabled systemd unit can still be loaded while
+        # another unit references it. Only reuse a configured instance.
+        if SVCINST="`common_registeredInstance \"$UPSF\" \"$LISTED_INSTANCES\"`" && \
+            [ -n "`$hook_getSavedMD5 \"$SVCINST\"`" ]; then
+            REGISTERED_INSTANCES="$REGISTERED_INSTANCES $SVCINST"
+            set -- "$@" "$UPSF" "$SVCINST" existing
+            continue
         fi
+        log_info "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..."
+        SVCINST=""
+        $hook_registerInstance "$UPSF" && [ -n "$SVCINST" ] || continue
+        REGISTERED_INSTANCES="$REGISTERED_INSTANCES $SVCINST"
+        set -- "$@" "$UPSF" "$SVCINST" new
     done
+
+    # Starting a dependent may also start its sources, so finish writing
+    # all new instance configurations before starting the first one.
+    CONFIGURE_FAILED=no
+    NEW_INSTANCES=""
+    while [ "$#" -ge 3 ]; do
+        _MED="`upsconf_getMedia \"$1\"`"
+        # An otherwise unchanged section can gain or lose a backing service.
+        if [ "$3" = existing ]; then
+            case "$_MED" in drivers=*|*,drivers=*) ;; *) shift 3; continue ;; esac
+        fi
+        if $hook_configureInstance "$1" "$2" "$3" "$_MED"; then
+            [ "$3" != new ] || NEW_INSTANCES="$NEW_INSTANCES $2"
+        else
+            CONFIGURE_FAILED=yes
+            $hook_setSavedMD5 "$2" ""
+        fi
+        shift 3
+    done
+    if [ -n "$NEW_INSTANCES" ] && [ "$AUTO_START" = yes ]; then
+        $hook_refreshSupervizor || log_warn "Failed to refresh ${SERVICE_FRAMEWORK} before starting drivers"
+        for SVCINST in $NEW_INSTANCES; do
+            $hook_startInstance "$SVCINST"
+        done
+    fi
+    [ "$CONFIGURE_FAILED" = no ]
 }
 
 upslist_delSvcs() {
@@ -1600,7 +1666,9 @@ nut_driver_enumerator_main() {
             CURR_DEV="`USE_SAVEDINST=true get_device_for_service \"${UPSS}\"`" && [ "${#CURR_DEV}" -gt 0 ] || CURR_DEV="${UPSS}"
             CURR_DRV="`upsconf_getDriver \"${CURR_DEV}\"`" || CURR_DRV=""
             DO_UNREGISTER=yes
-            if [ -n "$CURR_DRV" ] ; then
+            # An interrupted registration can leave an instance without
+            # its generated configuration. Such an instance needs rebuilding.
+            if [ -n "$CURR_DRV" ] && [ -n "`$hook_getSavedMD5 \"$UPSS\"`" ] ; then
                 # If reload is handled and does not complain,
                 # we are OK to proceed without re-defining
                 # and restarting the driver service instance.
@@ -1608,7 +1676,7 @@ nut_driver_enumerator_main() {
                     log_info "Reloading ${SERVICE_FRAMEWORK} service instance '${UPSS}' whose section '${CURR_DEV}' in config file has changed: calling driver program '${CURR_DRV}' for the low-level work..."
                 fi
                 "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >/dev/null 2>/dev/null \
-                || { if [ "${VERBOSE_LOOP}" = yes ] ; then sleep 1; "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >&2 ; fi; } \
+                || { [ "${VERBOSE_LOOP}" = yes ] && sleep 1 && "@DRVPATH@/$CURR_DRV" -a "${CURR_DEV}" -c reload-or-error >&2 ; } \
                 && DO_UNREGISTER=no
             fi
             if [ "$DO_UNREGISTER" = yes ] ; then
@@ -1641,9 +1709,10 @@ nut_driver_enumerator_main() {
         $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ''`"
     fi
 
+    ADD_FAILED=no
     if [ "${#UPSLIST_FILE}" != 0 ]; then
         # Add services for sections that are in config file but not yet wrapped
-        upslist_addSvcs
+        upslist_addSvcs || ADD_FAILED=yes
         $hook_refreshSupervizor
         upslist_readSvcs "after checking for new config sections to define service instances"
     fi
@@ -1688,7 +1757,7 @@ nut_driver_enumerator_main() {
         # do REPORT_RESTART_42 logic or the error exit-code
     fi
 
-    if [ "$UPSLIST_EQ_RES" = 0 ] ; then
+    if [ "$UPSLIST_EQ_RES" = 0 ] && [ "$ADD_FAILED" = no ]; then
         log_info "OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
@@ -1709,8 +1778,9 @@ nut_driver_enumerator_full_reconfigure() {
         done
         upslist_readSvcs "after dropping"
     fi
+    ADD_FAILED=no
     if [ "${#UPSLIST_FILE}" != 0 ]; then
-        upslist_addSvcs
+        upslist_addSvcs || ADD_FAILED=yes
         upslist_readSvcs "after checking for new config sections to define service instances"
     fi
 
@@ -1753,7 +1823,7 @@ nut_driver_enumerator_full_reconfigure() {
         # The "main" routine will do REPORT_RESTART_42 logic too
     fi
 
-    if [ "$UPSLIST_EQ_RES" = 0 ] ; then
+    if [ "$UPSLIST_EQ_RES" = 0 ] && [ "$ADD_FAILED" = no ]; then
         log_info "OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
