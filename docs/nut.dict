@@ -937,6 +937,7 @@ OUTPUTV
 OUTVOLT
 OV
 OVERDURATION
+ObjectID
 Oden
 OffTime
 Ohloh
@@ -1193,6 +1194,7 @@ Rackmount
 Radek
 Ragtech
 RatedVA
+ReadDevID
 RealSmart
 RedHat
 Redhat
