@@ -68,6 +68,10 @@ typedef struct microlink_descriptor_usage_s {
 	char path[64];
 	size_t data_offset;
 	size_t size;
+	uint64_t bitmask;
+	int has_range;
+	uint64_t range_min;
+	uint64_t range_max;
 } microlink_descriptor_usage_t;
 
 typedef struct microlink_page0_state_s {

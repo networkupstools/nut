@@ -119,6 +119,21 @@ In rough order of cost:
    values that can be matched against the data pages, which is useful for
    read-only fields that step 2 cannot reach.
 
+Usage limits
+~~~~~~~~~~~~
+
+After a usage ID, `0xFB` introduces a bit mask of supported values or bits.
+The `0xFA` min/max attribute encodes the upper bound followed by the lower
+bound. `0xF9` introduces the default value, which the driver skips. Each
+operand is the same width as the usage and uses big-endian byte order.
+Interpret the bounds using the signedness of the mapped value. For example,
+`0xFFFF` is the lower limit of -1 for a signed two-byte countdown.
+
+These attributes also occur on read-only usages. The driver publishes choice
+lists and integer ranges only for usages explicitly marked writable in its
+mapping table. It uses a mask as a choice list only for a mapped enumeration
+whose labels cover every bit in the mask.
+
 Mapping pitfalls
 ~~~~~~~~~~~~~~~~
 
