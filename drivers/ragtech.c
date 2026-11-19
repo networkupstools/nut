@@ -521,10 +521,10 @@ void upsdrv_initinfo(void)
 		if (iout_calib_override) {
 			upsdebugx(1, "reg 0xF3 reports iout_calib = %u, "
 				  "overridden by ups.conf value %g",
-				  calib, iout_calib);
+				  (unsigned int)calib, iout_calib);
 		} else {
 			iout_calib = (double)calib;
-			upsdebugx(1, "iout_calib from reg 0xF3 = %u", calib);
+			upsdebugx(1, "iout_calib from reg 0xF3 = %u", (unsigned int)calib);
 		}
 	}
 	if (ragtech_read(0x0202, 2, osc) == 2) {
