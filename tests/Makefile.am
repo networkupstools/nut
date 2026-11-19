@@ -16,6 +16,7 @@ SUBDIRS = . NIT
 all: $(TESTS) $(check_PROGRAMS) $(check_SCRIPTS)
 
 EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
+EXTRA_DIST += nut-driver-enumerator-backends.sh nut-driver-enumerator-test--backing.conf
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 EXTRA_DIST += pynut-commands-test.py
 EXTRA_DIST += upsset-string-test.py

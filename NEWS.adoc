@@ -948,6 +948,15 @@ https://github.com/networkupstools/nut/milestone/13
       with insecure start-up like it could do before). [issue #3331, PR #3435]
 
  - The `nut-driver-enumerator.sh` script (NDE) updates:
+    * Generate systemd and SMF dependencies for `clone`, `clone-outlet`
+      and `failover` using the service instances of their backing drivers.
+      Update these dependencies when backing services are added or removed.
+      Local `dummy-ups` proxies keep separate network and driver requirements.
+      On systemd, use the existing hashed instance name for section names
+      that the enumerator cannot use literally in its service mapping. [PR #3852]
+    * When a driver cannot reload a changed configuration, recreate its
+      service instance and apply the new settings. Previously the default
+      quiet mode could record the change without applying it. [PR #3852]
     * The shell/`awk` based parser now decodes `ups.conf` values using NUT token
       syntax, preserving quoted hashes and escaped characters and ignoring
       trailing comments. For example, `port = "auto" # comment` now properly
