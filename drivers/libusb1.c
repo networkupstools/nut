@@ -149,7 +149,9 @@ static void nut_libusb_close(libusb_device_handle *udev);
  */
 void nut_usb_addvars(void)
 {
+#if (defined HAVE_LIBUSB_GET_VERSION) && HAVE_LIBUSB_GET_VERSION
 	const struct libusb_version	*v = libusb_get_version();
+#endif
 
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
@@ -189,11 +191,16 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_hid_ep_in",	"Deeper tuning of USB communications for complex devices");
 	addvar(VAR_VALUE, "usb_hid_ep_out",	"Deeper tuning of USB communications for complex devices");
 
-#ifdef LIBUSB_API_VERSION
+#if (defined HAVE_LIBUSB_GET_VERSION) && HAVE_LIBUSB_GET_VERSION
+# ifdef LIBUSB_API_VERSION
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%08X)", v->major, v->minor, v->micro, (unsigned int)LIBUSB_API_VERSION);
-#else  /* no LIBUSB_API_VERSION */
+# else  /* no LIBUSB_API_VERSION */
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
-#endif /* LIBUSB_API_VERSION */
+# endif /* LIBUSB_API_VERSION */
+#else  /* no libusb_get_version() */
+	/* Added after libusb 1.0.9, the oldest release configure accepts */
+	dstate_setinfo("driver.version.usb", "libusb-1.0 (version unknown, 1.0.9 or older)");
+#endif /* HAVE_LIBUSB_GET_VERSION */
 
 	upsdebugx(1, "Using USB implementation: %s", dstate_getinfo("driver.version.usb"));
 }

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3917 utf-8
+personal_ws-1.1 en 3924 utf-8
 AAC
 AAS
 ABI
@@ -719,6 +719,7 @@ LiFePO
 LibGD
 LibLTDL
 LibUSB
+LibreSSL
 LineA
 LineB
 Lintian
@@ -936,6 +937,7 @@ OUTPUTV
 OUTVOLT
 OV
 OVERDURATION
+ObjectID
 Oden
 OffTime
 Ohloh
@@ -1192,6 +1194,7 @@ Rackmount
 Radek
 Ragtech
 RatedVA
+ReadDevID
 RealSmart
 RedHat
 Redhat
@@ -1988,6 +1991,7 @@ compareprocnames
 compat
 compilation's
 compilerPath
+concat
 conf
 confargs
 confdir
@@ -2349,6 +2353,7 @@ gethostbyname
 getnameinfo
 getopt
 getproctag
+getrandom
 getrlimit
 getter
 getters
@@ -2778,6 +2783,7 @@ mdutil
 meanwell
 mecer
 megatec
+memcpy
 memset
 metadata
 metasys
@@ -3738,6 +3744,7 @@ urb
 uri
 url
 urpmi
+urandom
 usb
 usbconfig
 usbfs

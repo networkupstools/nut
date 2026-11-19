@@ -682,6 +682,12 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) \
 # NOTE: MKDIR_P may be defined via expanded $(top_builddir)/install-sh
 # so should be run from $(abs_builddir) to be safe, as we jump around
 # the build workspace
+
+# For some reason, parallel builds of man pages on FreeBSD 15 with tmpfs
+# (to create a tarball during `make dist`, or inside `make distcheck`
+# context) fail sufficiently often to be noticeable. May be a system
+# problem with some files not becoming visible in time (some other
+# tests had failed suspiciously similarly). Sleep just in case...
 DOCBUILD_BEGIN = { \
     if test -n "$${A2X_OUTDIR}" && test "$${A2X_OUTDIR}" != '.' ; then \
         rm -rf "./$${A2X_OUTDIR}" || true ; \
@@ -702,6 +708,12 @@ DOCBUILD_BEGIN = { \
     && test ! -w "${builddir}/docbook-xsl.css" \
     ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi ; \
     chmod -R u+w "./$${A2X_OUTDIR}" || true; \
+    case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+        *-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
+            case "`uname -s | tr 'A-Z' 'a-z'`" in \
+                *freebsd*) sleep 1 ;; \
+            esac ;; \
+    esac ; \
 }
 
 # When moving "*" hope a2x did not make any "hidden" files
@@ -713,9 +725,14 @@ DOCBUILD_END = { \
         chmod -R u+w "./$${A2X_OUTDIR}" || true; \
         test -d '$@' && rm -rf '$@' || true ; \
         rm -f "./$${A2X_OUTDIR}/"*docinfo*.xml* || exit ; \
-        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || exit ; \
-        mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
-        rm -rf "./$${A2X_OUTDIR}" ; \
+        RESMV=0; \
+        mv -f "./$${A2X_OUTDIR}/$(@F)" ./ || RESMV=$$? ; \
+        if [ 0 = $$RESMV ] ; then \
+            mv -f "./$${A2X_OUTDIR}/"*.* ./ 2>/dev/null || true ; \
+            rm -rf "./$${A2X_OUTDIR}" ; \
+        else \
+            RES=$$RESMV ; \
+        fi ; \
     fi ; \
 }
 
@@ -761,6 +778,20 @@ GENERATE_HTML_SINGLE = ( \
 	                $(MAKE) $(AM_MAKEFLAGS) "`basename '$(@F)'`"-contentchecked || RES=$$? ; \
 	            fi ; \
 	        fi ;; \
+	    *) \
+	        if [ "$$RES" != 0 ] ; then \
+	            case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+	                *-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
+	                    case "`uname -s | tr 'A-Z' 'a-z'`" in \
+	                        *freebsd*) sleep 1 ; \
+	                            echo "  DOC-HTML	RETRY: Generating $@"; \
+	                            $(DOCBUILD_BEGIN) ; RES=0; \
+	                            $(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl '$<' || RES=$$? ; \
+	                            $(DOCBUILD_END) ; \
+	                        ;; \
+	                    esac ;; \
+	            esac ; \
+	        fi ;; \
 	esac ; \
 	exit $$RES ; \
 )
@@ -782,7 +813,20 @@ GENERATE_HTML_CHUNKED = ( \
 	echo "  DOC-HTML-CHUNKED	Generating $@"; \
 	$(DOCBUILD_BEGIN) ; RES=0; \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
-	$(DOCBUILD_END) ; exit $$RES ; \
+	$(DOCBUILD_END) ; \
+    if [ 0 = "$${RES}" ] ; then exit 0 ; fi ; \
+    case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+        *-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
+            case "`uname -s | tr 'A-Z' 'a-z'`" in \
+                *freebsd*) sleep 1 ; \
+                    echo "  DOC-HTML-CHUNKED	RETRY: Generating $@"; \
+                    $(DOCBUILD_BEGIN) ; RES=0; \
+                    $(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl '$<' || RES=$$? ; \
+                    $(DOCBUILD_END) ; \
+                ;; \
+            esac ;; \
+    esac ; \
+    exit $$RES ; \
 )
 
 *.chunked: common.xsl chunked.xsl
@@ -798,7 +842,21 @@ GENERATE_PDF = ( \
 	$(DOCBUILD_BEGIN) ; RES=0; \
 	if [ -s "$${A2X_OUTDIR}/docinfo.xml" ] ; then A2X_DOCINFO_DIR="$${A2X_OUTDIR}"; fi ; \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
-	$(DOCBUILD_END) ; exit $$RES ; \
+	$(DOCBUILD_END) ; \
+    if [ 0 = "$${RES}" ] ; then exit 0 ; fi ; \
+    case "-$(MAKEFLAGS) $(AM_MAKEFLAGS)" in \
+        *-j|*-j" "*|*-{j,l}{0,1,2,3,4,5,6,7,8,9}*|*-[jl][0123456789]*|*{-l,--jobs,--load-average,--max-load}" "{-,0,1,2,3,4,5,6,7,8,9}*|*--jobserver*|*--jobs" "[0123456789]*|*--load-average" "[0123456789]*|*--max-load" "[0123456789]*) \
+            case "`uname -s | tr 'A-Z' 'a-z'`" in \
+                *freebsd*) sleep 1 ; \
+                    echo "  DOC-PDF	RETRY: Generating $@"; \
+                    $(DOCBUILD_BEGIN) ; RES=0; \
+	                if [ -s "$${A2X_OUTDIR}/docinfo.xml" ] ; then A2X_DOCINFO_DIR="$${A2X_OUTDIR}"; fi ; \
+                    $(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 '$<' || RES=$$? ; \
+                    $(DOCBUILD_END) ; \
+                ;; \
+            esac ;; \
+    esac ; \
+    exit $$RES ; \
 )
 
 *.pdf: docinfo.xml
