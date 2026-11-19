@@ -814,10 +814,6 @@ my_ups_set() will receive two parameters:
 	const char * -- the variable being changed
 	const char * -- the new value
 
-You should return either STAT_SET_HANDLED if your driver recognizes the
-command, or STAT_SET_UNKNOWN if it doesn't.  Other possibilities will be
-added at some point in the future.
-
 INSTCMD
 ~~~~~~~
 
@@ -829,10 +825,7 @@ arriving from the server.
 Your function will receive two args:
 
 	const char * -- the command name
-	const char * -- (reserved)
-
-You should return either STAT_INSTCMD_HANDLED or STAT_INSTCMD_UNKNOWN
-depending on whether your driver can handle the requested command.
+	const char * -- the command argument, or NULL if none was supplied
 
 Notes
 ~~~~~
@@ -843,11 +836,48 @@ without regards to case.
 Responses
 ~~~~~~~~~
 
-Drivers will eventually be expected to send responses to commands.
-Right now, there is no channel to get these back through upsd to
-the client, so this is not implemented.
+Return the constant from `drivers/upshandler.h` for your callback. Both
+sets of constants use the suffixes below. For example, `setvar` returns
+`STAT_SET_HANDLED` and `instcmd` returns `STAT_INSTCMD_HANDLED` on success.
 
-This will probably be implemented with a polling scheme in the clients.
+[cols="1,2,4,2",options="header"]
+|=======================================================================
+|Value |Suffix    |Meaning in the driver        |`GET TRACKING <id>` reply
+|0     |`HANDLED` |The handler reports success. |`SUCCESS`
+|1     |`UNKNOWN` |Unspecified error.
+                   Drivers also use this
+                   for an unrecognized variable
+                   or command.                  |`ERR UNKNOWN`
+|2     |`INVALID` |For `SET`, the variable is not
+                   writable or the value is invalid.
+                   For `INSTCMD`, the command or
+                   its argument is invalid.     |`ERR INVALID-ARGUMENT`
+|3     |`FAILED`  |The driver reports that the
+                   write or command failed.     |`ERR FAILED`
+|4     |`CONVERSION_FAILED` |The driver could not
+                   convert the variable value
+                   or command argument.         |`ERR INVALID-ARGUMENT`
+|=======================================================================
+
+The driver core tries its shared handler first. Only `UNKNOWN` state
+passes the request to a registered driver-specific callback.
+That callback returns the final driver result.
+
+Drivers differ in how they report a command they recognize but cannot
+execute in the current device state.
+
+`upsd` can reject a request before it reaches the driver, for example if
+the command is not advertised. With tracking disabled, `upsd` replies `OK`
+as soon as it forwards the request. A client that sent `SET TRACKING ON`
+receives `OK TRACKING <id>` at that point. The driver core sends the integer
+result to `upsd` as `TRACKING <id> <value>`. The client can poll with
+`GET TRACKING <id>`, as `upsrw -w` and `upscmd -w` do.
+
+`PENDING` means `upsd` is still waiting for a result. If the shared
+handler returns `UNKNOWN` and there is no driver-specific callback, the
+core reports `UNKNOWN` for a tracked `INSTCMD`. A tracked `SET` in that
+case stays `PENDING` until the entry expires. An unknown or expired
+tracking ID also yields `ERR UNKNOWN`.
 
 
 Enumerated types

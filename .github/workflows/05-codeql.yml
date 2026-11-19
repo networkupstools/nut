@@ -22,9 +22,55 @@ on:
   workflow_dispatch:
     # Allow manually running the action, e.g. if disabled after some quietness in the source
 
+permissions: {}
+
 jobs:
+  changes:
+    name: Check for documentation-only changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      docs_only: ${{ steps.compare.outputs.result }}
+    steps:
+    - name: Classify the pull request
+      id: compare
+      continue-on-error: true
+      uses: actions/github-script@v9
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          const { data } = await github.rest.repos.compareCommitsWithBasehead({
+            ...context.repo,
+            basehead: `${pr.base.sha}...${pr.head.sha}`,
+            per_page: 1,
+          });
+
+          // The first comparison page lists at most 300 files across all commits.
+          if (!data.files?.length || data.files.length !== pr.changed_files) return false;
+
+          function isDoc(path) {
+            if (!path) return false;
+            if (path.endsWith('.adoc') || path.endsWith('.md') || path === 'docs/nut.dict') return true;
+            // NUT's guide chapters, man pages and cable descriptions are AsciiDoc
+            // with a .txt suffix. Build and dependency lists also use that suffix.
+            if (/(^|\/)(CMakeLists|requirements[^/]*|constraints[^/]*)\.txt$/.test(path)) return false;
+            return /^docs\/(man\/|cables\/)?[^/]+\.txt$/.test(path);
+          }
+
+          return data.files.every(file => {
+            if (file.status === 'renamed') {
+              return isDoc(file.previous_filename) && isDoc(file.filename);
+            }
+            return ['added', 'modified', 'removed'].includes(file.status) && isDoc(file.filename);
+          });
+
   analyze:
     name: Analyze
+    needs: changes
+    # Non-PR events skip the comparison. An unavailable comparison also runs analysis.
+    if: ${{ !cancelled() && needs.changes.outputs.docs_only != 'true' }}
     runs-on: ${{ matrix.os }}
     permissions:
       actions: read
