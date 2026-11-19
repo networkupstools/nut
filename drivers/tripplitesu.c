@@ -185,12 +185,12 @@
     (2) these items have not been tested because I haven't tested them.
 */
 
-
-#include <limits.h>
-
 #include "main.h"
 #include "serial.h"
+#include "timehead.h"
 #include "nut_stdint.h"
+
+#include <limits.h>
 
 #define DRIVER_NAME	"Tripp Lite SmartOnline driver"
 #define DRIVER_VERSION	"0.13"
@@ -1924,7 +1924,7 @@ void upsdrv_updateinfo(void)
 	char response[MAX_RESPONSE_LENGTH];
 	char value[32];
 	char *ptr2;
-	int i;
+	unsigned int i;
 	int flags;
 	int contacts_set;
 	int low_battery;
@@ -2051,7 +2051,7 @@ void upsdrv_updateinfo(void)
 		flags = 0;
 		contacts_set = 0;
 		for (i = 0; i < 4; i++) {
-			if (get_field(response, 2 + i, value, sizeof(value))) {
+			if (get_field(response, 2U + i, value, sizeof(value))) {
 				contacts_set = 1;
 				if (value[0] == '1')
 					flags |= 1 << i;
