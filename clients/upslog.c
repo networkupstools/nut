@@ -508,9 +508,10 @@ static void compile_format(void)
 }
 
 /* go through the list of functions and call them in order */
-static void run_flist(const struct monhost_ups_t *monhost_ups_print)
+static int run_flist(const struct monhost_ups_t *monhost_ups_print)
 {
 	flist_t	*tmp;
+	struct logtarget_t	*target = monhost_ups_print->logtarget;
 
 	tmp = fhead;
 
@@ -522,8 +523,19 @@ static void run_flist(const struct monhost_ups_t *monhost_ups_print)
 		tmp = tmp->next;
 	}
 
-	fprintf(monhost_ups_print->logtarget->logfile, "%s\n", logbuffer);
-	fflush(monhost_ups_print->logtarget->logfile);
+	if (fprintf(target->logfile, "%s\n", logbuffer) < 0
+	 || fflush(target->logfile) != 0) {
+		if (!target->write_failed) {
+			upslog_with_errno(LOG_ERR, "Could not write sample to %s",
+				target->logfile == stdout ? "stdout" : target->logfn);
+		}
+		target->write_failed = 1;
+		clearerr(target->logfile);
+		return -1;
+	}
+
+	target->write_failed = 0;
+	return 0;
 }
 
 static void cleanup_flist(void)
@@ -556,6 +568,7 @@ int main(int argc, char **argv)
 	const struct timeval	*upslog_start_tmp = upscli_upslog_start_sync(upslog_start_sync(NULL), nut_common_cookie());
 	int	interval = 30, opt_ret = 0, i, foreground = -1, prefix_UPSHOST = 0, logformat_allocated = 0;
 	size_t	monhost_len = 0, loop_count = 0;
+	int	exit_status = EXIT_SUCCESS;
 	const char	*prog = getprogname_argv0_default(argc > 0 ? argv[0] : NULL, "upslog");
 	const char	*net_connect_timeout = NULL;
 	time_t	now, nextpoll = 0;
@@ -1128,7 +1141,9 @@ int main(int argc, char **argv)
 					flags_ssl);
 			}
 
-			run_flist(monhost_ups_current);
+			if (run_flist(monhost_ups_current) < 0 && max_loops > 0) {
+				exit_status = EXIT_FAILURE;
+			}
 
 			/* don't keep connection open if we don't intend to use it shortly */
 			if (interval > 30) {
@@ -1190,7 +1205,7 @@ int main(int argc, char **argv)
 	fflush(stderr);
 
 	upscli_cleanup();
-	exit(EXIT_SUCCESS);
+	exit(exit_status);
 }
 
 

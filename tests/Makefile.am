@@ -19,6 +19,7 @@ EXTRA_DIST = become-user-root-warning-test.sh nut-driver-enumerator-test.sh nut-
 EXTRA_DIST += cppunit-warnings.h cppunit-warnings-end.h
 EXTRA_DIST += pynut-commands-test.py
 EXTRA_DIST += upsset-string-test.py
+EXTRA_DIST += upslog-output-test.sh
 
 TESTS =
 noinst_LTLIBRARIES =
@@ -464,12 +465,17 @@ if WITH_VALGRIND
 CHECK_LOCAL_TARGETS += memcheck
 endif WITH_VALGRIND
 
+CHECK_LOCAL_TARGETS += upslog-output-test
+
 pynut-commands-test: $(CHECK_LOCAL_TARGETS_PYNUT)
 
 check-local: $(CHECK_LOCAL_TARGETS) $(CHECK_LOCAL_TARGETS_PYNUT)
 
 become-user-root-warning-test: $(top_builddir)/clients/upslog$(EXEEXT)
 	$(AM_V_at)UPSLOG='$(abs_top_builddir)/clients/upslog$(EXEEXT)' $(SHELL) $(srcdir)/become-user-root-warning-test.sh
+
+upslog-output-test: $(top_builddir)/clients/upslog$(EXEEXT)
+	$(AM_V_at)UPSLOG='$(abs_top_builddir)/clients/upslog$(EXEEXT)' $(SHELL) $(srcdir)/upslog-output-test.sh
 
 dummy:
 
