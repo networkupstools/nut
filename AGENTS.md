@@ -48,9 +48,16 @@ Follow more specific guidance in those files if this summary differs from it.
   common ecosystem -- do not introduce dangling paragraphs where they can
   rather be bullet points in an existing list. Be sure to only add entries to
   the upcoming release (topmost chapter in `NEWS.adoc` and `UPGRADING.adoc`).
+- When a release note references the PR being opened, include the expected
+  PR number in the initial commit. Just before opening the PR, check the
+  latest issue or PR number in the upstream repository (including closed
+  items) and add one. Verify the assigned number afterward and correct the
+  reference if it differs. This usually saves a commit and another CI run.
 
 ## Validate the affected behaviour
 
+- For a bug fix, where practical, show that the same check exposes the
+  reported behavior before the change and passes afterward.
 - Select checks from the affected compatibility requirements, including older
   supported tools and feature-disabled paths. Apply these requirements to tests
   and build scripts too.
