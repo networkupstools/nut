@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "nut-scan.h"
+#include "nutscan-thread.h"
 #include "nut_stdint.h"
 
 #include <fcntl.h>
@@ -422,7 +423,6 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	 *  ports to care much, usually... right?
 	 */
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
-	pthread_t thread;
 	nutscan_thread_t * thread_array = NULL;
 	size_t thread_count = 0;
 
@@ -464,16 +464,15 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		 */
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-		/* Just wait for someone to free a semaphored slot,
-		 * if none are available, and then/otherwise grab one
-		 */
-		if (thread_array == NULL) {
-			/* Starting point, or after a wait to complete
-			 * all earlier runners */
-			sem_wait(semaphore);
-			pass = TRUE;
-		} else {
-			pass = (sem_trywait(semaphore) == 0) ? TRUE : FALSE;
+		{
+			int admitted = nut_scanner_semaphore_acquire(semaphore,
+				NULL, 0, thread_array == NULL);
+
+			if (admitted < 0) {
+				upsdebug_with_errno(0, "%s: Semaphore admission failed", __func__);
+				break;
+			}
+			pass = admitted > 0 ? TRUE : FALSE;
 		}
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
@@ -550,38 +549,29 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			current_port_name = serial_ports_list[current_port_nb];
 
 #ifdef HAVE_PTHREAD
-			if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device_thready, (void*)current_port_name) == 0) {
-				nutscan_thread_t	*new_thread_array;
-# ifdef HAVE_PTHREAD_TRYJOIN
-				pthread_mutex_lock(&threadcount_mutex);
-				curr_threads++;
-# endif /* HAVE_PTHREAD_TRYJOIN */
-
-				thread_count++;
-				new_thread_array = (nutscan_thread_t*)realloc(thread_array,
-					thread_count * sizeof(nutscan_thread_t));
-				if (new_thread_array == NULL) {
-					upsdebugx(1, "%s: Failed to realloc thread array", __func__);
-# ifdef HAVE_PTHREAD_TRYJOIN
-					pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
-					break;
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+			if (semaphore == NULL) {
+				nutscan_scan_eaton_serial_device_thready(current_port_name);
+				nut_scanner_semaphore_release(semaphore, NULL, 0);
+			} else
+# endif
+			{
+				int ret = nut_scanner_thread_create(&thread_array, &thread_count,
+					nutscan_scan_eaton_serial_device_thready, (void *)current_port_name);
+				if (ret != 0) {
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+					nut_scanner_semaphore_release(semaphore, NULL, 0);
+# endif
+					if (ret < 0) {
+						break;
+					}
 				}
-				else {
-					thread_array = new_thread_array;
-				}
-				thread_array[thread_count - 1].thread = thread;
-				thread_array[thread_count - 1].active = TRUE;
-
-# ifdef HAVE_PTHREAD_TRYJOIN
-				pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
 			}
-#else   /* if not HAVE_PTHREAD */
+#else /* !HAVE_PTHREAD */
 			nutscan_scan_eaton_serial_device_thready(current_port_name);
-#endif  /* if HAVE_PTHREAD */
+#endif /* HAVE_PTHREAD */
 
-			/* Prepare the next iteration */
+			/* Workers borrow the port names until all scans have finished. */
 			current_port_nb++;
 		} else { /* if not pass -- all slots busy */
 #ifdef HAVE_PTHREAD
@@ -599,7 +589,6 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 						 * but handle it just in case */
 						upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %" PRIuSIZE " to be not active",
 							__func__, i);
-						sem_post(semaphore);
 						continue;
 					}
 					thread_array[i].active = FALSE;
@@ -608,7 +597,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 						upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
 							__func__, ret);
 					}
-					sem_post(semaphore);
+					nut_scanner_semaphore_release(semaphore, NULL, 0);
 				}
 				thread_count = 0;
 				free(thread_array);
@@ -638,7 +627,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			}
 			thread_array[i].active = FALSE;
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-			sem_post(semaphore);
+			nut_scanner_semaphore_release(semaphore, NULL, 0);
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
 			pthread_mutex_lock(&threadcount_mutex);
