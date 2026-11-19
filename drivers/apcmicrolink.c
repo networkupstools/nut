@@ -1611,6 +1611,15 @@ static uint64_t microlink_read_descriptor_uint(const unsigned char *data, size_t
 	return raw;
 }
 
+/* The descriptor usage gives the field width in bytes. For a signed field,
+ * raw > max / 2 means its sign bit is set. In that case max - raw is the
+ * field's bitwise complement, which fits in int64_t even for an 8-byte
+ * field. Subtracting it from -1 yields the two's-complement value (e.g.
+ * 0xfffe at width 2 gives -1 - 1 = -2).
+ *
+ * dstate_addrange() takes host int endpoints and publishes them as decimal
+ * text. Reject out-of-range values before casting so the conversion is exact.
+ */
 static int microlink_descriptor_bound(uint64_t raw, size_t size,
 	microlink_desc_numeric_sign_t sign, int *bound)
 {
