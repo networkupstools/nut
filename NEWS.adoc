@@ -659,6 +659,11 @@ https://github.com/networkupstools/nut/milestone/13
       `output.voltage.nominal` and `ups.firmware.aux` from Phoenixtec
       based UPS cards that already answer the rest of the subtree. [issue #2608,
       PR #3492]
+    * `mge` subdriver: exposed `output.realpower` (and its per-phase
+      `output.Lx.realpower` variants) and `output.realpower.nominal` from
+      the IETF UPS MIB, as published by Eaton Network-MS cards. Documented
+      `realpower.nominal` as a specification in `docs/nut-names.txt`.
+      [issue #3718]
     * Mapped `standby(8)` from XPPC output status to `OL` rather than `OFF`,
       because line-interactive devices use it for inverter standby while their
       UPS output remains online on utility power. [issue #3512, PR #3600]
