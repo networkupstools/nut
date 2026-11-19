@@ -729,9 +729,13 @@ char *	str_concat(size_t count, ...)
 	null_pos = 0;
 	for(i=0 ; i<count ; i++)
 	{
+		/* Lengths were summed above and the buffer is zeroed, so copy
+		 * just the characters; memcpy() rather than strcpy() also keeps
+		 * OpenBSD ld from warning about the latter in every program */
 		char *s = va_arg(ap, char*);
-		strcpy(merged+null_pos, s);
-		null_pos += strlen(s);
+		size_t slen = strlen(s);
+		memcpy(merged+null_pos, s, slen);
+		null_pos += slen;
 	}
 	va_end(ap);
 
