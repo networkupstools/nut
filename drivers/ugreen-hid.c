@@ -59,7 +59,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define UGREEN_HID_VERSION	"UGREEN HID 0.5"
+#define UGREEN_HID_VERSION	"UGREEN HID 0.05"
 
 /* UGREEN */
 #define UGREEN_VENDORID	0x2b89
