@@ -16,6 +16,10 @@ file defines who may access them, and what is available.
 IMPORTANT NOTES
 ---------------
 
+* Additional configuration file discovery is supported for `<confpath>/upsd.users.d/*.users`
+  and `<confpath>/upsd.users.d/*.conf` drop-in files, processed in alphanumeric order.
+  Any additional file restarts population of the root context, adding or replacing
+  configuration remembered there from earlier parsing.
 * Contents of this file should be pure ASCII (character codes
   not in range would be ignored with a warning message).
 * Balance the run-time user permissions to access the file (and perhaps the

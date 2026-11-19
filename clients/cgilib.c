@@ -304,52 +304,63 @@ void extractpostargs(void)
 /* called for fatal errors in parseconf like malloc failures */
 static void cgilib_err(const char *errmsg)
 {
-	upslogx(LOG_ERR, "Fatal error in parseconf(ups.conf): %s", errmsg);
+	upslogx(LOG_ERR, "Fatal error in parseconf(hosts.conf): %s", errmsg);
 }
 
 int checkhost(const char *host, char **desc)
 {
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
+	char	**files;
+	size_t	file_idx, count = 0;
+	int	found = 0;
 
 	if (!host)
 		return 0;		/* deny null hostnames */
 
 	snprintf(fn, sizeof(fn), "%s/hosts.conf", confpath());
 
-	pconf_init(&ctx, cgilib_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
-		pconf_finish(&ctx);
-		fprintf(stderr, "%s\n", ctx.errmsg);
-
+	files = pconf_get_files(fn, &count);
+	if (!files || count == 0) {
+		fprintf(stderr, "Can't open %s (and %s.d/*.conf)\n", fn, fn);
 		return 0;	/* failed: deny access */
 	}
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			fprintf(stderr, "Error: %s:%d: %s\n",
-				fn, ctx.linenum, ctx.errmsg);
-			continue;
-		}
+	for (file_idx = 0; file_idx < count; file_idx++) {
+		pconf_init(&ctx, cgilib_err);
 
-		/* MONITOR <host> <description> */
-		if (ctx.numargs < 3)
-			continue;
-
-		if (strcmp(ctx.arglist[0], "MONITOR") != 0)
-			continue;
-
-		if (!strcmp(ctx.arglist[1], host)) {
-			if (desc)
-				*desc = xstrdup(ctx.arglist[2]);
-
+		if (!pconf_file_begin(&ctx, files[file_idx])) {
 			pconf_finish(&ctx);
-			return 1;	/* found: allow access */
+			fprintf(stderr, "%s\n", ctx.errmsg);
+			continue;
 		}
+
+		while (pconf_file_next(&ctx)) {
+			if (pconf_parse_error(&ctx)) {
+				fprintf(stderr, "Error: %s:%d: %s\n",
+					files[file_idx], ctx.linenum, ctx.errmsg);
+				continue;
+			}
+
+			/* MONITOR <host> <description> */
+			if (ctx.numargs < 3)
+				continue;
+
+			if (strcmp(ctx.arglist[0], "MONITOR") != 0)
+				continue;
+
+			if (!strcmp(ctx.arglist[1], host)) {
+				if (desc) {
+					free(*desc);
+					*desc = xstrdup(ctx.arglist[2]);
+				}
+				found = 1;
+			}
+		}
+
+		pconf_finish(&ctx);
 	}
 
-	pconf_finish(&ctx);
-
-	return 0;	/* not found: access denied */
+	pconf_free_files(files);
+	return found;
 }

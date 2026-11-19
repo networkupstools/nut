@@ -1105,15 +1105,14 @@ static void check_conf(void)
 {
 	char	fn[NUT_PATH_MAX + 1];
 	PCONF_CTX_t	ctx;
+	char	**files;
+	size_t	file_idx, count = 0;
 
 	snprintf(fn, sizeof(fn), "%s/upsset.conf", confpath());
 	upsdebugx(1, "%s: considering configuration file %s", __func__, fn);
 
-	pconf_init(&ctx, upsset_conf_err);
-
-	if (!pconf_file_begin(&ctx, fn)) {
-		pconf_finish(&ctx);
-
+	files = pconf_get_files(fn, &count);
+	if (!files || count == 0) {
 		printf("<PRE>\n");
 		printf("Error: Can't open upsset.conf to verify security settings.\n");
 		printf("Refusing to start until this is fixed.\n");
@@ -1124,21 +1123,33 @@ static void check_conf(void)
 		exit(EXIT_FAILURE);
 	}
 
-	while (pconf_file_next(&ctx)) {
-		if (pconf_parse_error(&ctx)) {
-			upslogx(LOG_ERR, "Parse error: %s:%d: %s",
-				fn, ctx.linenum, ctx.errmsg);
+	for (file_idx = 0; file_idx < count; file_idx++) {
+		pconf_init(&ctx, upsset_conf_err);
+
+		if (!pconf_file_begin(&ctx, files[file_idx])) {
+			pconf_finish(&ctx);
+			fprintf(stderr, "upsset: %s\n", ctx.errmsg);
 			continue;
 		}
 
-		if (ctx.numargs < 1)
-			continue;
+		while (pconf_file_next(&ctx)) {
+			if (pconf_parse_error(&ctx)) {
+				upslogx(LOG_ERR, "Parse error: %s:%d: %s",
+					files[file_idx], ctx.linenum, ctx.errmsg);
+				continue;
+			}
 
-		if (!strcmp(ctx.arglist[0], MAGIC_ENABLE_STRING))
-			magic_string_set = 1;
+			if (ctx.numargs < 1)
+				continue;
+
+			if (!strcmp(ctx.arglist[0], MAGIC_ENABLE_STRING))
+				magic_string_set = 1;
+		}
+
+		pconf_finish(&ctx);
 	}
 
-	pconf_finish(&ctx);
+	pconf_free_files(files);
 
 	/* if we've been enabled, jump out of here and go to work */
 	if (magic_string_set == 1)

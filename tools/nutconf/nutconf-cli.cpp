@@ -2000,23 +2000,15 @@ void NutConfOptions::getMonitor(
  *  \retval false if the file doesn't exist
  */
 static bool source(nut::Serialisable * config, const std::string & file_name) {
-	nut::NutFile file(file_name);
-
-	if (!file.exists())
-		return false;
-
-	file.openx();
-
-	bool parsed_ok = config->parseFrom(file);
-
-	file.closex();
-
-	if (parsed_ok)
+	// Use the library helper to also read drop-ins: <file>.d/*.conf
+	// and for upsd.users: <file>.d/*.users
+	bool parsed_any = nut::parseConfigWithDropins(*config, file_name);
+	if (parsed_any) {
 		return true;
+	}
 
-	std::cerr << "Error: Failed to parse " << file_name << std::endl;
-
-	::exit(1);
+	// Nothing existed to read; treat as "not found"
+	return false;
 }
 
 

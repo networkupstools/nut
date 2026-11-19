@@ -2340,6 +2340,7 @@ getClients
 getDescription
 getDevice
 getDevicesVariableValues
+getSection
 getTrackingResult
 getValue
 getVariable
@@ -3702,6 +3703,7 @@ upsclient
 upscmd
 upscode
 upscommon
+upsconf
 upsct
 upsd
 upsdebug
@@ -3734,6 +3736,7 @@ upssched
 upssched's
 upsset
 upsstats
+upstable
 upstype
 upsuser
 upswired
@@ -3765,6 +3768,7 @@ usermod
 username
 usernames
 userspace
+usertable
 usleep
 usr
 utalk

@@ -39,7 +39,8 @@ let hosts_notify = [ del_spc . key "MONITOR" . sep_spc
 
 let hosts_lns    = (hosts_notify|comment|empty)*
 
-let hosts_filter = ( incl "@CONFPATH@/hosts.conf" )
+let hosts_filter = ( incl "@CONFPATH@/hosts.conf" |
+                     incl "@CONFPATH@/hosts.conf.d/*.conf" )
                         . Util.stdexcl
 
 let hosts_xfm    = transform hosts_lns hosts_filter

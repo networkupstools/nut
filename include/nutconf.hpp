@@ -2457,6 +2457,30 @@ protected:
 	std::string _currentSection;
 };
 
+/**
+ * Public C++ API helper to source configuration from a base file
+ * and optional drop-in directory files in alphanumeric order.
+ *
+ * This extends the single-file readers to support multi-file
+ * configurations consistently with C components:
+ *   <confpath>/<conffile>.d/ *.conf
+ *   and for upsd.users specifically: <confpath>/upsd.users.d/ *.users
+ *
+ * The helper is declared in the header to be available to clients
+ * like the nutconf tool; implementation is in common/nutconf.cpp.
+ *
+ * Parse configuration from a base file and matching drop-ins.
+ *
+ * Order of processing:
+ *  1) If baseFile exists, parse it first
+ *  2) If baseFile.d directory exists, parse files matching
+ *     the expected extension in lexicographic order
+ *     ("*.users" if basename is "upsd.users"; otherwise "*.conf").
+ *
+ * Returns true if any file was parsed. Throws or returns false only
+ * if none of the sources existed or if reading failed before parsing.
+ */
+bool parseConfigWithDropins(Serialisable &config, const std::string &baseFile);
 
 } /* namespace nut */
 #endif /* __cplusplus */

@@ -12,6 +12,11 @@
 # NOTE: Contents of this file should be pure ASCII (character codes
 # not in range would be ignored with a warning message).
 #
+# Additional configuration snippets can be placed in `ups.conf.d/*.conf`
+# files, processed in alphanumeric order. Each additional file restarts
+# population of the root context, adding or replacing configuration
+# remembered there from earlier parsing.
+#
 # This is where you configure all the UPSes that this system will be
 # monitoring directly.  These are usually attached to serial ports, but
 # USB devices and SNMP devices are also supported.
