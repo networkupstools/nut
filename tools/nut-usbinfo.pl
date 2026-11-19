@@ -174,11 +174,7 @@ sub gen_usb_files
 	print $outDevScanner "# ifdef HAVE_USB_H\n";
 	print $outDevScanner "#  include <usb.h>\n";
 	print $outDevScanner "# else\n";
-	print $outDevScanner "#  ifdef HAVE_LUSB0_USB_H\n";
-	print $outDevScanner "#   include <lusb0_usb.h>\n";
-	print $outDevScanner "#  else\n";
-	print $outDevScanner "#   error \"configure script error: Neither HAVE_USB_H nor HAVE_LUSB0_USB_H is set for the WITH_LIBUSB_0_1 build\"\n";
-	print $outDevScanner "#  endif\n";
+	print $outDevScanner "#  error \"configure script error: HAVE_USB_H is not set for the WITH_LIBUSB_0_1 build\"\n";
 	print $outDevScanner "# endif\n";
 	print $outDevScanner " /* simple remap to avoid bloating structures */\n";
 	print $outDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
