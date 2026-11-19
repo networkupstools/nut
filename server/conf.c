@@ -151,6 +151,8 @@ static void ups_update(const char *fn, const char *name, const char *desc)
  */
 static int parse_boolean(char *arg, int *result)
 {
+	assert(arg);
+	assert(result);
 	if ( (!strcasecmp(arg, "true")) || (!strcasecmp(arg, "on")) || (!strcasecmp(arg, "yes")) || (!strcasecmp(arg, "1"))) {
 		*result = 1;
 		return 1;
@@ -165,8 +167,9 @@ static int parse_boolean(char *arg, int *result)
 /* Return 1 if usable, 0 if not, -1 for an invalid LISTEN address. */
 static int parse_upsd_conf_args(size_t numargs, char **arg)
 {
-	int n, starts_with_digit;
-	long l;
+	int	starts_with_digit;
+	unsigned int	u;
+	long	l;
 
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)
@@ -185,33 +188,37 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if ( str_to_int (arg[1], &lvl, 10) && lvl >= 0 ) {
 			nut_debug_level_global = lvl;
 		} else {
-			upslogx(LOG_INFO, "DEBUG_MIN has non numeric or negative value in upsd.conf");
+			upslogx(LOG_INFO, "DEBUG_MIN has non-numeric or negative value in upsd.conf");
 		}
 		return 1;
 	}
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		if (starts_with_digit && str_to_int(arg[1], &n, 10)) {
-			maxage = n;
+		/* In practice, sstate_dead() compares "elapsed" since "ups->last_heard":
+		 * to "maxage/3" for ping to driver,
+		 * to "maxage + 1" to proclaim dead, and
+		 * to "maxage" to log as probably dead.
+		 * Values under 0 are outright wrong, and under cca 5 not really good
+		 * (self-inflicted DoS on pinger and log writer) although not illegal.
+		 * Might be useful for stress-testing etc.
+		 */
+		if (starts_with_digit && str_to_uint(arg[1], &u, 10)) {
+			maxage = u;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "MAXAGE has invalid or out of range numeric value (%s)!", arg[1]);
-			return 0;
-		}
+		goto invalid_number_out_of_range;
 	}
 
 	/* TRACKINGDELAY <seconds> */
 	if (!strcmp(arg[0], "TRACKINGDELAY")) {
-		if (starts_with_digit && str_to_int(arg[1], &n, 10)) {
-			tracking_delay = n;
+    /* Perhaps a negative value is not toxic, but 0 suffices to forget 
+     * the status info right away, should someone want to (for tests?) */
+		if (starts_with_digit && str_to_uint(arg[1], &u, 10)) {
+			tracking_delay = u;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "TRACKINGDELAY has invalid or out of range numeric value (%s)!", arg[1]);
-			return 0;
-		}
+		goto invalid_number_out_of_range;
 	}
 
 	/* ALLOW_NO_DEVICE <bool> */
@@ -223,8 +230,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if (parse_boolean(arg[1], &allow_no_device))
 			return 1;
 
-		upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
-		return 0;
+		goto invalid_notnumber_notboolean;
 	}
 
 	/* ALLOW_NOT_ALL_LISTENERS <bool> */
@@ -236,8 +242,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 		if (parse_boolean(arg[1], &allow_not_all_listeners))
 			return 1;
 
-		upslogx(LOG_ERR, "ALLOW_NOT_ALL_LISTENERS has non numeric and non boolean value (%s)!", arg[1]);
-		return 0;
+		goto invalid_notnumber_notboolean;
 	}
 
 	/* MAXCONN <connections> */
@@ -248,10 +253,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 			maxconn = (nfds_t)l;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "MAXCONN has invalid or out of range numeric value (%s)!", arg[1]);
-			return 0;
-		}
+		goto invalid_number_out_of_range;
 	}
 
 	/* STATEPATH <dir> */
@@ -317,10 +319,11 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 # ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (starts_with_digit && str_to_int(arg[1], &n, 10)
-		&&  n >= NETSSL_CERTREQ_MIN && n <= NETSSL_CERTREQ_MAX
-		) {
-			certrequest = n;
+		/* NOTE: Not checking so far for u >= NETSSL_CERTREQ_MIN (0)
+		 *  to avoid reasonable compiler warnings about "always true"
+		 *  conditional checks with an unsigned int */
+		if (starts_with_digit && str_to_uint(arg[1], &u, 10) && u <= NETSSL_CERTREQ_MAX) {
+			certrequest = u;
 			return 1;
 		}
 		else {
@@ -336,8 +339,7 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 				certrequest = NETSSL_CERTREQ_REQUIRE;	/* 2 */
 				return 1;
 			}
-			upslogx(LOG_ERR, "CERTREQUEST has invalid or out of range value (%s)!", arg[1]);
-			return 0;
+			goto invalid_number_out_of_range;
 		}
 	}
 # else	/* !WITH_CLIENT_CERTIFICATE_VALIDATION */
@@ -416,6 +418,17 @@ static int parse_upsd_conf_args(size_t numargs, char **arg)
 
 	/* not recognized */
 	return 0;
+
+invalid_number_out_of_range:
+	upslogx(LOG_ERR, "%s has invalid or out of range numeric value (%s)! %s",
+		arg[0], arg[1], errno ? strerror(errno) : "");
+	return 0;
+
+invalid_notnumber_notboolean:
+	upslogx(LOG_ERR, "%s has non numeric and non boolean value (%s)!",
+		arg[0], arg[1]);
+	return 0;
+
 }
 
 /* called for fatal errors in parseconf like malloc failures */
