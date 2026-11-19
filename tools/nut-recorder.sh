@@ -49,7 +49,7 @@ fi
 curTimer=0
 
 # Test communication with the device
-testResult="`upsc $devName > /dev/null`"
+testResult="`upsc \"$devName\" 2>&1 > /dev/null`"
 if [ $? -gt 0 ]; then
 	echo "$devName: $testResult"
 	exit
@@ -74,7 +74,7 @@ do
 	curTimer=`expr $curTimer + $pollInterval`
 
 	# dump the current data
-	testResult="`upsc $devName > ${TEMP_DIR}/curDump.tmp`"
+	testResult="`upsc \"$devName\" 2>&1 > \"${TEMP_DIR}/curDump.tmp\"`"
 	if [ $? -gt 0 ]; then
 		echo "$devName: $testResult"
 	#	FIXME: what to do (pause, exit)?
