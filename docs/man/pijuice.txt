@@ -17,10 +17,6 @@ NOTE: This man page only documents the hardware-specific features of the
 *pijuice* driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
-NOTE: This manual page was hastily adapted from related `asem` driver
-man page based on information from the original pull request, and so
-may not fully apply to PiJuice HAT, patches from experts are welcome.
-
 SUPPORTED HARDWARE
 ------------------
 
@@ -43,16 +39,40 @@ with `pijuice`, if vendor CLI/GUI/automation packages are also installed), e.g.
 INSTALLATION
 ------------
 
-NOTE: This section was copied from `asem` driver man page and may not fully
-apply to PiJuice HAT, patches are welcome.
+This driver is specific to the Linux I2C API. Building it requires Linux
+I2C development support. The `configure` script checks the available
+I2C headers and functions and links `libi2c` where needed. Package
+names vary by distribution.
 
-This driver is specific to the Linux I2C API, and requires the lm_sensors
-libi2c-dev or its equivalent to compile.
+The I2C bus must be enabled and its device node accessible to the user
+running the driver. See the *port* parameter above for permissions guidance.
 
-Beware that the SystemIO memory used by the I2C controller is reserved by ACPI.
-If only a native I2C driver (e.g. `i2c_i801`, as of 3.5.X Linux kernels) is
-available, then you'll need to relax the ACPI resources check. For example, you
-can boot with the `acpi_enforce_resources=lax` option.
+CONFIGURATION
+-------------
+
+For a PiJuice HAT on `/dev/i2c-1`, a minimal linkman:ups.conf[5] entry is:
+
+----
+[hat]
+    driver = pijuice
+    port = /dev/i2c-1
+----
+
+Use the bus device node appropriate for your system.
+
+SHUTDOWN
+--------
+
+The driver implements `shutdown.stayoff` by attempting to send the HAT a
+power-off request with a 30-second delay. The driver's default shutdown
+procedure uses the same request.
+
+The instant command reports the request as handled, and the default shutdown
+reports success, even if the I2C write fails. Write failures are logged at
+debug level 2. These results do not confirm that the HAT received or carried
+out the request. Actual power off and subsequent power restoration behavior
+still require verification on the device. Do not rely on the command name
+as a guarantee that the HAT will remain off or restart when input power returns.
 
 //////////////////////////////////////////
 Optional: use DIAGNOSTICS to describe troubleshooting techniques that are
@@ -65,12 +85,6 @@ DIAGNOSTICS
 
 KNOWN ISSUES AND BUGS
 ---------------------
-
-NOTE: This section was copied from `asem` driver man page and may not fully
-apply to PiJuice HAT, patches are welcome.
-
-The driver shutdown function is not implemented, so other arrangements must be
-made to turn off the UPS.
 
 The `battery.current` and `input.current` may be reported as negative, if it
 is being charged and wall power is plugged into the Pi itself (not the HAT).
