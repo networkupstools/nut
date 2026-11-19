@@ -250,10 +250,10 @@ while [ $# -gt 0 ]; do
             echo "NOTE: Action '$1' is not implemented via services currently, will call upsdrvctl" >&2
             echo "Stopping the driver service instance(s) to release exclusive resources, if any..." >&2
             RES=0
-            $0 stop $2
-            "${UPSDRVCTL}" shutdown $2 || RES=$?
+            "$0" ${DRYRUN:+-t} stop ${2:+"$2"}
+            $DRYRUN "${UPSDRVCTL}" shutdown ${2:+"$2"} || RES=$?
             echo "Starting the driver service instance(s) so they can reconnect when the UPS returns..." >&2
-            $0 start $2
+            "$0" ${DRYRUN:+-t} start ${2:+"$2"}
             exit $RES
             ;;
         --timeout-length|--timeout-len|--timeout-args)
