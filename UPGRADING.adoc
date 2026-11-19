@@ -88,6 +88,11 @@ Changes from 2.8.5 to 2.8.6
   if the requested value is larger than what is allowed (minus some reserve
   for configuration files and other use-cases). [issue #3365]
 
+- If an earlier version of `nutconf` edited `upsmon.conf`, check each
+  `MONITOR` role against your intended configuration. An entry using
+  `master` or a mixed-case spelling of `primary` could have been saved
+  as `secondary`. Restore the primary role where needed. [PR #3851]
+
 - Potentially a breaking change for existing deployments with `upsmon` and
   `upssched` integration: the `CMDSCRIPT` and `NOTIFYCMD` definitions were
   revised for the first token to mean an exact program name (possibly with
