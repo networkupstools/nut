@@ -14,7 +14,7 @@ import tempfile
 import threading
 from urllib.parse import urlencode
 
-default_timeout = 30
+default_timeout = 60
 nut_debug_level_env = int(os.getenv('NUT_DEBUG_LEVEL', 0))
 # Might hack here to debug PY script independently of upsset.cgi binary
 nut_debug_level = nut_debug_level_env
