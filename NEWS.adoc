@@ -300,6 +300,10 @@ https://github.com/networkupstools/nut/milestone/13
       failure causes than just a timeout; quieter retry logging to avoid
       severe syslog/journal thrashing. [PR #3571, #3414]
 
+ - `bcmxcp` driver updates:
+    * Validate current-alarm response lengths against the alarm map, preserving
+      the last complete alarm state when a response is truncated or overlong.
+
  - `bestups` driver updates:
     * Fixed Megatec Q1 parser to expect specific response format and avoid
       blind `scanf()` usage. [#GHSA-hwqr-5pjj-3m25]
