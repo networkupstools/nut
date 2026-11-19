@@ -218,6 +218,7 @@ CXX
 CXXCPP
 CXXFLAGS
 Casar
+CbU
 CentOS
 Centralion
 ChangeLog
@@ -1904,6 +1905,7 @@ cafile
 calc
 calib
 calloc
+cancelDischarge
 capath
 cb
 cbe
@@ -2251,6 +2253,7 @@ execve
 expandsize
 expr
 extapi
+extbatt
 extern
 externalConsole
 extradata
@@ -2983,6 +2986,7 @@ nvi
 nvo
 nwfilter
 objdump
+obload
 odette
 offdelay
 offsite
@@ -3660,6 +3664,7 @@ ukUNV
 ul
 ulimit
 ulink
+umask
 umount
 un
 uname
