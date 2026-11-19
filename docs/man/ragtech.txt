@@ -51,9 +51,22 @@ EXTRA ARGUMENTS
 This driver supports the following options in the *ups.conf*:
 
 *iout_calib*='number';;
-Per-unit output current calibration constant. If omitted (default),
-the driver reads the value from register `0xF3` at startup. Set this
-only to override a wrong factory-stored calibration.
+Per-unit output current calibration constant: `output.current` is
+computed as 'raw reading' times a per-model constant divided by
+*iout_calib*. If omitted (default), the driver reads the value from
+register `0xF3` at startup; when set, this value takes precedence and
+the register value is only logged. Set this only to override a wrong
+factory-stored calibration.
++
+Rebadged units are the known case. On a "One Up Nitro 2000" -- whose
+firmware reports the *Easy 2000 TI* model id -- register `0xF3` holds
+`70` where `140` is correct, so `output.current`, `ups.load` and the
+implied output VA all come out exactly twice the real value. If
+`ups.load` looks too high, and especially if the implied output power
+exceeds what the whole unit draws from the wall, compare
+`output.current` against a clamp meter on the UPS output (or against a
+load of known consumption) and set *iout_calib* so that the reported
+current matches.
 
 *va*='number';;
 Override the apparent-power (VA) rating of the unit. The model id byte
