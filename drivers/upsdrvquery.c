@@ -679,14 +679,12 @@ ssize_t upsdrvquery_restore_broadcast(udq_pipe_conn_t *conn)
 #define UUID4_BYTESIZE 16
 static int upsdrvquery_nut_uuid_v4(char *uuid_str)
 {
-	size_t	i;
 	uint8_t	nut_uuid[UUID4_BYTESIZE];
 
 	if (!uuid_str)
 		return 0;
 
-	for (i = 0; i < UUID4_BYTESIZE; i++)
-		nut_uuid[i] = (uint8_t)rand() + (uint8_t)rand();
+	nut_random_bytes(nut_uuid, sizeof(nut_uuid));
 
 	/* set variant and version */
 	nut_uuid[6] = (nut_uuid[6] & 0x0F) | 0x40;
