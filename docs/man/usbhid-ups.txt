@@ -147,11 +147,22 @@ are broken on your UPS).
 If this flag is set on Windows builds, use the experimental native Windows HID
 backend instead of libusb.
 +
-This backend currently follows a read-focused scope. It supports
-device discovery and matching by identifiers such as `vendorid` and
-`productid`, input/feature reads, and interrupt-report fallback handling.
-Feature-report writes are not implemented in this phase, so writable
-`setvar`/`instcmd` operations may be unavailable.
+This backend supports device discovery and matching by identifiers such as
+`vendorid` and `productid`, input/feature reads, interrupt-report fallback
+handling, and Feature Report writes used by writable `setvar` and `instcmd`
+operations. A UPS still has to implement the corresponding HID report and
+accept the requested operation.
+
+*winhid_layout*='value'::
+Select how the Windows HID capability lists are mapped to the NUT HID report
+descriptor. The default `auto` mode validates the native ordering and falls
+back to the historical `legacy` ordering when needed. Use `native` or
+`legacy` to force one layout when diagnosing a device-specific compatibility
+issue. The value is ignored unless `winhid` is enabled.
+
+The generic `set_report()` path remains a Feature Report operation. Output
+Reports use a separate transport path so that drivers which send command
+packets can preserve the report type and report-ID semantics of the device.
 +
 This option is ignored on non-WIN32 builds.
 

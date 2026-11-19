@@ -22,8 +22,8 @@ DESCRIPTION
 -----------
 
 The *upscli_set_ssl_context*() function attaches an SSL context configuration
-to a connection, enabling per-connection SSL settings for certificate verification,
-client certificate identity, and certificate authority.
+to a connection structure. It changes the stored context reference; it does
+not reconfigure an established SSL session.
 
 The *upscli_get_ssl_context*() function retrieves the currently attached SSL
 context for a connection.
@@ -40,26 +40,16 @@ only by linkman:upscli_cleanup[3] after all connections are disconnected.
 USAGE
 -----
 
-These functions are typically used together with linkman:upscli_get_or_create_ssl_context_authconf[3]
-to support multiple servers with independent SSL configurations within a single
-process:
+linkman:upscli_connect[3] and linkman2:upscli_connect[upscli_tryconnect,3] clear the
+`UPSCONN_t` structure, including its context reference. Calling
+*upscli_set_ssl_context*() before connecting does not select the context for
+that connection. During SSL setup, the library looks up the server's authconf
+and obtains a context internally; see
+linkman2:upscli_find_authconf_item[upscli_get_authconf_item,3].
 
-------
-	// Get per-server authconf
-	upscli_authconf_t *ac = upscli_get_authconf_item(
-		NULL, hostname, port_str, 1);
-	
-	// Create/fetch SSL context from registry
-	void *ssl_ctx = upscli_get_or_create_ssl_context_authconf(ac);
-	
-	// Attach to connection
-	if (ssl_ctx) {
-		upscli_set_ssl_context(&conn, ssl_ctx);
-	}
-	
-	// Connect (uses per-server CA, client cert, verify mode)
-	upscli_connect(&conn, hostname, port, flags);
-------
+Do not call these functions with an uninitialized connection structure.
+Attaching a context after SSL setup does not change the settings of the
+existing SSL session.
 
 MULTI-REALM CONNECTIONS
 ------------------------
@@ -83,7 +73,7 @@ attached to the connection (or NULL if none was attached), allowing callers
 to track context changes if needed.
 
 The *upscli_get_ssl_context*() function returns the currently attached SSL
-context, or NULL if none is attached (connection will use registry default).
+context, or NULL if none is attached.
 
 PARAMETERS
 ----------
@@ -97,52 +87,27 @@ PARAMETERS
 	An opaque SSL context handle obtained from 
 	linkman:upscli_get_or_create_ssl_context[3] or
 	linkman:upscli_get_or_create_ssl_context_authconf[3].
-	Pass NULL to clear any existing per-connection context (falls back to default).
-
-EXAMPLE
--------
-
-Connecting to multiple NUT servers with independent SSL configurations:
-
-------
-	UPSCONN_t conn1, conn2;
-	
-	// Server 1: custom CA and verify settings
-	upscli_authconf_t *ac1 = upscli_get_authconf_item(
-		NULL, "server1.example.com", "3493", 1);
-	void *ctx1 = upscli_get_or_create_ssl_context_authconf(ac1);
-	upscli_set_ssl_context(&conn1, ctx1);
-	upscli_connect(&conn1, "server1.example.com", 3493, flags);
-	
-	// Server 2: different CA and client certificate
-	upscli_authconf_t *ac2 = upscli_get_authconf_item(
-		NULL, "server2.example.com", "3493", 1);
-	void *ctx2 = upscli_get_or_create_ssl_context_authconf(ac2);
-	upscli_set_ssl_context(&conn2, ctx2);
-	upscli_connect(&conn2, "server2.example.com", 3493, flags);
-	
-	// Both connections use independent SSL contexts
-	
-	// Cleanup
-	upscli_disconnect(&conn1);
-	upscli_disconnect(&conn2);
-	upscli_cleanup();  // Frees all registry contexts
-------
+	Pass NULL to clear the stored per-connection context reference.
 
 LEGACY BEHAVIOR
 ---------------
 
-When no per-connection SSL context is set (NULL), the connection uses the
-ambient default context created by linkman:upscli_init[3],
+When SSL setup proceeds without a per-connection context, the library uses
+the ambient default context created by linkman:upscli_init[3],
 linkman:upscli_init2[3], or linkman:upscli_init_authconf[3]. This provides
 backward compatibility with existing client code.
+
+If a context cannot be created for a server's authconf entry that contains
+certificate settings, the current implementation logs a warning and
+terminates the process instead of falling back to the default context.
 
 SEE ALSO
 --------
 
 linkman:upscli_get_or_create_ssl_context[3],
 linkman:upscli_get_or_create_ssl_context_authconf[3],
-linkman:upscli_connect[3], linkman:upscli_disconnect[3],
+linkman:upscli_connect[3], linkman2:upscli_connect[upscli_tryconnect,3],
+linkman:upscli_disconnect[3],
 linkman:upscli_init[3], linkman:upscli_init2[3],
 linkman:upscli_init_authconf[3], linkman:upscli_cleanup[3],
 linkman:upscli_get_authconf_item[3],
