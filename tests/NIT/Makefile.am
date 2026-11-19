@@ -12,6 +12,7 @@
 EXTRA_DIST = nit.sh README.adoc
 EXTRA_DIST += repeater.py
 EXTRA_DIST += parseconf-test.py
+EXTRA_DIST += upslog-lifetime.py
 
 if WITH_CHECK_NIT
 check: check-NIT
@@ -30,6 +31,11 @@ ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 check-NIT-repeater:
 	@test -n "$(PYTHON3)" || { echo "Python 3 is required for $@" >&2; exit 1; }
 	$(PYTHON3) "$(abs_srcdir)/repeater.py" "$(ABS_TOP_BUILDDIR)" --exeext="$(EXEEXT)"
+
+# Real upslog process lifecycle, with disposable upsd instances only as needed.
+check-NIT-upslog-lifetime:
+	@test -n "$(PYTHON3)" || { echo "Python 3 is required for $@" >&2; exit 1; }
+	$(PYTHON3) "$(abs_srcdir)/upslog-lifetime.py" "$(ABS_TOP_BUILDDIR)" --exeext="$(EXEEXT)" --output="$(abs_builddir)/upslog-lifetime-results"
 
 # Early in issue #1711 OpenSSL tests failed more often than we liked, so
 # this toggle was added.  It may still be useful for CI on some platforms.
@@ -152,4 +158,4 @@ CLEANFILES = *-spellchecked
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
 clean-local:
-	$(AM_V_at)rm -rf tmp
+	$(AM_V_at)rm -rf tmp upslog-lifetime-results
