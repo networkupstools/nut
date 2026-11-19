@@ -842,22 +842,29 @@ sets of constants use the suffixes below. For example, `setvar` returns
 
 [cols="1,2,4,2",options="header"]
 |=======================================================================
-|Value |Suffix |Meaning in the driver |`GET TRACKING <id>` reply
-|0 |`HANDLED` |The handler reports success. |`SUCCESS`
-|1 |`UNKNOWN` |Unspecified error. Drivers also use this for an
-unrecognized variable or command. |`ERR UNKNOWN`
-|2 |`INVALID` |For `SET`, the variable is not writable or the value is
-invalid. For `INSTCMD`, the command or its argument is invalid.
-|`ERR INVALID-ARGUMENT`
-|3 |`FAILED` |The driver reports that the write or command failed. |`ERR FAILED`
-|4 |`CONVERSION_FAILED` |The driver could not convert the variable value
-or command argument. |`ERR INVALID-ARGUMENT`
+|Value |Suffix    |Meaning in the driver        |`GET TRACKING <id>` reply
+|0     |`HANDLED` |The handler reports success. |`SUCCESS`
+|1     |`UNKNOWN` |Unspecified error.
+                   Drivers also use this
+                   for an unrecognized variable
+                   or command.                  |`ERR UNKNOWN`
+|2     |`INVALID` |For `SET`, the variable is not
+                   writable or the value is invalid.
+                   For `INSTCMD`, the command or
+                   its argument is invalid.     |`ERR INVALID-ARGUMENT`
+|3     |`FAILED`  |The driver reports that the
+                   write or command failed.     |`ERR FAILED`
+|4     |`CONVERSION_FAILED` |The driver could not
+                   convert the variable value
+                   or command argument.         |`ERR INVALID-ARGUMENT`
 |=======================================================================
 
-The driver core tries its shared handler first. Only `UNKNOWN` passes the
-request to a registered driver-specific callback. That callback returns
-the final driver result. Drivers differ in how they report
-a command they recognize but cannot execute in the current device state.
+The driver core tries its shared handler first. Only `UNKNOWN` state
+passes the request to a registered driver-specific callback.
+That callback returns the final driver result.
+
+Drivers differ in how they report a command they recognize but cannot
+execute in the current device state.
 
 `upsd` can reject a request before it reaches the driver, for example if
 the command is not advertised. With tracking disabled, `upsd` replies `OK`
