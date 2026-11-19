@@ -1119,6 +1119,10 @@ https://github.com/networkupstools/nut/milestone/13
       in the `aspell` output), and in GitHub Actions also as annotations on
       the source lines (once per unknown word, despite the retries) and in
       the job summary. [PR #3773]
+    * The `make spellcheck` recipes now sanity-check the dictionary file
+      (should not contain underscores in entries) and that source text files
+      do not contain non-ASCII characters commonly added by AI agents, like
+      the multi-byte symbols for various-length dashes). [PR #3453]
     * The `configure` script now also looks for `aspell` filter resources
       under `lib64` (e.g. on CentOS 7) and in directories named by just the
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
