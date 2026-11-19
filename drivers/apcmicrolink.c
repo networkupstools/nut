@@ -3008,8 +3008,7 @@ static int microlink_authenticate(void)
 	 * trivially predictable, and a failed auth is suspected of locking out
 	 * comms until a device reset. Randomization only - the reply itself is
 	 * not verified. */
-	payload[0] = (unsigned char)(rand() % 256);
-	payload[1] = (unsigned char)(rand() % 256);
+	nut_random_bytes(payload, 2);
 	payload[2] = s0;
 	payload[3] = s1;
 
@@ -3869,9 +3868,6 @@ static int instcmd(const char *cmdname, const char *extra)
 void upsdrv_initups(void)
 {
 	int use_usb = 0;
-	time_t now = microlink_now();
-
-	srand((unsigned int)now);
 
 	microlink_read_config();
 

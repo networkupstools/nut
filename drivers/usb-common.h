@@ -95,6 +95,14 @@
 #if WITH_LIBUSB_1_0
 # include <libusb.h>
 
+ /* libusb_strerror() appeared in libusb 1.0.16; configure accepts older
+  * releases from 1.0.9 on, which only have libusb_error_name(): it names
+  * the error code (e.g. "LIBUSB_ERROR_TIMEOUT") instead of describing it.
+  * See https://github.com/networkupstools/nut/issues/509 */
+# if !(defined HAVE_LIBUSB_STRERROR) || !HAVE_LIBUSB_STRERROR
+#  define libusb_strerror(e)	libusb_error_name((int)(e))
+# endif
+
  /* Simply remap libusb functions/structures from 0.1 to 1.0 */
 
  /* Structures */

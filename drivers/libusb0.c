@@ -897,6 +897,38 @@ static int nut_libusb_set_report(
 	return nut_libusb_strerror(ret, __func__);
 }
 
+/* Send a HID Output report (type 2), keeping Feature-report writes above
+ * separate from this transport operation. */
+static int nut_libusb_set_output_report(
+	usb_dev_handle *udev,
+	usb_ctrl_repindex ReportId,
+	usb_ctrl_charbuf raw_buf,
+	usb_ctrl_charbufsize ReportSize)
+{
+	int ret;
+
+	if (!udev) {
+		return 0;
+	}
+
+	ret = usb_control_msg(udev,
+		USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
+		0x09, /* HID_REPORT_SET = 0x09 */
+		ReportId+(0x02<<8), /* HID_REPORT_TYPE_OUTPUT */
+		usb_subdriver.hid_rep_index,
+		raw_buf, ReportSize, USB_TIMEOUT);
+
+#ifdef WIN32
+	errno = -ret;
+#endif	/* WIN32 */
+
+	if (ret == -EPIPE) {
+		return 0;
+	}
+
+	return nut_libusb_strerror(ret, __func__);
+}
+
 /* Expected evaluated types for the API:
  * static int nut_libusb_get_string(usb_dev_handle *udev,
  *	int StringIdx, char *buf, int buflen)
@@ -992,6 +1024,7 @@ usb_communication_subdriver_t usb_subdriver = {
 	nut_libusb_close,
 	nut_libusb_get_report,
 	nut_libusb_set_report,
+	nut_libusb_set_output_report,
 	nut_libusb_get_string,
 	nut_libusb_get_interrupt,
 	LIBUSB_DEFAULT_CONF_INDEX,

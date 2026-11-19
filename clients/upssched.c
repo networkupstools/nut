@@ -2450,7 +2450,6 @@ static int conf_arg(size_t numargs, char **arg)
 			 */
 			l += strlen(arg[i]) + 3;
 			cmdscript_argv[i - 1] = xstrdup(arg[i]);
-			strcpy(cmdscript_argv[i - 1], arg[i]);
 		}
 		cmdscript_argv[cmdscript_argc] = NULL;
 
