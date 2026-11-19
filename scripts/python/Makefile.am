@@ -185,27 +185,28 @@ if HAVE_MSGFMT
 # "spurious" changes that do not benefit (otherwise unmodified) contents; see:
 #   https://github.com/sphinx-doc/sphinx/pull/3490
 #   https://github.com/sphinx-doc/sphinx/issues/3443
-# Note that OUTFILE may be in builddir (not necessarily same as srcdir)
+# OUTFILE is always named in builddir, not taken from "$@": a make that
+# finds the git-tracked *.mo in srcdir via VPATH may set "$@" to that copy,
+# and srcdir can be read-only (e.g. distcheck, see issue #2529).
+# Each *.mo has one rule: an indirection via $(abs_builddir)/... names the
+# same file in an in-tree build, which OpenBSD make reports as a cycle.
 ACT_MSGFMT = { \
 	$(EGREP) -v '^.?POT-Creation-Date: ' < "$${SRCFILE}" > "$${OUTFILE}.tmpsrc" && \
 	$(MSGFMT) -o "$${OUTFILE}" "$${OUTFILE}.tmpsrc" && \
 	rm -f "$${OUTFILE}.tmpsrc" ; \
 }
 
-app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo
-$(abs_builddir)/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
+app/locale/fr/LC_MESSAGES/NUT-Monitor.mo: app/locale/fr/fr.po
 	@$(MKDIR_P) "$(builddir)/app/locale/fr/LC_MESSAGES"
-	SRCFILE='$?'; OUTFILE='$@'; $(ACT_MSGFMT)
+	SRCFILE='$?'; OUTFILE='$(builddir)/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo'; $(ACT_MSGFMT)
 
-app/locale/it/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/it/LC_MESSAGES/NUT-Monitor.mo
-$(abs_builddir)/app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
+app/locale/it/LC_MESSAGES/NUT-Monitor.mo: app/locale/it/it.po
 	@$(MKDIR_P) "$(builddir)/app/locale/it/LC_MESSAGES"
-	SRCFILE='$?'; OUTFILE='$@'; $(ACT_MSGFMT)
+	SRCFILE='$?'; OUTFILE='$(builddir)/app/locale/it/LC_MESSAGES/NUT-Monitor.mo'; $(ACT_MSGFMT)
 
-app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: $(abs_builddir)/app/locale/ru/LC_MESSAGES/NUT-Monitor.mo
-$(abs_builddir)/app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
+app/locale/ru/LC_MESSAGES/NUT-Monitor.mo: app/locale/ru/ru.po
 	@$(MKDIR_P) "$(builddir)/app/locale/ru/LC_MESSAGES"
-	SRCFILE='$?'; OUTFILE='$@'; $(ACT_MSGFMT)
+	SRCFILE='$?'; OUTFILE='$(builddir)/app/locale/ru/LC_MESSAGES/NUT-Monitor.mo'; $(ACT_MSGFMT)
 endif HAVE_MSGFMT
 
 if WITH_NUT_MONITOR_PY2GTK2

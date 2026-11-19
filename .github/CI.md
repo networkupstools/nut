@@ -17,6 +17,13 @@ This covers the GitHub Actions workflows and helper scripts under `.github/`.
 
   Some shellcheck style notes on existing code are known; do not add new ones.
 
+- **ShellCheck** on the shell scripts you changed, with the same version as
+  the "GHA-07: ShellCheck" check (`SHELLCHECK_VERSION` in
+  `.github/workflows/07-shellcheck.yml`, currently 0.11.0). `shellcheck` must
+  be in PATH, e.g. from the release tarball or `pip install shellcheck-py==0.11.0.1`:
+
+      perl tools/shellcheck-ci.pl origin/master
+
 - **`tsc --strict`** for `.github/scripts/*.js`, see the header of
   `.github/scripts/pr-comments.js` for the command. There is no `package.json`
   on purpose: NUT is a C project, so the TypeScript tooling is installed ad hoc

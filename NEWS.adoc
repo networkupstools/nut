@@ -100,6 +100,16 @@ https://github.com/networkupstools/nut/milestone/13
       when explicitly specifying same `--with-user` *OR* `--with-group` name
       as would be default for current platform (so one was treated as not-set
       and failed a sanity check). [issue #3513]
+    * The rules which build the NUT-Monitor translations (`*.mo` files) in
+      `scripts/python/Makefile.am` named the same file twice in an in-tree
+      build, which OpenBSD `make` treats as a dependency cycle: it failed the
+      build, or skipped regenerating the files (impacts NUT v2.8.3 through
+      v2.8.5). Each file now has one rule, which still writes into the build
+      directory, so a read-only source tree (e.g. in `make distcheck`) keeps
+      working. [PR #3809, follow-up to issue #2529]
+    * `nut-recorder.sh` now prints the error message of a failed `upsc` call.
+      It captured the standard output, which went to a file, so the message
+      was always empty. [PR #3809]
 
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
@@ -758,6 +768,22 @@ https://github.com/networkupstools/nut/milestone/13
       with the actual size detected during device discovery. This should
       avoid potential truncation introduced by the fix above (and avoid
       the overflows it addressed) in normal device interactions. [#3588]
+    * Calls that the OpenBSD linker warns about at every link (as misused or
+      not random) were replaced [PR #3820]:
+      - `strcpy()` and `sprintf()` in `upsmon`, `upssched`, `tripplite_usb`
+        and the Masterguard subdriver of `nutdrv_qx`, where the length was
+        already checked; in `upsmon` and `upssched` the `strcpy()` only
+        repeated the `xstrdup()` just before it.
+      - `rand()` and `random()` now go through a new `nut_random_bytes()` in
+        `libcommon`, which uses `arc4random_buf()` where the system has it
+        (BSDs, macOS, GNU libc 2.36 and newer), else `getrandom()` or
+        `/dev/urandom` (older GNU libc and other systems) or `rand_s()` (Windows),
+        and only if none of those works a `rand()` seeded once from the time and
+        process ID. Besides the drivers (`apcmicrolink`,
+        `nhs_ser`, `safenet`), this changes the `upsd` tracking IDs and the
+        IDs of driver socket queries: they came from a `rand()` that was
+        never seeded, so on most systems every start of `upsd` handed out
+        the same sequence of IDs.
 
  - NUT client libraries:
     * Fixed strict Clang conversion warnings and isolated an OpenSSL macro
@@ -944,6 +970,14 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Documented the `SET` and `INSTCMD` driver callback return values and
+      their client-visible tracking replies. [issue #3602, PR #3847]
+    * Corrected SSL context connection-setup and concurrency guidance,
+      marked the SSL architecture analysis as historical, and clarified
+      continued support for both OpenSSL and NSS. [issue #3747, PR #3831]
+    * Corrected the `pijuice` installation guidance, added a minimal
+      configuration example, and documented the existing shutdown request
+      and its unverified power-off and restart behavior. [issue #3747, PR #3832]
     * Corrected client API signatures and array initialization descriptions,
       SNMP daisychain alarm handling and subdriver mapping references, and
       developer-guide protocol links and source access instructions. [PR #3745]
@@ -1078,6 +1112,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Further rearrangement of AppVeyor CI builds and security hardening of
       GitHub Actions used to prepare the dist tarballs and report on progress
       there. [PRs #3753, #3754, #3756]
+    * The CodeQL workflow skips its analysis matrix for pull requests that
+      change only recognized documentation files. [issue #3746, PR #3846]
     * Fixed more AppVeyor CI step scripts where `cmd.exe` interpreted `||`
       inside the single-quoted `bash` command lines itself (it does not
       honour such quotes). Also enforce the `ccache` size limit before the
@@ -1121,15 +1157,79 @@ https://github.com/networkupstools/nut/milestone/13
       locally with `perl tools/shellcheck-ci.pl`. A new `.shellcheckrc` file
       disables the checks for deliberate portability idioms of NUT scripts
       (backticks, `x"$var"` comparisons, `expr`). [PR #3773]
+    * Added a "GHA-10: Shell portability" GitHub Actions workflow. It checks
+      on GitHub-hosted runners what the Jenkins "shellcheck" quick tests
+      (`make shellcheck`, an alias of `make check-scripts-syntax`) check with
+      one build agent per OS: `autogen.sh` with four autotools generations
+      (as shipped from CentOS 7 to Ubuntu 26.04), `<shell> -n configure` and
+      a real `configure` under eight `/bin/sh` implementations with the
+      results compared, `make check-scripts-syntax` with GNU make and
+      `bmake`, and a build and driver enumerator test with FreeBSD, NetBSD,
+      OpenBSD and busybox userland tools first in `PATH`. Failures show as
+      annotations on the source lines and in the job summary. [PR #3809]
+    * The "GHA-07: ShellCheck" workflow now uses ShellCheck 0.11.0 from its
+      upstream release (pinned by sha256) instead of the version the runner
+      image happens to have (0.9.0 on Ubuntu 24.04), so that it agrees with
+      `tools/shellcheck-ci.pl` run locally with the same version. [PR #3809]
     * The `make spellcheck` recipes now report unknown words with the file
       name, line and column where they were found (rather than byte offsets
       in the `aspell` output), and in GitHub Actions also as annotations on
       the source lines (once per unknown word, despite the retries) and in
       the job summary. [PR #3773]
+    * The `make spellcheck` recipes now sanity-check the dictionary file
+      (should not contain underscores in entries) and that source text files
+      do not contain non-ASCII characters commonly added by AI agents, like
+      the multi-byte symbols for various-length dashes). [PR #3453]
     * The `configure` script now also looks for `aspell` filter resources
       under `lib64` (e.g. on CentOS 7) and in directories named by just the
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
       [issue #2068, PR #3773]
+    * USB support can now be built against libusb-1.0 releases from 1.0.9
+      on, such as the `libusb1` 1.0.9 package of CentOS 6. Before 1.0.16
+      there is no `libusb_strerror()`, so error messages show the name of
+      the libusb error code (from `libusb_error_name()`) instead of its
+      description; before 1.0.10 or so there is no `libusb_get_version()`,
+      so `driver.version.usb` says the version is unknown. `nut-scanner`
+      falls back the same way when the libusb it loads at run time lacks
+      these methods. [issues #509, #3781, PR #3782]
+    * With `--with-usb=auto` (or `yes`), the `configure` script now falls
+      back to an also available libusb-0.1 when the preferred libusb-1.0 is
+      too old for NUT, instead of building without USB drivers. An explicit
+      `--with-usb=libusb-1.0` still fails in that case.
+      [issue #3781, PR #3782]
+    * Portability fixes found with OpenBSD 8.0 (`clang` 22, LibreSSL 4.4)
+      and NetBSD 11.0 [PR #3816]:
+      - Out-of-tree builds with BSD `make` (seen with OpenBSD `make`) no
+        longer regenerate the `nut-scanner` headers `nutscan-usb.h` and
+        `nutscan-snmp.h` into the build directory when the copy in the source
+        directory (from `autogen.sh` or a dist tarball) is newer than all of
+        its inputs. Such `make` does not look up targets via `VPATH` the way
+        GNU `make` does, and with the two copies `clang` 22 and newer warned
+        about "multiple candidates for header", which failed builds with
+        fatal warnings.
+      - NIT test certificates are now accepted by LibreSSL: the root CA lists
+        its subject key identifier before the authority key identifier that
+        needs it, the fallback for older OpenSSL no longer uses `sed -i`
+        (which BSD `sed` does not take after the script), and `::1` is no
+        longer listed as a DNS name (only as an IP address). Before, NIT on
+        OpenBSD skipped the SSL tests in OpenSSL builds, and the PyNUT tests
+        failed in NSS builds.
+      - The OpenSSL server and client certificate requests of NIT now come with
+        their own minimal `openssl req` configuration, like the root CA's,
+        rather than relying on the system `openssl.cnf`. Where there is none
+        (seen with NetBSD 11.0), NIT skipped the SSL tests in OpenSSL builds.
+      - The top-level `make check-NIT` recipe called an undefined `$(RM_F)`,
+        so the shell tried to run `NIT.env` as a command. GNU `make` only
+        printed an error and went on; BSD `make` stopped there.
+      - `str_concat()` copies with `memcpy()` instead of `strcpy()`, so the
+        OpenBSD linker no longer warns about `strcpy()` for each program
+        linked with `libcommon`.
+    * NIT (`tests/NIT/nit.sh`) now stops a `cppnit` (C++ client library test)
+      run that is still going after `NIT_CPPNIT_TIMEOUT` seconds (300 by
+      default, `0` waits forever): it logs an error, kills the process and
+      fails that test case, so the rest of NIT still runs. Each `cppnit` run
+      normally takes a few seconds; one seen hanging on OpenBSD 8.0 would
+      otherwise have held the CI job until its own timeout. [PR #3816]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
@@ -1428,13 +1528,10 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      polls fail. [issue #3116]
    * `arduino-hid` subdriver enhanced with `ups.load`, `input.voltage` and
      `output.voltage` readings where supported (e.g. Ugreen US3000). [#3281]
-   * Introduced a `winhid` extension in NUT for Windows builds, to directly
-     work with Windows HID API so that extra driver like WinUSB or Zadig is
-     not needed. Note that currently this backend follows a read-focused
-     scope: it supports device discovery and matching by identifiers such
-     as `vendorid` and `productid`, input/feature reads, and interrupt-report
-     fallback handling. Feature-report writes are not implemented in this
-     phase, so `setvar`/`instcmd` operations may be unavailable. [PR #3335]
+   * Extended the `winhid` extension in NUT for Windows builds with selectable
+     HID capability ordering (`winhid_layout`) and Feature Report writes, so
+     writable `setvar`/`instcmd` operations can use the native Windows HID API
+     when supported by the UPS. [PRs #3335, #3723, issue #3717]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the
