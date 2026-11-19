@@ -966,6 +966,9 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Corrected SSL context connection-setup and concurrency guidance,
+      marked the SSL architecture analysis as historical, and clarified
+      continued support for both OpenSSL and NSS. [issue #3747, PR #3831]
     * Corrected the `pijuice` installation guidance, added a minimal
       configuration example, and documented the existing shutdown request
       and its unverified power-off and restart behavior. [issue #3747, PR #3832]
