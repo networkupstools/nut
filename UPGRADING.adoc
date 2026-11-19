@@ -68,6 +68,10 @@ Changes from 2.8.5 to 2.8.6
   Encoded protocol output continues to escape hashes for older peers;
   default `upsc` text output is unchanged. [issues #607, #1306, PR #3633]
 
+- If an earlier version of `nutconf` edited your listeners, compare
+  `DISABLE_WEAK_SSL` and `ALLOW_NOT_ALL_LISTENERS` in `upsd.conf` with
+  your intended settings. Restore any value lost or changed by that edit. [PR #3849]
+
 - Correct malformed numeric values in `upsd.conf` when upgrading: `MAXAGE`,
   `TRACKINGDELAY`, `MAXCONN` and numeric `CERTREQUEST` values are now checked
   in full and must fit their destination ranges. Values such as `15seconds`

@@ -1890,6 +1890,18 @@ void UpsdConfigParser::onParseSectionName(const std::string& sectionName, const 
 	NUT_UNUSED_VARIABLE(comment);
 }
 
+// As in upsd, an unrecognized word leaves the previous setting in effect.
+static void parseUpsdBoolean(const std::string &value, Settable<bool> &setting)
+{
+	if (value == "1" || !::strcasecmp(value.c_str(), "true")
+		|| !::strcasecmp(value.c_str(), "on") || !::strcasecmp(value.c_str(), "yes")) {
+		setting = true;
+	} else if (value == "0" || !::strcasecmp(value.c_str(), "false")
+		|| !::strcasecmp(value.c_str(), "off") || !::strcasecmp(value.c_str(), "no")) {
+		setting = false;
+	}
+}
+
 void UpsdConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
 {
 	// NOTE: separators are always ignored
@@ -1946,14 +1958,20 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 		{
 			if(values.size()>0)
 			{
-				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+				const std::string &value = values.front();
+				// upsd also treats a nonzero numeric listener setting as true.
+				if (!value.empty() && isdigit(static_cast<unsigned char>(value[0]))) {
+					_config->allowNotAllListeners = ::strtol(value.c_str(), nullptr, 10) != 0;
+				} else {
+					parseUpsdBoolean(value, _config->allowNotAllListeners);
+				}
 			}
 		}
 		else if(directiveName == "DISABLE_WEAK_SSL")
 		{
 			if(values.size()>0)
 			{
-				_config->allowNotAllListeners = StringToSettableNumber<bool>(values.front());
+				parseUpsdBoolean(values.front(), _config->disableWeakSsl);
 			}
 		}
 		else if(directiveName == "CERTFILE")
