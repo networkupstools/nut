@@ -83,7 +83,7 @@ void server_load(void);
 void server_free(void);
 
 /* Can be called by configuration (re)loading logic to free up file descriptors */
-void close_oldest_client(void);
+int close_oldest_client(void);
 
 /* Three usual stdin/stdout/stderr triplet FDs, new connection handler,
  * work with config files (reload), maybe something else?..
