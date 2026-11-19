@@ -754,7 +754,13 @@ class interface :
             fav_data["auth"] = self.__widgets["ups_authentication_check"].isChecked()
             if fav_data["auth"] :
                 fav_data["login"]    = self.__widgets["ups_authentication_login"].text()
-                fav_data["password"] = base64.b64encode( self.__widgets["ups_authentication_password"].text().encode('ascii') ).decode('ascii')
+                # A pasted line ending is not part of the protocol password.
+                password = self.__widgets["ups_authentication_password"].text().rstrip('\r\n')
+                if any( ord(c) > 127 for c in password ) :
+                    self.gui_status_message( _("The password must contain only ASCII characters") )
+                    self.__widgets["main_window"].setEnabled( True )
+                    return
+                fav_data["password"] = password
 
             fav_name = dialog.entry4.text()
             self.__favorites[ fav_name ] = fav_data
@@ -804,9 +810,8 @@ class interface :
             # reactions with the 'check_gui_fields' function.
             if ( self.__favorites[fav_name].get("auth", False ) ) :
                 self.__widgets["ups_authentication_check"].setChecked( True )
-                password = base64.b64decode( self.__favorites[fav_name].get("password","") ).decode('ascii')
                 self.__widgets["ups_authentication_login"].setText( self.__favorites[fav_name].get("login","") )
-                self.__widgets["ups_authentication_password"].setText( password )
+                self.__widgets["ups_authentication_password"].setText( self.__favorites[fav_name].get("password","") )
 
             self.__widgets["ups_host_entry"].setText( self.__favorites[fav_name].get("host","") )
             self.__widgets["ups_port_entry"].setValue( int( self.__favorites[fav_name].get( "port", 3493 ) ) )
@@ -958,7 +963,7 @@ class interface :
                             fav_data["login"]    = conf.get( current, "login" )
 
                             try :
-                                fav_data["password"] = base64.decodebytes( conf.get( current, "password" ).encode('ascii') ).decode('ascii')
+                                fav_data["password"] = base64.decodebytes( conf.get( current, "password" ).encode('ascii') ).decode('ascii').rstrip('\r\n')
 
                             except :
                                 # If the password is not in base64, let the field empty
@@ -990,6 +995,8 @@ class interface :
             for k, v in self.__favorites[ current ].items() :
                 if isinstance( v, bool ) :
                     v = str( v )
+                elif k == "password" :
+                    v = base64.b64encode( v.encode('ascii') ).decode('ascii')
                 save_conf.set( current, k, v )
 
         try :
