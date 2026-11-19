@@ -60,6 +60,8 @@ static struct {
 	{ "USERNAME",	net_username,	0		},
 	{ "PASSWORD",	net_password,	0		},
 
+	{ "ATTACH",	net_attach,	FLAG_USER	},
+	{ "DETACH",	net_logout,	0		},
 	{ "LOGIN",	net_login,	FLAG_USER	},
 	{ "LOGOUT", 	net_logout,	0		},
 	/* NOTE: Protocol in NUT 2.8.0 allows to handle

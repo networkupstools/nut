@@ -31,6 +31,7 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+void net_attach(nut_ctype_t *client, size_t numarg, const char **arg);
 void net_login(nut_ctype_t *client, size_t numarg, const char **arg);
 void net_logout(nut_ctype_t *client, size_t numarg, const char **arg);
 

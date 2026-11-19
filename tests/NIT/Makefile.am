@@ -10,6 +10,7 @@
 @NUT_AM_MAKE_CAN_EXPORT@@NUT_AM_EXPORT_CCACHE_PATH@export PATH=@PATH_DURING_CONFIGURE@
 
 EXTRA_DIST = nit.sh README.adoc
+EXTRA_DIST += attachment-test.py
 EXTRA_DIST += repeater.py
 EXTRA_DIST += parseconf-test.py
 
@@ -68,7 +69,7 @@ check-NIT: $(abs_srcdir)/nit.sh
 #  so we only ask for "all" there and let its Makefile decide.
 check-NIT-devel: $(abs_srcdir)/nit.sh @dotMAKE@
 	+@cd "$(top_builddir)" && $(MAKE) $(AM_MAKEFLAGS) -s generated-sources-with-a-touch
-	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
+	+@cd .. && ( $(MAKE) $(AM_MAKEFLAGS) -s cppnit$(EXEEXT) attachment-client$(EXEEXT) || echo "OPTIONAL C++ test client test will be skipped" )
 	+@cd "$(top_builddir)/clients" && $(MAKE) $(AM_MAKEFLAGS) -s upsc$(EXEEXT) upscmd$(EXEEXT) upsrw$(EXEEXT) upsmon$(EXEEXT) upslog$(EXEEXT) upssched$(EXEEXT)
 	+@cd "$(top_builddir)/server" && $(MAKE) $(AM_MAKEFLAGS) -s upsd$(EXEEXT) sockdebug$(EXEEXT)
 	+@cd "$(top_builddir)/drivers" && $(MAKE) $(AM_MAKEFLAGS) -s dummy-ups$(EXEEXT) upsdrvctl$(EXEEXT)

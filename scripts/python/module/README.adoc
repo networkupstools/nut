@@ -420,3 +420,16 @@ in case of failure.
 -----
 
 See also: `GetRWVars()`
+
+Attachment protocol aliases
+----------------------------
+
+`DeviceAttach(ups)`, `GetDeviceNumAttach(ups)` and `Detach()` are the
+preferred names for `DeviceLogin(ups)`, `GetDeviceNumLogins(ups)` and
+`disconnect()`. The legacy methods remain available. Attachment and count
+queries prefer RFC 9271 commands and fall back when an older server rejects
+the new spelling. Authentication failures and lost attachment replies are
+not retried. `Detach()` closes the entire connection even if the request
+fails; it waits for a reply so it can fall back to `LOGOUT` on older servers.
+Implicit `disconnect()` cleanup, including object deletion, retains `LOGOUT`
+without waiting for a reply, so older servers close the connection promptly.
