@@ -938,6 +938,7 @@ OUTPUTV
 OUTVOLT
 OV
 OVERDURATION
+ObjectID
 Oden
 OffTime
 Ohloh
@@ -1194,6 +1195,7 @@ Rackmount
 Radek
 Ragtech
 RatedVA
+ReadDevID
 RealSmart
 Rebadged
 RedHat
@@ -1807,6 +1809,7 @@ b'string
 bAlternateSetting
 bUps
 backend
+backend's
 backends
 backgrounding
 backport
@@ -2353,6 +2356,7 @@ gethostbyname
 getnameinfo
 getopt
 getproctag
+getrandom
 getrlimit
 getter
 getters
@@ -3335,6 +3339,7 @@ secretpass
 securityLevel
 securityName
 sed
+selectable
 selftest
 semanage
 semver
@@ -3743,6 +3748,7 @@ urb
 uri
 url
 urpmi
+urandom
 usb
 usbconfig
 usbfs

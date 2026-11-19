@@ -1184,6 +1184,18 @@ spellcheck: @dotMAKE@
 		echo "=====================================================================" ; \
 	 fi >&2 ; exit 0
 	@$(SOURCE_CHECK_UNICODE)
+	@if grep _ '$(abs_srcdir)/$(NUT_SPELL_DICT)' | grep -v personal_ws ; then \
+		echo "=====================================================================" ; \
+		echo "FAILED sanity-check of dictionary file '$(NUT_SPELL_DICT)':" ; \
+		echo "=====================================================================" ; \
+		echo "It should not contain words with underscores, this confuses older"; \
+		echo "versions of the tool, and seems effectively treated as white-space"; \
+		echo "between two asserted correctly spelled words by newer versions."; \
+		echo "=====================================================================" ; \
+		test x"$(SPELLCHECK_ERROR_FATAL)" = xno || exit 1; \
+		echo "NOTE: SPELLCHECK_ERROR_FATAL == no so this make does not break the build!"; \
+		echo "=====================================================================" ; \
+	 fi
 
 # Interactively spell check all documentation source files below (so a human
 # can edit the documentation errors and/or add words to custom dictionary).
