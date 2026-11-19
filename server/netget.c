@@ -71,6 +71,7 @@ static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 	const	upstype_t	*ups;
 	const	char	*varptr;
 	const	char	*desc;
+	char	esc[PCONF_DEFAULT_WORDLEN_LIMIT * 2 + 1];
 
 	ups = get_ups_ptr(upsname);
 
@@ -93,7 +94,8 @@ static void get_desc(nut_ctype_t *client, const char *upsname, const char *var)
 	desc = desc_get_var(varptr);
 
 	if (desc)
-		sendback(client, "DESC %s %s \"%s\"\n", upsname, var, desc);
+		sendback(client, "DESC %s %s \"%s\"\n", upsname, var,
+			pconf_encode(desc, esc, sizeof(esc)));
 	else
 		sendback(client, "DESC %s %s \"Description unavailable\"\n", upsname, var);
 }
@@ -103,6 +105,7 @@ static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cm
 	const	upstype_t	*ups;
 	const	char	*cmdptr;
 	const	char	*desc;
+	char	esc[PCONF_DEFAULT_WORDLEN_LIMIT * 2 + 1];
 
 	ups = get_ups_ptr(upsname);
 
@@ -125,7 +128,8 @@ static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cm
 	desc = desc_get_cmd(cmdptr);
 
 	if (desc)
-		sendback(client, "CMDDESC %s %s \"%s\"\n", upsname, cmd, desc);
+		sendback(client, "CMDDESC %s %s \"%s\"\n", upsname, cmd,
+			pconf_encode(desc, esc, sizeof(esc)));
 	else
 		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n",
 			upsname, cmd);

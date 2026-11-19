@@ -124,7 +124,7 @@ if HAVE_UNITTEST:
             socket.create_connection = lambda *args: sock
             self.assertRaises(PyNUT.PyNUTError, client.__init__, login="test")
             client.__del__()
-            self.assertEqual(sock.events, [b"USERNAME test\n", b"LOGOUT\n", "close"])
+            self.assertEqual(sock.events, [b"USERNAME \"test\"\n", b"LOGOUT\n", "close"])
             self.assertEqual(client._PyNUTClient__srv_handler, None)
         finally:
             socket.create_connection = create_connection
