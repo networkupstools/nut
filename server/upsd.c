@@ -945,9 +945,13 @@ static void client_readline(nut_ctype_t *client)
 {
 	char	buf[SMALLBUF];
 	int	i;
+#ifdef WITH_SSL
+	int	read_over_ssl;
+#endif /* WITH_SSL */
 	ssize_t	ret;
 
 #ifdef WITH_SSL
+	read_over_ssl = (client->ssl != NULL);
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
 	} else
@@ -977,6 +981,18 @@ static void client_readline(nut_ctype_t *client)
 		case 1:
 			time(&client->last_heard);	/* command received */
 			parse_net(client);
+#ifdef WITH_SSL
+			if (client->starttls_pending) {
+				client_disconnect(client);
+				return;
+			}
+
+			if (!read_over_ssl && client->ssl_connected) {
+				pconf_finish(&client->ctx);
+				pconf_init(&client->ctx, NULL);
+				return;
+			}
+#endif /* WITH_SSL */
 			continue;
 
 		case 0:
