@@ -754,6 +754,22 @@ https://github.com/networkupstools/nut/milestone/13
       with the actual size detected during device discovery. This should
       avoid potential truncation introduced by the fix above (and avoid
       the overflows it addressed) in normal device interactions. [#3588]
+    * Calls that the OpenBSD linker warns about at every link (as misused or
+      not random) were replaced [PR #3820]:
+      - `strcpy()` and `sprintf()` in `upsmon`, `upssched`, `tripplite_usb`
+        and the Masterguard subdriver of `nutdrv_qx`, where the length was
+        already checked; in `upsmon` and `upssched` the `strcpy()` only
+        repeated the `xstrdup()` just before it.
+      - `rand()` and `random()` now go through a new `nut_random_bytes()` in
+        `libcommon`, which uses `arc4random_buf()` where the system has it
+        (BSDs, macOS, GNU libc 2.36 and newer), else `getrandom()` or
+        `/dev/urandom` (older GNU libc and other systems) or `rand_s()` (Windows),
+        and only if none of those works a `rand()` seeded once from the time and
+        process ID. Besides the drivers (`apcmicrolink`,
+        `nhs_ser`, `safenet`), this changes the `upsd` tracking IDs and the
+        IDs of driver socket queries: they came from a `rand()` that was
+        never seeded, so on most systems every start of `upsd` handed out
+        the same sequence of IDs.
 
  - NUT client libraries:
     * Fixed strict Clang conversion warnings and isolated an OpenSSL macro
@@ -1124,7 +1140,7 @@ https://github.com/networkupstools/nut/milestone/13
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
       [issue #2068, PR #3773]
     * Portability fixes found with OpenBSD 8.0 (`clang` 22, LibreSSL 4.4)
-      and NetBSD 11.0:
+      and NetBSD 11.0 [PR #3816]:
       - Out-of-tree builds with BSD `make` (seen with OpenBSD `make`) no
         longer regenerate the `nut-scanner` headers `nutscan-usb.h` and
         `nutscan-snmp.h` into the build directory when the copy in the source
@@ -1155,7 +1171,7 @@ https://github.com/networkupstools/nut/milestone/13
       default, `0` waits forever): it logs an error, kills the process and
       fails that test case, so the rest of NIT still runs. Each `cppnit` run
       normally takes a few seconds; one seen hanging on OpenBSD 8.0 would
-      otherwise have held the CI job until its own timeout.
+      otherwise have held the CI job until its own timeout. [PR #3816]
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4

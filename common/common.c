@@ -20,6 +20,12 @@
 
 #define NUT_WANT_INET_NTOP_XX	1
 
+#if (defined _WIN32) || (defined WIN32)
+/* Have the C runtime headers declare rand_s() for nut_random_bytes();
+ * this must come before the first stdlib.h */
+# define _CRT_RAND_S
+#endif
+
 #include "common.h"
 #include "timehead.h"
 
@@ -37,6 +43,10 @@
 #endif	/* WIN32 */
 
 #include "nut_platform.h"
+
+#ifdef HAVE_SYS_RANDOM_H
+# include <sys/random.h>	/* getrandom() */
+#endif
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>	/* readlink */
@@ -6117,4 +6127,88 @@ const char *xinet_ntopAI(struct addrinfo *ai)
 	/* if error */
 	free(addrstr);
 	return NULL;
+}
+
+void nut_random_bytes(void *buf, size_t len)
+{
+#if (defined HAVE_ARC4RANDOM_BUF) && HAVE_ARC4RANDOM_BUF \
+ && (defined HAVE_DECL_ARC4RANDOM_BUF) && HAVE_DECL_ARC4RANDOM_BUF
+	arc4random_buf(buf, len);
+#else
+	static int	seeded = 0;
+	unsigned char	*p = (unsigned char *)buf;
+	size_t	got = 0, i;
+
+# if (defined HAVE_GETRANDOM) && HAVE_GETRANDOM \
+  && (defined HAVE_DECL_GETRANDOM) && HAVE_DECL_GETRANDOM
+	/* Linux 3.17+ with glibc 2.25+: needs no device node,
+	 * so it also works after upsd or a driver did chroot() */
+	while (got < len) {
+		ssize_t	r = getrandom(p + got, len - got, 0);
+
+		if (r > 0)
+			got += (size_t)r;
+		else if (r < 0 && errno == EINTR)
+			continue;
+		else
+			break;
+	}
+# endif	/* HAVE_GETRANDOM */
+
+# ifdef WIN32
+	/* the system RNG, 32 bits a call (msvcrt.dll since XP, and UCRT) */
+	while (got < len) {
+		unsigned int	r;
+		size_t	n = len - got;
+
+		if (rand_s(&r) != 0)
+			break;
+		if (n > sizeof(r))
+			n = sizeof(r);
+		memcpy(p + got, &r, n);
+		got += n;
+	}
+# else	/* !WIN32 */
+	if (got < len) {
+		int	fd = open("/dev/urandom", O_RDONLY
+#  ifdef O_CLOEXEC
+			| O_CLOEXEC
+#  endif
+			);
+
+		if (fd >= 0) {
+			while (got < len) {
+				ssize_t	r = read(fd, p + got, len - got);
+
+				if (r > 0)
+					got += (size_t)r;
+				else if (r < 0 && errno == EINTR)
+					continue;
+				else
+					break;
+			}
+			close(fd);
+		}
+	}
+# endif	/* !WIN32 */
+
+	if (got == len)
+		return;
+
+	/* Last resort, if no system RNG answered (say, an old kernel and
+	 * libc inside a chroot without /dev/urandom): rand() seeded once
+	 * from the time and the process ID, which is guessable */
+	if (!seeded) {
+		struct timeval	tv;
+
+		gettimeofday(&tv, NULL);
+		srand((unsigned int)tv.tv_sec ^ (unsigned int)tv.tv_usec
+			^ ((unsigned int)getpid() << 16));
+		seeded = 1;
+	}
+
+	/* the low bits of some rand() implementations are the weakest */
+	for (i = got; i < len; i++)
+		p[i] = (unsigned char)(rand() >> 7);
+#endif
 }

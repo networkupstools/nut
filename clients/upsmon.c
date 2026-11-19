@@ -2334,7 +2334,6 @@ static int parse_conf_arg(size_t numargs, char **arg)
 			 */
 			l += strlen(arg[i]) + 3;
 			notifycmd_argv[i - 1] = xstrdup(arg[i]);
-			strcpy(notifycmd_argv[i - 1], arg[i]);
 		}
 		notifycmd_argv[notifycmd_argc] = NULL;
 
@@ -2380,7 +2379,6 @@ static int parse_conf_arg(size_t numargs, char **arg)
 			 */
 			l += strlen(arg[i]) + 3;
 			shutdowncmd_argv[i - 1] = xstrdup(arg[i]);
-			strcpy(shutdowncmd_argv[i - 1], arg[i]);
 		}
 		shutdowncmd_argv[shutdowncmd_argc] = NULL;
 
