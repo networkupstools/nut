@@ -32,7 +32,7 @@
 #include "cps-hid.h"
 #include "usb-common.h"
 
-#define CPS_HID_VERSION      "CyberPower HID 0.87"
+#define CPS_HID_VERSION      "CyberPower HID 0.88"
 
 /* Cyber Power Systems */
 #define CPS_VENDORID	0x0764
@@ -468,6 +468,27 @@ static const char *cps_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
+/* These may refuse a USB request sent too soon after their previous answer,
+ * then refuse everything until a USB reset (issue #3808). A model needing
+ * other timing can be told apart here by hd->Product. */
+static long cps_request_min_gap_default(HIDDevice_t *hd)
+{
+	if (hd->VendorID == CPS_VENDORID && hd->ProductID == 0x0501) {
+		return 100;
+	}
+
+	return 0;
+}
+
+static subdriver_aux_t cps_aux = {
+	NULL,	/* makevartable */
+	NULL,	/* initups */
+	NULL,	/* initinfo */
+	NULL,	/* updateinfo */
+	NULL,	/* cleanup */
+	cps_request_min_gap_default,
+};
+
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
 static int cps_claim(HIDDevice_t *hd) {
@@ -821,5 +842,5 @@ subdriver_t cps_subdriver = {
 	cps_format_mfr,
 	cps_format_serial,
 	cps_fix_report_desc,
-	NULL,
+	&cps_aux,
 };

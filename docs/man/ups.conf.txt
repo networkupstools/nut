@@ -411,6 +411,26 @@ As a rule of thumb for `usb_hid_desc_index` discovery, you can see larger
 `wDescriptorLength` values (roughly 600+ bytes) in reports of `lsusb` or
 similar tools.
 
+*usb_request_min_gap_us*='microseconds'::
+
+Optional.  Minimum time from the end of one USB control request to the
+start of the next, for devices that refuse a request sent too soon after
+their previous answer and then refuse everything until a USB reset.  `0` is
+off.  Some drivers have a default for devices known to need it (the
+CyberPower subdriver of `usbhid-ups` uses `100` for `0764:0501`); a value
+set here always wins.
++
+An invalid value stops the driver with an error.  Values above 10000
+(10 ms) are capped with a warning, as longer gaps make the driver too slow
+to start and to poll.
+`upsc` shows the value as written in `ups.conf`.
++
+A request sent at least this long after the previous answer is not
+delayed.  One sent sooner waits for the remainder of the gap, and usually a
+little longer, as the system wakes the driver late (with `100`, typically
+120 to 300 microseconds).  After many refused requests in a row soon after
+an answer, the driver logs a hint with a value to try.
+
 *default.<variable>*::
 
 Optional.  Set a default value for <variable> which is used in case the UPS

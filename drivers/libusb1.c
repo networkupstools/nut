@@ -47,7 +47,7 @@
 #endif
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.55"
+#define USB_DRIVER_VERSION	"0.56"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -190,6 +190,11 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_hid_desc_index",	"Deeper tuning of USB communications for complex devices");
 	addvar(VAR_VALUE, "usb_hid_ep_in",	"Deeper tuning of USB communications for complex devices");
 	addvar(VAR_VALUE, "usb_hid_ep_out",	"Deeper tuning of USB communications for complex devices");
+
+	addvar(VAR_VALUE, "usb_request_min_gap_us",
+		"Minimum time in microseconds from the end of one USB control request "
+		"to the start of the next, for devices that refuse requests sent too "
+		"soon (default 0: off)");
 
 #if (defined HAVE_LIBUSB_GET_VERSION) && HAVE_LIBUSB_GET_VERSION
 # ifdef LIBUSB_API_VERSION
@@ -352,6 +357,10 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			usb_subdriver.hid_ep_out = (usb_ctrl_endpoint)us;
 		}
 #include "nut-pragmas-range-checks-end.h"
+
+		if ((s = getval("usb_request_min_gap_us"))) {
+			nut_usb_set_request_min_gap(s);
+		}
 
 		usb_hid_number_opts_parsed = 1;
 	}
@@ -714,7 +723,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 
 		/* FIRST METHOD: ask for HID descriptor directly. */
 		/* libusb0: USB_ENDPOINT_IN + 1 */
-		res = libusb_control_transfer(udev,
+		res = nut_usb_control_transfer_with_gap(udev,
 			LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
 			LIBUSB_REQUEST_GET_DESCRIPTOR,
 			(LIBUSB_DT_HID << 8) + usb_subdriver.hid_desc_index,
@@ -838,7 +847,7 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 			}
 
 			/* libusb0: USB_ENDPOINT_IN + 1 */
-			res = libusb_control_transfer(udev,
+			res = nut_usb_control_transfer_with_gap(udev,
 				LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
 				LIBUSB_REQUEST_GET_DESCRIPTOR,
 				(LIBUSB_DT_REPORT << 8) + usb_subdriver.hid_desc_index,
@@ -1068,7 +1077,7 @@ static int nut_libusb_get_report(
 	}
 
 	/* libusb0: USB_ENDPOINT_IN + USB_TYPE_CLASS + USB_RECIP_INTERFACE */
-	ret = libusb_control_transfer(udev,
+	ret = nut_usb_control_transfer_with_gap(udev,
 		LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_CLASS|LIBUSB_RECIPIENT_INTERFACE,
 		0x01, /* HID_REPORT_GET */
 		(uint16_t)ReportId + (0x03<<8), /* HID_REPORT_TYPE_FEATURE */
@@ -1118,7 +1127,7 @@ static int nut_libusb_set_report(
 	}
 
 	/* libusb0: USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE */
-	ret = libusb_control_transfer(udev,
+	ret = nut_usb_control_transfer_with_gap(udev,
 		LIBUSB_ENDPOINT_OUT|LIBUSB_REQUEST_TYPE_CLASS|LIBUSB_RECIPIENT_INTERFACE,
 		0x09, /* HID_REPORT_SET = 0x09*/
 		(uint16_t)ReportId + (0x03<<8), /* HID_REPORT_TYPE_FEATURE */
