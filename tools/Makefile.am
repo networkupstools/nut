@@ -74,10 +74,23 @@ nut-scanner-deps: $(GENERATED_SNMP_FILES) $(GENERATED_USB_FILES)
 nut-scanner-deps-snmpinfo: $(GENERATED_SNMP_FILES)
 nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 
+# In an out-of-tree build, a non-empty copy of a generated header in the
+# source tree (from autogen.sh or a dist tarball) that is newer than all of
+# its inputs is used as is: GNU make finds it via VPATH and never gets here,
+# but BSD makes (seen with OpenBSD make) do not look up targets via VPATH,
+# would regenerate it into the build tree, and the two copies then make
+# clang 22+ fail with -Wshadow-header ("multiple candidates for header").
+GENERATED_SNMP_DEPS = $(top_srcdir)/drivers/*-mib.c $(top_srcdir)/tools/nut-snmpinfo.py.in
+GENERATED_USB_DEPS = $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c $(top_srcdir)/tools/nut-usbinfo.pl
+
 # The distributed nut-snmpinfo.py.in template is assumed to only differ from
 # a generated nut-snmpinfo.py by the @PYTHON_DEFAULT@ shebang.
-$(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c $(top_srcdir)/tools/nut-snmpinfo.py.in
-	@if [ -n "$(PYTHON_DEFAULT)" ] && [ x"no" != x"$(PYTHON_DEFAULT)" ] && $(PYTHON_DEFAULT) -c 1; then \
+$(GENERATED_SNMP_FILES): $(GENERATED_SNMP_DEPS)
+	@if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" \
+	 && test -s "$(srcdir)/$(GENERATED_SNMP_FILES)" \
+	 && test -z "`find $(GENERATED_SNMP_DEPS) -newer '$(srcdir)/$(GENERATED_SNMP_FILES)' 2>/dev/null`" ; then \
+		echo "The SNMP helper files in SRC dir are up to date, using them."; \
+	elif [ -n "$(PYTHON_DEFAULT)" ] && [ x"no" != x"$(PYTHON_DEFAULT)" ] && $(PYTHON_DEFAULT) -c 1; then \
 		echo "Regenerating the SNMP helper files in SRC dir with '$(PYTHON_DEFAULT)'."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
@@ -118,8 +131,12 @@ $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	@touch '$@'
 
 # FIXME: Make use of @PERL[@] substitution and HAVE_PERL conditional?
-$(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c $(top_srcdir)/tools/nut-usbinfo.pl
-	@if perl -e 1; then \
+$(GENERATED_USB_FILES): $(GENERATED_USB_DEPS)
+	@if test x"$(abs_top_srcdir)" != x"$(abs_top_builddir)" \
+	 && test -s "$(srcdir)/$(GENERATED_USB_FILES)" \
+	 && test -z "`find $(GENERATED_USB_DEPS) -newer '$(srcdir)/$(GENERATED_USB_FILES)' 2>/dev/null`" ; then \
+		echo "The USB helper files in SRC dir are up to date, using them."; \
+	elif perl -e 1; then \
 		echo "Regenerating the USB helper files in SRC dir."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \

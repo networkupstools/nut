@@ -1123,6 +1123,39 @@ https://github.com/networkupstools/nut/milestone/13
       under `lib64` (e.g. on CentOS 7) and in directories named by just the
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
       [issue #2068, PR #3773]
+    * Portability fixes found with OpenBSD 8.0 (`clang` 22, LibreSSL 4.4)
+      and NetBSD 11.0:
+      - Out-of-tree builds with BSD `make` (seen with OpenBSD `make`) no
+        longer regenerate the `nut-scanner` headers `nutscan-usb.h` and
+        `nutscan-snmp.h` into the build directory when the copy in the source
+        directory (from `autogen.sh` or a dist tarball) is newer than all of
+        its inputs. Such `make` does not look up targets via `VPATH` the way
+        GNU `make` does, and with the two copies `clang` 22 and newer warned
+        about "multiple candidates for header", which failed builds with
+        fatal warnings.
+      - NIT test certificates are now accepted by LibreSSL: the root CA lists
+        its subject key identifier before the authority key identifier that
+        needs it, the fallback for older OpenSSL no longer uses `sed -i`
+        (which BSD `sed` does not take after the script), and `::1` is no
+        longer listed as a DNS name (only as an IP address). Before, NIT on
+        OpenBSD skipped the SSL tests in OpenSSL builds, and the PyNUT tests
+        failed in NSS builds.
+      - The OpenSSL server and client certificate requests of NIT now come with
+        their own minimal `openssl req` configuration, like the root CA's,
+        rather than relying on the system `openssl.cnf`. Where there is none
+        (seen with NetBSD 11.0), NIT skipped the SSL tests in OpenSSL builds.
+      - The top-level `make check-NIT` recipe called an undefined `$(RM_F)`,
+        so the shell tried to run `NIT.env` as a command. GNU `make` only
+        printed an error and went on; BSD `make` stopped there.
+      - `str_concat()` copies with `memcpy()` instead of `strcpy()`, so the
+        OpenBSD linker no longer warns about `strcpy()` for each program
+        linked with `libcommon`.
+    * NIT (`tests/NIT/nit.sh`) now stops a `cppnit` (C++ client library test)
+      run that is still going after `NIT_CPPNIT_TIMEOUT` seconds (300 by
+      default, `0` waits forever): it logs an error, kills the process and
+      fails that test case, so the rest of NIT still runs. Each `cppnit` run
+      normally takes a few seconds; one seen hanging on OpenBSD 8.0 would
+      otherwise have held the CI job until its own timeout.
 
 
 Release notes for NUT 2.8.5 - what's new since 2.8.4
