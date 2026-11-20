@@ -109,6 +109,7 @@
 "APC"	"ups"	"3"	"Smart-UPS X 750 (SMX750I, USB)"	"USB"	"apc_modbus"
 "APC"	"ups"	"3"	"Smart-UPS X 1500 (SMX1500I, USB)"	"USB"	"apc_modbus"
 "APC"	"ups"	"3"	"CS500"	"USB"	"usbhid-ups (limited data available)"	# https://github.com/networkupstools/nut/issues/1776#issuecomment-1377784584
+"APC"	"ups"	"2"	"Easy UPS On-Line SRV2KI-E"	"USB (Exar XR21V1410 USB-UART, USB ID 04e2:1410)"	"nutdrv_qx protocol=voltronic"	# https://github.com/networkupstools/nut/pull/3859 ; Voltronic OEM unit, QPI reports PI01, 2400 8N1
 "APC"	"ups"	"1"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
