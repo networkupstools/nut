@@ -316,7 +316,7 @@ char *fixture_resolve(const char *name)
 	}
 	if (resolve_calls++ == resolver_hit) {
 		resolved_pointer = xstrdup("fixture-resolved-path");
-		return resolved_pointer;
+		return (char *)resolved_pointer;
 	}
 	return NULL;
 }
