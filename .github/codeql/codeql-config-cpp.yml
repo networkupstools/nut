@@ -15,3 +15,9 @@ query-filters:
       id: cpp/fixme-comment
   - exclude:
       id: cpp/guarded-free
+  # Replaced by nut/cpp/constant-comparison below, which skips portable
+  # range checks against type limits (e.g. "(uintmax_t)ret > SIZE_MAX").
+  - exclude:
+      id: cpp/constant-comparison
+queries:
+  - uses: ./.github/codeql/nut-cpp-queries
