@@ -1049,6 +1049,8 @@ Perriault
 Petr
 Petri
 Petter
+Peukert
+Peukert's
 Pezzini
 Phasak
 PhoenixContact
@@ -2007,6 +2009,7 @@ conn
 connectable
 const
 contrib
+conv
 cooldown
 coolofftime
 copyrightable
@@ -2931,6 +2934,7 @@ noimp
 noinst
 nolock
 nombattvolt
+nominaltension
 nonascii
 noncommercially
 nonliteral
@@ -2967,6 +2971,7 @@ nullptr
 num
 numOfBytesFromUPS
 numa
+numbat
 numbatteries
 numlogins
 numq
@@ -3590,6 +3595,7 @@ th
 thead
 timeframe
 timehead
+timeremain
 timername
 timespec
 timestamp
@@ -3821,6 +3827,7 @@ vla
 vo
 volsize
 voltronic
+vout
 vscode
 vsnprintf
 vsnprintfcat
