@@ -1,0 +1,20 @@
+# CodeQL config for the Python cell (build-mode: none).
+# CodeQL only parses *.py files; the workflow copies NUT's Python templates
+# (see python-templates.txt) to *.py names in these directories before
+# analysis. The Python extractor walks each entry as a directory, so list
+# directories here, not files. Tests are not analyzed (test_nutclient.py.in
+# is deliberately not copied).
+paths:
+  - scripts/python/module
+  - scripts/python/app
+  - scripts/augeas
+  - scripts/Solaris
+  - tools
+# The C/C++ sources and the glade header in these directories belong to the
+# C/C++ cells; ignoring them keeps them out of this cell's coverage counts.
+# Directories only, for the same reason as above.
+paths-ignore:
+  - tests
+  - tools/nut-scanner
+  - tools/nutconf
+  - scripts/python/app/ui

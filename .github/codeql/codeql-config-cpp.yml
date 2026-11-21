@@ -1,0 +1,6 @@
+# CodeQL config for the C/C++ cells (build-mode: manual).
+# With a manual build, paths-ignore only affects the file coverage numbers on
+# the tool status page, not what gets analyzed: the workflow drops alerts in
+# tests/ from the SARIF before uploading it (see sarif-filter.jq).
+paths-ignore:
+  - tests
