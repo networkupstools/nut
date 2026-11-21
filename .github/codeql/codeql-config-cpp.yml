@@ -15,6 +15,19 @@ query-filters:
       id: cpp/fixme-comment
   - exclude:
       id: cpp/guarded-free
+  # Code-style metrics, not defects: case length, switch size, comment
+  # density, partial enum initializers, and loop counters advanced inside
+  # the body (NUT's hand-written parsers do "buf[++i]" on purpose).
+  - exclude:
+      id: cpp/long-switch
+  - exclude:
+      id: cpp/trivial-switch
+  - exclude:
+      id: cpp/poorly-documented-function
+  - exclude:
+      id: cpp/irregular-enum-init
+  - exclude:
+      id: cpp/loop-variable-changed
   # Replaced by nut/cpp/constant-comparison below, which skips portable
   # range checks against type limits (e.g. "(uintmax_t)ret > SIZE_MAX").
   - exclude:
