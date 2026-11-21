@@ -18,3 +18,8 @@ paths-ignore:
   - tools/nut-scanner
   - tools/nutconf
   - scripts/python/app/ui
+# Bare "except:" is used on purpose for optional imports and best-effort
+# GUI/client paths; the note flags style, not a defect.
+query-filters:
+  - exclude:
+      id: py/catch-base-exception

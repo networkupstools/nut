@@ -4,3 +4,14 @@
 # tests/ from the SARIF before uploading it (see sarif-filter.jq).
 paths-ignore:
   - tests
+# Style notes from security-and-quality, not defects: commented-out code,
+# FIXME comments, and "if (p) free(p);" (guarded-free; free(NULL) is a
+# no-op since C89, the guard is redundant but harmless). Together they
+# made up most of the alerts.
+query-filters:
+  - exclude:
+      id: cpp/commented-out-code
+  - exclude:
+      id: cpp/fixme-comment
+  - exclude:
+      id: cpp/guarded-free
