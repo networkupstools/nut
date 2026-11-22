@@ -21,6 +21,12 @@ and dump it in a `.seq` format.
 The `.seq` file can then be used by the linkman:dummy-ups[8] driver
 to replay the sequence.
 
+After a failed poll, a server reporting `WAIT` may still be loading driver
+data. The recorder keeps new readings and defers clearing a missing alarm
+description until the status leaves `WAIT` or the device reports an explicit
+`ups.alarm` value. During uninterrupted polling, `WAIT` is recorded like
+any other status.
+
 OPTIONS
 -------
 
