@@ -930,6 +930,8 @@ https://github.com/networkupstools/nut/milestone/13
     * Fixed TAB/SHIFT-TAB focus change order through login page. [PR #3533]
     * Updated formal version of all three client variants to `2.1.0`. [#3514,
       #3509]
+    * The battery runtime display now shows total hours for runtimes of
+      24 hours or more in the Qt and GTK clients. [PR #3864]
 
  - `upssched` client/tool updates:
     * Added a `clean_exit()` handler similar to that in `upsmon`. [PR #3499]
