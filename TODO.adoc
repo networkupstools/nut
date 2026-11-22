@@ -107,12 +107,15 @@ NOTE: Python may be a good candidate.
 Sandbox
 ~~~~~~~
 
-- recover and review the tasks and feature requests from the former
-https://web.archive.org/web/20170630202752/https://alioth.debian.org/projects/nut/[Alioth project (archived 2017-06-30)]
+- recover and review the NUT project's former Alioth
+https://alioth.debian.org/pm/?group_id=30602[tasks] and
+https://alioth.debian.org/tracker/?atid=411545&group_id=30602&func=browse[feature requests].
+See the https://web.archive.org/web/20170630202752/https://alioth.debian.org/projects/nut/[project page archived on June 30, 2017].
 - add "Generic ?Ascii? driver": I've got to think more about that, but the recent
 solar panel driver, and the powerman internal approach of a generic engine with
 a scripting interface is a cool idea.
-See the current https://github.com/chaos/powerman/blob/master/etc/devices/apcpdu.dev[Powerman APC PDU device definition].
+The example used http://powerman.svn.sourceforge.net/viewvc/powerman/trunk/etc/apcpdu.dev?revision=969&view=markup[revision 969 of the Powerman APC PDU definition].
+The https://github.com/chaos/powerman/blob/master/etc/devices/apcpdu.dev[current definition] is on GitHub.
 - integrate the (future) new powerman LUA engine (maybe/must-be used for the driver above?)
 for native PDU support
 - see how we can help and collaborate with DeviceKit-power

@@ -49,7 +49,7 @@ ifndef::pdf_format[]
 :nut-diagram-width: 640
 endif::pdf_format[]
 
-image:images/nut_layering.png["Power devices communicate with drivers, drivers with upsd, and clients with upsd",width="{nut-diagram-width}"]
+image:images/nut_layering.png["Clients connect to upsd over TCP. Local drivers communicate with upsd and reach power devices over serial, USB, network or local IPMI interfaces.",width="{nut-diagram-width}"]
 
 
 How information gets around
