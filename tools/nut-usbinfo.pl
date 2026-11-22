@@ -283,6 +283,13 @@ sub gen_usb_files
 	# Udev footer
 	print $outUdev "\n".'LABEL="nut-usbups_rules_end"'."\n";
 
+	# Retire the autogen opt-out after writing a replacement template.
+	my $udevMarker = "$outputUdev.AUTOGEN_WITHOUT";
+	if (-f $udevMarker) {
+		close($outUdev) or die "error $outputUdev : $!";
+		unlink($udevMarker) or die "error $udevMarker : $!";
+	}
+
 	# Device scanner footer
 	print $outDevScanner "\n\t/* Terminating entry */\n\t{ 0, 0, NULL, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
 }
