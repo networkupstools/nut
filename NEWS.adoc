@@ -782,6 +782,8 @@ https://github.com/networkupstools/nut/milestone/13
         the same sequence of IDs.
 
  - NUT client libraries:
+    * Development installs now provide pkg-config files for the scanner and
+      C++ client libraries only when those libraries are built. [PR #3866]
     * Fixed strict Clang conversion warnings and isolated an OpenSSL macro
       annotation warning in the C client library. [PR #3770]
     * Introduction of `nutauth.conf` support caused some rearrangement of
