@@ -21,7 +21,7 @@
 
 #include "huawei-mib.h"
 
-#define HUAWEI_MIB_VERSION  "0.40"
+#define HUAWEI_MIB_VERSION  "0.41"
 
 #define HUAWEI_SYSOID       ".1.3.6.1.4.1.8072.3.2.10"
 #define HUAWEI_UPSMIB       ".1.3.6.1.4.1.2011"
@@ -204,13 +204,13 @@ static snmp_info_t huawei_mib[] = {
 
 	snmp_info_default("output.frequency", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.7.1", NULL, SU_FLAG_OK, NULL),
 
-	snmp_info_default("output.L1.realpower", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.8.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L1.realpower", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.9.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L1.realpower", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.10.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L1.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.8.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L2.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.9.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L3.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.10.1", NULL, SU_FLAG_OK, NULL),
 
-	snmp_info_default("output.L1.power", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.11.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L2.power", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.12.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L3.power", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.13.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L1.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.11.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L2.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.12.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L3.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.13.1", NULL, SU_FLAG_OK, NULL),
 
 	snmp_info_default("output.L1.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.14.1", NULL, SU_FLAG_OK, NULL),
 	snmp_info_default("output.L2.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.15.1", NULL, SU_FLAG_OK, NULL),
@@ -222,7 +222,7 @@ static snmp_info_t huawei_mib[] = {
 
 	snmp_info_default("output.L1.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.19.1", NULL, SU_FLAG_OK, NULL),
 	snmp_info_default("output.L2.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.20.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L2.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.21.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L3.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.21.1", NULL, SU_FLAG_OK, NULL),
 
 
 	/* Battery page */
