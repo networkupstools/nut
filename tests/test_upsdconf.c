@@ -26,7 +26,7 @@ nut_ctype_t *firstclient = NULL;
 char *certfile = NULL, *certpath = NULL, *certname = NULL, *certpasswd = NULL;
 int disable_weak_ssl = 0;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-int certrequest = 0;
+unsigned int certrequest = 0;
 #endif
 
 /* These daemon operations must not be reached by the configuration tests. */
