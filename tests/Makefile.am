@@ -114,8 +114,8 @@ if WITH_NUT_SCANNER
 if HAVE_LIBREGEX
 TESTS += nutscan-display-test
 nutscan_display_test_SOURCES = nutscan-display-test.c
-nutscan_display_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner $(LIBIPMI_CFLAGS)
-nutscan_display_test_LDADD = $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON)
+nutscan_display_test_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner $(LIBIPMI_CFLAGS) $(LIBREGEX_CFLAGS)
+nutscan_display_test_LDADD = $(top_builddir)/tools/nut-scanner/libnutscan.la $(NUT_LIBCOMMON) $(LIBREGEX_LIBS)
 nutscan_display_test_LDFLAGS = $(AM_LDFLAGS)
 if WITH_SSL
 nutscan_display_test_LDADD += $(LIBSSL_LIBS)

@@ -159,7 +159,7 @@ int main(void)
 		{ "duplicate serials", "serial", "000000", "000000", 0, 3 },
 		{ "distinct serials", "serial", "unit-1", "unit-2", 0, 0 },
 		{ "one absent serial", "serial", "unit-1", NULL, 0, 2 },
-		{ "empty and absent serials", "serial", "", NULL, 0, 3 },
+		{ "anchored empty regex and absent serial", "serial", "^$", NULL, 0, 3 },
 		{ "empty and nonempty serials", "serial", "", "unit-2", 0, 0 },
 		{ "commented serials", "serial", "unit-1", "unit-2", 1, 3 },
 		{ "distinct vendors", "vendor", "CPS", "other", 0, 0 },
@@ -192,6 +192,8 @@ int main(void)
 		"richcomm_usb", "apc_modbus", "bcmxcp_usb", "nutdrv_atcl_usb", "powervar_cx_usb", "unknown"
 	};
 	nutscan_device_t *devices[3];
+	regex_t empty_regex;
+	unsigned int empty_serial_expected = 2;
 	char *output;
 	size_t i, j;
 	int failed = 0;
@@ -211,6 +213,20 @@ int main(void)
 		nutscan_add_device_to_device(devices[0], devices[1]);
 		failed += check_case(cases[i].name, devices, 2, cases[i].expected);
 	}
+
+	/* The absent selector matches either device. The empty selector can
+	 * match the absent serial only if the host accepts an empty ERE.
+	 */
+	if (regcomp(&empty_regex, "", REG_ICASE | REG_EXTENDED) == 0) {
+		regfree(&empty_regex);
+		empty_serial_expected = 3;
+	}
+	devices[0] = new_device("usbhid-ups");
+	devices[1] = new_device("usbhid-ups");
+	set_option(devices[0], "serial", "", 0);
+	nutscan_add_device_to_device(devices[0], devices[1]);
+	failed += check_case("empty and absent serials", devices, 2, empty_serial_expected);
+
 	for (i = 0; i < SIZEOF_ARRAY(supported) + SIZEOF_ARRAY(unsupported); i++) {
 		const char *driver = i < SIZEOF_ARRAY(supported)
 			? supported[i] : unsupported[i - SIZEOF_ARRAY(supported)];
