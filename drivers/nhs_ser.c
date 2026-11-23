@@ -1965,6 +1965,7 @@ void upsdrv_updateinfo(void) {
 	useconds_t	timeout_usec;
 	ssize_t	read_result;
 	int	randval = 0;
+	unsigned char	rb = 0;
 	pkt_hwinfo	received_hwinfo;
 
 	upsdebugx(3, "%s: starting...", __func__);
@@ -2103,7 +2104,8 @@ void upsdrv_updateinfo(void) {
 		}	/* end if */
 		else {
 			/* randomly send */
-			randval = rand() % 3;
+			nut_random_bytes(&rb, 1);
+			randval = rb % 3;
 			switch (randval) {
 				case 0:
 					upsdebugx(4, "Sending long initialization packet (random)");
