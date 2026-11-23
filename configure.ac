@@ -5755,6 +5755,7 @@ return res ? 0 : 1;
         AS_CASE([$CXXFLAGS],
             [*-std=*++*], [AC_MSG_WARN([You have a C++ standard version explicitly required in CXXFLAGS... The CPPUNIT build test failed, and some of its releases used auto_ptr which is deprecated since C++14 and removed in e.g. clang since C++17])]
         )
+        AC_MSG_WARN([On some platforms libcppunit is built with different ABI settings (e.g. C++ LLVM/CLANG vs. GCC output) causing linker errors with one compiler family but not the other; bring it up with your OS distribution])
      ])
      CXXFLAGS="$my_CXXFLAGS"
      LDFLAGS="$my_LDFLAGS"

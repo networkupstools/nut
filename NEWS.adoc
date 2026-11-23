@@ -983,6 +983,14 @@ https://github.com/networkupstools/nut/milestone/13
       one-time reconciliation after upgrading. [PR #3635]
 
  - Revised dusty corners of NUT documentation:
+    * Documented the `SET` and `INSTCMD` driver callback return values and
+      their client-visible tracking replies. [issue #3602, PR #3847]
+    * Corrected SSL context connection-setup and concurrency guidance,
+      marked the SSL architecture analysis as historical, and clarified
+      continued support for both OpenSSL and NSS. [issue #3747, PR #3831]
+    * Corrected the `pijuice` installation guidance, added a minimal
+      configuration example, and documented the existing shutdown request
+      and its unverified power-off and restart behavior. [issue #3747, PR #3832]
     * Corrected client API signatures and array initialization descriptions,
       SNMP daisychain alarm handling and subdriver mapping references, and
       developer-guide protocol links and source access instructions. [PR #3745]
@@ -1178,10 +1186,27 @@ https://github.com/networkupstools/nut/milestone/13
       in the `aspell` output), and in GitHub Actions also as annotations on
       the source lines (once per unknown word, despite the retries) and in
       the job summary. [PR #3773]
+    * The `make spellcheck` recipes now sanity-check the dictionary file
+      (should not contain underscores in entries) and that source text files
+      do not contain non-ASCII characters commonly added by AI agents, like
+      the multi-byte symbols for various-length dashes). [PR #3453]
     * The `configure` script now also looks for `aspell` filter resources
       under `lib64` (e.g. on CentOS 7) and in directories named by just the
       major and minor version (e.g. `aspell-0.60` for `aspell` 0.60.6.1).
       [issue #2068, PR #3773]
+    * USB support can now be built against libusb-1.0 releases from 1.0.9
+      on, such as the `libusb1` 1.0.9 package of CentOS 6. Before 1.0.16
+      there is no `libusb_strerror()`, so error messages show the name of
+      the libusb error code (from `libusb_error_name()`) instead of its
+      description; before 1.0.10 or so there is no `libusb_get_version()`,
+      so `driver.version.usb` says the version is unknown. `nut-scanner`
+      falls back the same way when the libusb it loads at run time lacks
+      these methods. [issues #509, #3781, PR #3782]
+    * With `--with-usb=auto` (or `yes`), the `configure` script now falls
+      back to an also available libusb-0.1 when the preferred libusb-1.0 is
+      too old for NUT, instead of building without USB drivers. An explicit
+      `--with-usb=libusb-1.0` still fails in that case.
+      [issue #3781, PR #3782]
     * Portability fixes found with OpenBSD 8.0 (`clang` 22, LibreSSL 4.4)
       and NetBSD 11.0 [PR #3816]:
       - Out-of-tree builds with BSD `make` (seen with OpenBSD `make`) no
@@ -1513,13 +1538,10 @@ but the `nutshutdown` script would bail out quickly and quietly. [PR #3008]
      polls fail. [issue #3116]
    * `arduino-hid` subdriver enhanced with `ups.load`, `input.voltage` and
      `output.voltage` readings where supported (e.g. Ugreen US3000). [#3281]
-   * Introduced a `winhid` extension in NUT for Windows builds, to directly
-     work with Windows HID API so that extra driver like WinUSB or Zadig is
-     not needed. Note that currently this backend follows a read-focused
-     scope: it supports device discovery and matching by identifiers such
-     as `vendorid` and `productid`, input/feature reads, and interrupt-report
-     fallback handling. Feature-report writes are not implemented in this
-     phase, so `setvar`/`instcmd` operations may be unavailable. [PR #3335]
+   * Extended the `winhid` extension in NUT for Windows builds with selectable
+     HID capability ordering (`winhid_layout`) and Feature Report writes, so
+     writable `setvar`/`instcmd` operations can use the native Windows HID API
+     when supported by the UPS. [PRs #3335, #3723, issue #3717]
 
  - `nut-scanner` tool updates:
    * Fixed `nut-scanner` search for "simulation devices" to not use only the

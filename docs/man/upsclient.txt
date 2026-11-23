@@ -44,10 +44,12 @@ identities.
 A process-wide registry caches SSL context configurations, keyed by parameters
 (CA path, verify mode, client certificate identity, etc.).
 
-Contexts are created by linkman:upscli_get_or_create_ssl_context[3] or
-linkman:upscli_get_or_create_ssl_context_authconf[3] and attached to individual
-connections via linkman:upscli_set_ssl_context[3] before calling
-linkman:upscli_connect[3].
+During SSL setup, the library looks up the server's authconf and obtains a
+context internally. linkman:upscli_connect[3] and linkman2:upscli_connect[upscli_tryconnect,3]
+clear the connection structure, so a context attached with
+linkman:upscli_set_ssl_context[3] before either call is not retained.
+See linkman:upscli_get_or_create_ssl_context[3] for registry behavior and
+concurrency restrictions.
 
 For most applications, the default context created by linkman:upscli_init[3]
 legacy method, or linkman:upscli_init2[3] or linkman:upscli_init_authconf[3]

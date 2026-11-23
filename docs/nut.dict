@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3925 utf-8
+personal_ws-1.1 en 3932 utf-8
 AAC
 AAS
 ABI
@@ -937,6 +937,7 @@ OUTPUTV
 OUTVOLT
 OV
 OVERDURATION
+ObjectID
 Oden
 OffTime
 Ohloh
@@ -1194,6 +1195,7 @@ Rackmount
 Radek
 Ragtech
 RatedVA
+ReadDevID
 RealSmart
 RedHat
 Redhat
@@ -1806,6 +1808,7 @@ b'string
 bAlternateSetting
 bUps
 backend
+backend's
 backends
 backgrounding
 backport
@@ -1875,6 +1878,7 @@ brazil
 brcm
 brotli
 bsd
+bsdtar
 bt
 bti
 btn
@@ -2374,6 +2378,7 @@ gmail
 gmake
 gmtime
 gnuplot
+gnutar
 gnutls
 goodspeed
 google
@@ -2389,6 +2394,7 @@ graphmin
 graphviz
 groupadd
 groupname
+gtar
 gtec
 gtk
 guesstimate
@@ -3335,6 +3341,7 @@ secretpass
 securityLevel
 securityName
 sed
+selectable
 selftest
 semanage
 semver
@@ -3739,11 +3746,11 @@ upstype
 upsuser
 upswired
 uptime
+urandom
 urb
 uri
 url
 urpmi
-urandom
 usb
 usbconfig
 usbfs
