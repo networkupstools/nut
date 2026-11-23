@@ -192,6 +192,9 @@ https://github.com/networkupstools/nut/milestone/13
       * Newly mapped: `input.sensitivity`, `ups.beeper.status`,
         `experimental.battery.firmware` and
         `experimental.statistics.battery.transfers`.
+      * `upsrw` lists available choices and integer ranges for writable
+        settings when the Microlink descriptor supplies them. Writes to
+        enumerated variables use the exact labels listed by `upsrw`.
       * Driver-specific diagnostic variables moved from `microlink.*` to
         `experimental.microlink.*`.
       * Documented the Microlink descriptor format that the driver parses,

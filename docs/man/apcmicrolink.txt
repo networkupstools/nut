@@ -130,14 +130,15 @@ values are interpreted as strings, hex identifiers, dates, times, fixed-point
 numbers, and enum or bitfield maps depending on the Microlink type reported by
 the device.
 
-Writable descriptor-backed variables are exposed as read-write NUT variables
-when the device reports them as modifiable. Depending on the connected model,
-this can include values such as:
+The driver exposes variables as writable when its mapping marks them as
+writable and the corresponding usage is present. Depending on the connected
+model, these can include:
 
 * `ups.id`
 * `ups.display.language`
-* `ups.test.interval`
+* `experimental.microlink.battery.test.schedule`
 * `battery.date`
+* `input.sensitivity`
 * `input.transfer.delay`
 * `input.transfer.high`
 * `input.transfer.low`
@@ -150,6 +151,15 @@ this can include values such as:
 * `outlet.group.N.minimumreturnruntime`
 * `outlet.group.N.lowruntimewarning`
 * `outlet.group.N.name`
+
+When the descriptor supplies the necessary information, `upsrw` lists
+supported choices for settings such as sensitivity, display language and the
+self-test schedule, and numeric ranges for settings such as transfer voltages
+and outlet delays. Use the exact labels shown by `upsrw` for enumerated
+settings and decimal numbers for ranges. `NoDelay` is an alias for zero
+seconds when setting `input.transfer.delay` on a device that allows zero.
+`ups.test.interval` reports the recurring self-test period in seconds when
+the schedule has one.
 
 On the tested Smart-UPS 500 (SCL500RMI1UC), the vendor's own documentation
 lists these factory-default values for the delay/timer fields above:
