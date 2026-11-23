@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3924 utf-8
+personal_ws-1.1 en 3931 utf-8
 AAC
 AAS
 ABI
@@ -1877,6 +1877,7 @@ brazil
 brcm
 brotli
 bsd
+bsdtar
 bt
 bti
 btn
@@ -2376,6 +2377,7 @@ gmail
 gmake
 gmtime
 gnuplot
+gnutar
 gnutls
 goodspeed
 google
@@ -2391,6 +2393,7 @@ graphmin
 graphviz
 groupadd
 groupname
+gtar
 gtec
 gtk
 guesstimate
@@ -3742,11 +3745,11 @@ upstype
 upsuser
 upswired
 uptime
+urandom
 urb
 uri
 url
 urpmi
-urandom
 usb
 usbconfig
 usbfs
