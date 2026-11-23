@@ -3574,6 +3574,7 @@ telnetlib
 tempmax
 tempmin
 termios
+testgroup
 testime
 testinterval
 testtime
@@ -3773,6 +3774,7 @@ usleep
 usr
 utalk
 utf
+util
 utils
 uu
 uucp

@@ -52,6 +52,32 @@ and unaffected dummy modes through the real driver, server and client.
 It does not use hardware or send power commands. Temporary runtime and log
 directories are printed when the test starts.
 
+Certificate validity
+--------------------
+
+The default NIT suite checks certificate validity when both binaries support
+TLS and the signing material is available. To run this group alone after
+building the NIT prerequisites:
+
+----
+:; make check-NIT NIT_CASE=testgroup_sandbox_certificate_validity WITH_SSL_TESTS=required
+----
+
+The tests re-sign the existing NIT certificate requests with explicit valid,
+expired and future validity intervals. All variants for a role share
+their keys, CA, names and request extensions; the system clock is unchanged. Each query uses a new `upsc`
+process with `FORCESSL` and `CERTVERIFY` enabled. A valid certificate must
+succeed; expired and future certificates must fail with a date-related
+verification diagnostic. With client certificate validation enabled, the
+server must also reject missing, expired and future client certificates.
+NSS reports the same expiry diagnostic for both invalid date directions.
+
+Fixture signing requires the `openssl` command and the NIT CA private key
+and certificate requests, including for NSS builds. NSS generation can export
+the CA key when `pk12util` and `openssl` are available. The variants are made
+in the disposable sandbox, outside the certificate cache. When either endpoint lacks TLS, this group is skipped. Missing signing
+material skips it in best-effort mode and fails it when TLS tests are required.
+
 Caching!
 --------
 
