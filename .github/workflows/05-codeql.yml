@@ -84,11 +84,12 @@ jobs:
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
         #
-        # C/C++ cells: each compiler, SSL and USB variant appears at least
-        # once, rather than a full cross product. The SSL code (clients/,
-        # server/) and the USB code (drivers/, nut-scanner) never share a
-        # file, so their combinations add nothing: on an 18-cell run of the
-        # full cross product, these 3 cells found all 1486 distinct alerts.
+        # C/C++ cells: three SSL/USB combinations, each built with both
+        # compilers (gcc and clang complain about different things), rather
+        # than the full cross product. The SSL code (clients/, server/) and
+        # the USB code (drivers/, nut-scanner) never share a file, so pairing
+        # every SSL variant with every USB variant adds nothing; each variant,
+        # including "no" (a code path of its own), is still built.
         #
         # build-mode "manual": abusing it to build with ccache (and have
         # codeql not intercept that build but parse C/C++ files on its own);
@@ -117,6 +118,27 @@ jobs:
             NUT_SSL_VARIANTS: 'nss'
             NUT_USB_VARIANTS: 'libusb-0.1'
             cell: 'clang-nss-libusb0'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=clang CXX=clang++'
+            NUT_SSL_VARIANTS: 'no'
+            NUT_USB_VARIANTS: 'no'
+            cell: 'clang-nossl-nousb'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=gcc CXX=g++'
+            NUT_SSL_VARIANTS: 'openssl'
+            NUT_USB_VARIANTS: 'libusb-1.0'
+            cell: 'gcc-openssl-libusb1'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=gcc CXX=g++'
+            NUT_SSL_VARIANTS: 'nss'
+            NUT_USB_VARIANTS: 'libusb-0.1'
+            cell: 'gcc-nss-libusb0'
           - language: 'cpp'
             os: 'ubuntu-latest'
             build-mode: 'manual'
