@@ -52,7 +52,16 @@ def main():
     env["NUT_AUTHCONF_FILE"] = "none"
     env["LANG"] = env["LC_ALL"] = "C"
     env["TZ"] = "UTC"
-    user = getpass.getuser()
+    if os.name == "posix":
+        import pwd
+        try:
+            user = pwd.getpwuid(os.geteuid()).pw_name
+        except KeyError:
+            # An unmapped build UID still needs a valid name for -u.
+            # An unprivileged upslog or upsd keeps its current UID.
+            user = "nobody"
+    else:
+        user = getpass.getuser()
     upslog = str(build / ("clients/upslog" + args.exeext))
     upsc = str(build / ("clients/upsc" + args.exeext))
     reserve = socket.socket()
@@ -202,8 +211,15 @@ def main():
                 check("rotation-ready", wait_for(written))
                 descriptors = Path("/proc/{}/fd".format(proc.pid))
                 if descriptors.exists():
-                    count = sum(1 for fd in descriptors.iterdir()
-                                if os.path.realpath(str(fd)) == str(target))
+                    # On illumos, procfs exposes the file directly.
+                    count = 0
+                    for fd in descriptors.iterdir():
+                        try:
+                            if fd.samefile(target):
+                                count += 1
+                        except FileNotFoundError:
+                            # The process closed this descriptor since readdir.
+                            continue
                     check("shared-single-descriptor", count == 1, count)
                 target.rename(old)
                 proc.send_signal(signal.SIGHUP)
