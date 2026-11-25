@@ -385,10 +385,26 @@ https://github.com/networkupstools/nut/milestone/13
       declared figure in 11% of the cases, ranging from 9 times too low to
       4.3 times too high. The new estimate shares the load, corrected by the
       inverter efficiency, among all the batteries and applies Peukert's law
-      to each one; it is within one third in 88% of the same cases. The
-      estimate still does not count down during a discharge. While the UPS
-      reports no load the variable is now removed, instead of staying at
-      the last value calculated.
+      to each one; it is within one third in 88% of the same cases. While
+      the UPS reports no load the variable is now removed, instead of
+      staying at the last value calculated.
+    * `battery.runtime` now counts down during a discharge and comes back
+      on mains. It used to be how long full batteries last at the present
+      load and nothing else, so it only followed the load: on a real unit it
+      went up in the middle of a discharge when the load fell by 1%. The
+      driver now keeps the share of a full battery that is left, which
+      falls with the time on battery and recovers over the new `chargetime`
+      setting (12 hours by default).
+    * Added the `runtimecal`, `chargetime` and `idleload` settings, with the
+      meaning and format they have in the `blazer` and `nutdrv_qx` drivers:
+      two runtimes at two loads, from which the driver draws the curve it
+      uses for `battery.runtime`. The models whose manufacturer product
+      sheets declare the runtime at full and at half load are calibrated
+      with those two points out of the box, and `runtimecal` replaces them
+      with figures measured on the unit itself. A unit whose battery set
+      was changed in `ups.conf` (`ah`, `numbatteries` or `vbat`) keeps the
+      estimate from the battery capacity unless it gets a `runtimecal` of
+      its own. `battery.charge` still comes from the battery voltage.
     * `vbat` now means only the nominal voltage of one battery (12V in every
       NHS model), and the driver works out from the voltage reading itself
       how many batteries it covers. Before, the charge treated `vbat` as one
@@ -419,14 +435,37 @@ https://github.com/networkupstools/nut/milestone/13
       now work when written as flags, with just their name. They were
       read as values, so the packet diagnostics only turned on when a
       value was assigned to them (for example `debug_pkt_data = 1`).
-    * `battery.charge` is now a scale from 0% at 10.5V for each 12V battery
-      to 100% at 12.6V, following `vbat` in proportion. The previous value
+    * `battery.charge` is now a scale from 0% at 10.8V for each 12V battery
+      to 100% at 13.2V, following `vbat` in proportion. The previous value
       was the reading as a percentage of the nominal voltage, which only
-      went from 100% down to 87% over a complete discharge: in a discharge
-      logged from a real unit it stayed at 100% until 38% of the time was
-      left and showed 91% when the UPS raised its low battery flag. With the
-      new scale that flag falls at 19%. It remains an estimate from the
-      voltage alone, as the UPS does not report a charge.
+      went from 100% down to about 90% over a complete discharge: in 16
+      discharges logged from a real unit it stayed at 100% until about half
+      of the time was left and showed 90% when the UPS raised its low
+      battery flag. With the new scale that flag falls at 0%, and the value
+      stays within 20 points of the share of the time really left for 74%
+      of the discharge time, against 20% before. It remains an estimate
+      from the voltage alone, as the UPS does not report a charge. The new
+      `charge_scale` setting selects another scale, from 10.5V to 12.6V.
+    * `ups.status` now carries `DISCHRG` for as long as the UPS runs on
+      battery. The driver only set `OB`, and the NUT core added and removed
+      `DISCHRG` by itself as `battery.charge` moved, so on a real unit the
+      status alternated between `OB` and `OB DISCHRG` every few seconds.
+    * Added the `init_packet` setting, to choose which request for the
+      hardware information packet is sent to the UPS: all of them as
+      before (0, the default), only the short one (1) or only the long one
+      (2), which is the one answered with the serial number.
+    * Fixed the flags of the hardware information packet (220V input, 220V
+      output, buzzer and others), which were read from the wrong end of
+      their byte. A unit fed from 220V mains was taken as a 120V one and
+      got the 120V transfer points, input voltage thresholds and nominal
+      input voltage. The new `invert_bits_hwinfo` and `invert_bits_data`
+      settings choose the order of the flags of each packet, should a unit
+      turn out to be different.
+    * `battery.voltage`, `battery.voltage.nominal` and `battery.packs` are
+      no longer published for the first second or two after startup, while
+      the number of batteries is not known yet. They used to show the
+      reading of one battery, a nominal voltage of 12V and 0 packs until
+      the hardware information packet arrived.
     * Fixed `battery.current` and `battery.current.total`. They are now
       calculated only while the UPS runs on battery, from the load in W
       divided by the inverter efficiency, and are 0 on mains, where the

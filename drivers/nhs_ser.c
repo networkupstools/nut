@@ -59,25 +59,39 @@
 #define DEFAULTBATSER   1       /* batteries wired in series (0: in parallel) */
 #define DEFAULTREAD16   0       /* two-byte fields read as "first.second" (1: as 16 bits) */
 #define DEFAULTOVERLOAD 105     /* load, in %, above which the UPS is overloaded */
+#define DEFAULTCHARGESCALE 0    /* battery.charge scale: 0 from 10.8V to 13.2V, 1 from 10.5V to 12.6V */
+#define DEFAULTINITPACKET  0    /* hardware packet requested: 0 long, short and compatibility, 1 short, 2 long */
+#define DEFAULTINVERTBITS  1    /* flags packed in a byte: 1 flag n is bit n (inverted), 0 flag n is bit 7 - n */
 
 /*
  * Resting voltage of a fully charged lead-acid battery, as a ratio of its
  * nominal voltage: 6 cells at 2.1V make 12.6V for a 12V battery. It is the
- * yardstick used to tell how many batteries a voltage reading covers, and
- * the point that counts as 100% of charge; see the battery charge
- * calculation in interpret_pkt_data().
+ * yardstick used to tell how many batteries a voltage reading covers. It is
+ * also the point that counts as 100% of charge in the previous scale of
+ * battery.charge, which "charge_scale = 1" still selects; see the battery
+ * charge calculation in interpret_pkt_data().
  */
 #define BATTERY_FULL_RATIO      1.05
 
 /*
  * Voltage at which a lead-acid battery is taken as empty, as a ratio of its
  * nominal voltage: 6 cells at 1.75V make 10.5V for a 12V battery. That is
- * the usual end-of-discharge voltage of this kind of battery, and my own
- * unit shut down at 10.4V. It is the point that counts as 0% of charge; the
- * measurement behind it is written out at the battery charge calculation in
- * interpret_pkt_data().
+ * the usual end-of-discharge voltage of this kind of battery. It is the
+ * point that counts as 0% of charge in the previous scale of battery.charge
+ * ("charge_scale = 1").
  */
 #define BATTERY_EMPTY_RATIO     0.875
+
+/*
+ * The two ends of the scale of battery.charge, as ratios of the nominal
+ * voltage: 100% at 13.2V and 0% at 10.8V for a 12V battery. They are the
+ * pair that best followed the time really left in 16 complete discharges of
+ * my own unit, and 10.8V is where that unit raises its low battery flag.
+ * The measurement is written out at the battery charge calculation in
+ * interpret_pkt_data().
+ */
+#define CHARGE_FULL_RATIO       1.10
+#define CHARGE_EMPTY_RATIO      0.90
 
 /*
  * Constants of the battery runtime estimate. The reasoning behind the whole
@@ -107,6 +121,24 @@
  * manufacturer's rating.
  */
 #define RUNTIME_ASSUMED_INVERTER_EFF    80.0
+
+/*
+ * Runtime calibration, that is, the "runtimecal" setting and the two that go
+ * with it. What they do is written out where battery.runtime is computed in
+ * interpret_pkt_data().
+ *
+ * The first two are the loads, in percent of the nominal power, at which the
+ * manufacturer's product sheets declare a runtime: full load ("Aut. plena
+ * carga") and half load ("Aut. meia carga"). The other two are the defaults
+ * of "chargetime" and "idleload", and they are the defaults of the blazer
+ * and nutdrv_qx drivers (docs/man/blazer-common.txt: "the driver defaults
+ * to 43200 seconds (12 hours)" and "the driver defaults to 10%"), so that
+ * the same ups.conf lines mean the same thing in this driver.
+ */
+#define DEFAULTCALLOADHI                100     /* load of the first sheet runtime, in %: full load */
+#define DEFAULTCALLOADLO                50      /* load of the second sheet runtime, in %: half load */
+#define DEFAULTCHARGETIME               43200   /* time to recharge an empty battery, in s: 12 hours */
+#define DEFAULTIDLELOAD                 10      /* smallest effective load of the calibration, in % */
 
 /*
  * Defaults shared by every model (see upsinfo below). They used to appear
@@ -430,14 +462,19 @@ typedef struct {
  *                ups.conf: efficiency_inverter. UNKNOWN device: 0.
  *
  * battery_ah     Capacity, in Ah, of each battery fitted at the factory;
- *                "2 x 58Ah/12V" in the sheet is stored as 58. Most models
- *                wire their batteries as one series string, and there this
- *                is also the capacity of the whole bank. A few use parallel
- *                strings (the sheets show, for example, 4 x 58Ah at 24V),
- *                and there the bank holds this capacity times the number
- *                of strings. Published as battery.capacity and used for the
- *                battery.runtime estimate. ups.conf: ah. UNKNOWN device: 0,
- *                so neither is published until "ah" is set.
+ *                "2 x 58Ah/12V" in the sheet is stored as 58. Some sheets
+ *                allow batteries of two capacities, as in "2 x 17/18Ah/12V":
+ *                the lower one is stored, 17 in that example, so that the
+ *                runtime estimated from it errs on the short side, which is
+ *                the safe one for something used to decide a shutdown.
+ *                Most models wire their batteries as one series string, and
+ *                there this is also the capacity of the whole bank. A few
+ *                use parallel strings (the sheets show, for example,
+ *                4 x 58Ah at 24V), and there the bank holds this capacity
+ *                times the number of strings. Published as battery.capacity
+ *                and used for the battery.runtime estimate. ups.conf: ah.
+ *                UNKNOWN device: 0, so neither is published until "ah" is
+ *                set.
  *
  * battery_v      Nominal voltage, in V, of ONE battery, never of the bank.
  *                Every battery in the NHS product sheets is a 12V unit, so
@@ -495,6 +532,56 @@ typedef struct {
  *                read16_vin_max, read16_vout, read16_temp and read16_vbat.
  *                UNKNOWN device: DEFAULTREAD16, the driver's own reading.
  *
+ * charge_scale   Which scale turns the battery voltage into battery.charge.
+ *                0 is the one measured against real discharges, from 0% at
+ *                10.8V to 100% at 13.2V for a 12V battery. 1 is the one it
+ *                replaced, from 10.5V to 12.6V, kept for whoever tuned
+ *                alerts to it. No model sets it. ups.conf: charge_scale.
+ *                UNKNOWN device: DEFAULTCHARGESCALE.
+ *
+ * inv_bits_data  How the flags packed in one byte of a packet are taken out
+ * inv_bits_hw    of it. The protocol document lists the flags of such a
+ *                byte in order, and the place of a flag in that list, from
+ *                0 on, is its number. With 0 the driver takes flag n from
+ *                bit 7 - n, counting from the most significant bit. With
+ *                1, "inverted", flag n is bit n, counting from the least
+ *                significant one. inv_bits_data is for the status byte of
+ *                the data packet; inv_bits_hw for the configuration byte
+ *                and the status byte of the hardware packet. The reasons
+ *                and the evidence are written at packet_flag(). No model
+ *                sets them. ups.conf: invert_bits_data and
+ *                invert_bits_hwinfo. UNKNOWN device: DEFAULTINVERTBITS,
+ *                inverted, for both.
+ *
+ * runtime_hi     Runtime calibration: how long, in seconds, new batteries
+ * load_hi        last at two loads, each load in percent of the nominal
+ * runtime_lo     power. runtime_hi is the time at load_hi, the higher of
+ * load_lo        the two loads, and runtime_lo the time at load_lo. The
+ *                case of a model sets the two times from its product
+ *                sheet, "Aut. plena carga" and "Aut. meia carga" (which
+ *                the sheet gives in minutes), and the two loads stay the
+ *                ones of the UNKNOWN device, full and half load. ups.conf:
+ *                runtimecal, the four values in this same order
+ *                ("runtimecal = 1020,100,2400,50"); it is the setting,
+ *                and the format, of the blazer and nutdrv_qx drivers. The
+ *                times of a sheet describe the factory battery set, so
+ *                they are dropped when ups.conf changes that set ("ah",
+ *                "numbatteries" or "vbat") and gives no runtimecal of its
+ *                own. UNKNOWN device: 0 for the two times, DEFAULTCALLOADHI
+ *                and DEFAULTCALLOADLO for the two loads. A time of 0 means
+ *                "no calibration": battery.runtime is then estimated from
+ *                the battery capacity.
+ *
+ * chargetime     Time, in seconds, that an empty battery takes to recharge.
+ *                It sets how fast battery.runtime comes back on mains
+ *                after a discharge. No model sets it. ups.conf: chargetime.
+ *                UNKNOWN device: DEFAULTCHARGETIME.
+ *
+ * idleload       Smallest effective load, in percent, that the calibrated
+ *                estimate works with, so that the runtime does not grow
+ *                without limit as the load goes to zero. No model sets it.
+ *                ups.conf: idleload. UNKNOWN device: DEFAULTIDLELOAD.
+ *
  * overload_perc  Load, in percent of the nominal power, above which the UPS
  *                is reported as overloaded (OVER in ups.status). 0 turns
  *                the check off. ups.conf: overload_perc.
@@ -529,6 +616,15 @@ typedef struct {
 	unsigned int  r16_vout;       /* 1: output V read as 16 bits */
 	unsigned int  r16_temp;       /* 1: temperature read as 16 bits */
 	unsigned int  r16_vbat;       /* 1: battery V read as 16 bits */
+	unsigned int  charge_scale;   /* battery.charge: 0 10.8-13.2V, 1 10.5-12.6V */
+	unsigned int  inv_bits_data;  /* 1: flags of the data packet read inverted */
+	unsigned int  inv_bits_hw;    /* 1: flags of the hardware packet read inverted */
+	float         runtime_hi;     /* s that new batteries last at load_hi */
+	float         load_hi;        /* higher calibration load, % */
+	float         runtime_lo;     /* s that new batteries last at load_lo */
+	float         load_lo;        /* lower calibration load, % */
+	unsigned int  chargetime;     /* s to recharge an empty battery */
+	float         idleload;       /* smallest effective load, % */
 	unsigned int  overload_perc;  /* load % above which OVER is set */
 	float         vin_perc;       /* % margin for the input thresholds */
 } upsinfo;
@@ -549,6 +645,25 @@ static time_t         lastdp = 0;
 static unsigned int   checktime = 2000000;      /* 2 seconds */
 static unsigned int   max_checktime = 6000000;  /* max wait time: 6 seconds */
 static unsigned int   send_extended = 0;
+
+/*
+ * Which request for the hardware packet the driver sends to the UPS, from
+ * "init_packet" in ups.conf:
+ *
+ *   0  what the driver has always done: at startup the long request, the
+ *      short one and the compatibility one, in a row; while polling, six
+ *      times the long one and then one of the three at random;
+ *   1  only the short request;
+ *   2  only the long request.
+ *
+ * The hardware packet comes in two sizes: 18 bytes, and 50 bytes with the
+ * serial number and the clock as well. With 0 the driver keeps whichever
+ * arrives, and in two runs of the same unit (model 98) it got the serial
+ * number in one and "----------------" in the other. 1 and 2 let the user
+ * settle which request is sent. This is not a cure for the dashes: some
+ * units send the serial number as dashes whatever the packet.
+ */
+static unsigned int   init_packet = DEFAULTINITPACKET;
 static int            bwritten = 0;
 static unsigned char  datapacket[DATAPACKETSIZE];
 static char           porta[NUT_PATH_MAX + 1] = DEFAULTPORT;
@@ -697,6 +812,10 @@ static upsinfo getupsinfo(unsigned int upscode);
 
 static float get_float_option(const char *name);
 static unsigned int get_flag_option(const char *name, unsigned int current);
+static bool packet_flag(unsigned char flags, unsigned int number, unsigned int inverted);
+static int runtime_calibration(const upsinfo *ups, double *exponent, double *nominal);
+static double runtime_calibrated(const upsinfo *ups, double exponent, double nominal, unsigned int load);
+static double runtime_balance(double left, double elapsed, int on_battery, double full_runtime, unsigned int chargetime);
 static unsigned int get_va(int equipment);
 static float get_vbat(int equipment);
 static float get_pf(int equipment);
@@ -1277,21 +1396,21 @@ static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tem
 	for (i = 0; i < 8; i++)
 		pktdata.status[i] = get_bit_in_position(&datapkt[17], sizeof(datapkt[17]), i, 0);
 
-	/* I don't know WHY, but bit order is INVERTED here.
-	 * Discovered on clyra's github python implementation
+	/*
+	 * The eight flags of the status byte, by their number in the protocol
+	 * document. They are read inverted (flag n is bit n) unless
+	 * "invert_bits_data = 0" says otherwise: see packet_flag(). The
+	 * status[] array above keeps the bits as they come, from the most
+	 * significant one, for the packet diagnostics.
 	 */
-	/* TODO: check if ANY OTHER VARIABLES (like hardware array bits)
-	 *  have same problem. I won't have so much equipment to test
-	 *  these, then we need help to test more
-	 */
-	pktdata.s_battery_mode = (bool)pktdata.status[7];
-	pktdata.s_battery_low = (bool)pktdata.status[6];
-	pktdata.s_network_failure = (bool)pktdata.status[5];
-	pktdata.s_fast_network_failure = (bool)pktdata.status[4];
-	pktdata.s_220_in = (bool)pktdata.status[3];
-	pktdata.s_220_out = (bool)pktdata.status[2];
-	pktdata.s_bypass_on = (bool)pktdata.status[1];
-	pktdata.s_charger_on = (bool)pktdata.status[0];
+	pktdata.s_battery_mode = packet_flag(datapkt[17], 0, ups.inv_bits_data);
+	pktdata.s_battery_low = packet_flag(datapkt[17], 1, ups.inv_bits_data);
+	pktdata.s_network_failure = packet_flag(datapkt[17], 2, ups.inv_bits_data);
+	pktdata.s_fast_network_failure = packet_flag(datapkt[17], 3, ups.inv_bits_data);
+	pktdata.s_220_in = packet_flag(datapkt[17], 4, ups.inv_bits_data);
+	pktdata.s_220_out = packet_flag(datapkt[17], 5, ups.inv_bits_data);
+	pktdata.s_bypass_on = packet_flag(datapkt[17], 6, ups.inv_bits_data);
+	pktdata.s_charger_on = packet_flag(datapkt[17], 7, ups.inv_bits_data);
 	/* Position 18 means status, but I won't discover what's it */
 	pktdata.checksum = datapkt[19];
 	checksum = calculate_checksum(datapkt, 1, 18);
@@ -1317,6 +1436,7 @@ static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tem
 static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, size_t size) {
 	size_t         i = 0;
 	unsigned char  checksum = 0x00;
+	upsinfo        ups;
 	pkt_hwinfo pkthwinfo = {
 		0xFF,                /* header */
 		0,                   /* size */
@@ -1370,14 +1490,19 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, size_t size) {
 	pkthwinfo.size = (int)datapkt[1];
 	pkthwinfo.type = datapkt[2];
 	pkthwinfo.model = (int)datapkt[3];
+	/* How the flags of this packet are to be read: inv_bits_hw of upsinfo. */
+	ups = getupsinfo((unsigned int)pkthwinfo.model);
 	pkthwinfo.hardwareversion = (int)datapkt[4];
 	pkthwinfo.softwareversion = (int)datapkt[5];
 	pkthwinfo.configuration = datapkt[6];
+	/*
+	 * The five flags of the configuration byte, by their number in the
+	 * protocol document: configuration_array[n] is flag n. They are read
+	 * inverted (flag n is bit n) unless "invert_bits_hwinfo = 0" says
+	 * otherwise: see packet_flag().
+	 */
 	for (i = 0; i < 5; i++)
-		pkthwinfo.configuration_array[i] = get_bit_in_position(&datapkt[6], sizeof(datapkt[6]), i, 0);
-	/* TODO: check if ANY OTHER VARIABLES (like hardware array bits)
-	 * have same problem. I won't have so much equipment to test
-	 * these, then we need help to test more */
+		pkthwinfo.configuration_array[i] = packet_flag(datapkt[6], (unsigned int)i, ups.inv_bits_hw) ? 1 : 0;
 	pkthwinfo.c_oem_mode = (bool)pkthwinfo.configuration_array[0];
 	pkthwinfo.c_buzzer_disable = (bool)pkthwinfo.configuration_array[1];
 	pkthwinfo.c_potmin_disable = (bool)pkthwinfo.configuration_array[2];
@@ -1391,11 +1516,9 @@ static pkt_hwinfo mount_hwinfo(unsigned char *datapkt, size_t size) {
 	pkthwinfo.tensionout120V = (int)datapkt[12];
 	pkthwinfo.tensionout220V = (int)datapkt[13];
 	pkthwinfo.statusval = datapkt[14];
+	/* The six flags of the status byte, read as the configuration ones: status[n] is flag n. */
 	for (i = 0; i < 6; i++)
-		pkthwinfo.status[i] = get_bit_in_position(&datapkt[14], sizeof(datapkt[14]), i, 0);
-	/* TODO: check if ANY OTHER VARIABLES (like hardware array bits)
-	 * have same problem. I won't have so much equipment to test
-	 * these, then we need help to test more */
+		pkthwinfo.status[i] = packet_flag(datapkt[14], (unsigned int)i, ups.inv_bits_hw) ? 1 : 0;
 	pkthwinfo.s_220V_in = (bool)pkthwinfo.status[0];
 	pkthwinfo.s_220V_out = (bool)pkthwinfo.status[1];
 	pkthwinfo.s_sealed_battery = (bool)pkthwinfo.status[2];
@@ -1546,6 +1669,15 @@ static const upsinfo  ups_unknown_device = {
 	.r16_vout      = DEFAULTREAD16,
 	.r16_temp      = DEFAULTREAD16,
 	.r16_vbat      = DEFAULTREAD16,
+	.charge_scale  = DEFAULTCHARGESCALE,
+	.inv_bits_data = DEFAULTINVERTBITS,
+	.inv_bits_hw   = DEFAULTINVERTBITS,
+	.runtime_hi    = 0,
+	.load_hi       = (float)DEFAULTCALLOADHI,
+	.runtime_lo    = 0,
+	.load_lo       = (float)DEFAULTCALLOADLO,
+	.chargetime    = DEFAULTCHARGETIME,
+	.idleload      = (float)DEFAULTIDLELOAD,
 	.overload_perc = DEFAULTOVERLOAD,
 	.vin_perc      = (float)DEFAULTPERC
 };
@@ -1575,12 +1707,33 @@ static const upsinfo  ups_unknown_device = {
  * upscode, upsdesc and VA are the data the driver always had. The lines
  * under a "product sheet" comment come from the NHS product sheets
  * (nhs.com.br): watts, the three efficiencies, battery_ah and bat_series;
- * upsinfo describes each field. A model code is linked to a product by
- * name: same VA and same family words. A value is set only when every
- * matching product agrees on it. Old generations without a sheet of their
- * own use the current product of the same family and VA. The comment gives
- * the product code the values were taken from ("+N" when N more products
- * with the same values matched).
+ * upsinfo describes each field. The manufacturer does not publish which
+ * product each protocol model code stands for, so a code is linked to a
+ * product by name: same VA and same family words. A value is set only when
+ * every matching product agrees on it. Old generations without a sheet of
+ * their own use the current product of the same family and VA. The comment
+ * gives the product code the values were taken from ("+N" when N more
+ * products with the same values matched).
+ *
+ * Twelve codes were linked by hand, after going through the catalogue
+ * product by product, because the catalogue names the product with one
+ * family word more or fewer than this table does:
+ *
+ *   codes           in this table          in the catalogue
+ *   33, 34          PDV SENOIDAL           "Premium PDV Sen"
+ *   37, 58, 109     LASER ONLINE           "Laser OL EXT"
+ *   51              LASER EXT              "Laser Senoidal EXT"
+ *   67              LASER PRIME SENOIDAL   "Prime Senoidal"
+ *   78              PDV 600                "Premium PDV 600"
+ *   84, 87, 104     PDV SENOIDAL ISOLADOR  "Premium Sen Isolador"
+ *   85              PDV RACK               "Premium PDV Sen Rack"
+ *
+ * The same rule holds for them: only what every sheet agrees on is set. That
+ * is why 33 and 34 carry no watts and no capacity. Each of the two is sold
+ * with two battery sets (one 58Ah battery or four of 7Ah for the 1500VA,
+ * two of 17/18Ah or three of 7Ah for the 1000VA), with a different power
+ * factor for each, and the model code does not tell them apart: for those
+ * units "pf" and "ah" still have to come from ups.conf.
  */
 static upsinfo getupsinfo(unsigned int upscode) {
 	upsinfo  data = ups_unknown_device;
@@ -1593,6 +1746,9 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	char     *vbat = getval("vbat");
 	char     *series = getval("battery_series");
 	char     *overload = getval("overload_perc");
+	char     *runtimecal = getval("runtimecal");
+	char     *chargetime = getval("chargetime");
+	double   cal_runtime_hi = 0, cal_load_hi = 0, cal_runtime_lo = 0, cal_load_lo = 0;
 	float    value = 0;
 
 	/*
@@ -1614,6 +1770,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 840;
 			break;
 
 		case 2:
@@ -1660,6 +1818,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 58;
 			data.bat_series = 1;
+			data.runtime_hi = 780;
+			data.runtime_lo = 2820;
 			break;
 
 		case 7:
@@ -1703,6 +1863,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 75;
 			data.battery_ah = 58;
 			data.bat_series = 1;
+			data.runtime_hi = 1020;
+			data.runtime_lo = 2400;
 			break;
 
 		case 13:
@@ -1722,6 +1884,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 840;
 			break;
 
 		case 16:
@@ -1768,6 +1932,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 58;
 			data.bat_series = 1;
+			data.runtime_hi = 780;
+			data.runtime_lo = 2820;
 			break;
 
 		case 21:
@@ -1811,6 +1977,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 75;
 			data.battery_ah = 58;
 			data.bat_series = 1;
+			data.runtime_hi = 1020;
+			data.runtime_lo = 2400;
 			break;
 
 		case 27:
@@ -1848,6 +2016,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 840;
 			break;
 
 		case 32:
@@ -1860,12 +2030,20 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.upscode = 33;
 			strncpy(data.upsdesc, "PDV SENOIDAL 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
+			/* product sheet 91.B0.015700 +3 */
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.bat_series = 1;
 			break;
 
 		case 34:
 			data.upscode = 34;
 			strncpy(data.upsdesc, "PDV SENOIDAL 1000VA", sizeof(data.upsdesc));
 			data.VA = 1000;
+			/* product sheet 91.A1.010000 +3 */
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.bat_series = 1;
 			break;
 
 		case 36:
@@ -1878,6 +2056,14 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.upscode = 37;
 			strncpy(data.upsdesc, "LASER ONLINE 5000VA", sizeof(data.upsdesc));
 			data.VA = 5000;
+			/* product sheet 92.B3.050000 +2 */
+			data.watts = 4500;
+			data.eff_line = 90;
+			data.eff_inverter = 90;
+			data.battery_ah = 9;
+			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 660;
 			break;
 
 		case 38:
@@ -1891,6 +2077,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 360;
+			data.runtime_lo = 840;
 			break;
 
 		case 39:
@@ -1904,6 +2092,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 900;
 			break;
 
 		case 40:
@@ -1917,6 +2107,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 45;
 			data.bat_series = 1;
+			data.runtime_hi = 900;
+			data.runtime_lo = 2820;
 			break;
 
 		case 41:
@@ -1930,6 +2122,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 58;
 			data.bat_series = 1;
+			data.runtime_hi = 780;
+			data.runtime_lo = 2820;
 			break;
 
 		case 42:
@@ -1961,6 +2155,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 660;
 			break;
 
 		case 46:
@@ -1986,6 +2182,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 840;
 			break;
 
 		case 49:
@@ -2004,19 +2202,30 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 94;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 660;
 			break;
 
 		case 51:
 			data.upscode = 51;
 			strncpy(data.upsdesc, "LASER EXT 3300VA", sizeof(data.upsdesc));
 			data.VA = 3300;
+			/* product sheet 91.D1.033000 */
+			data.watts = 1980;
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.eff_inverter = 75;
+			data.battery_ah = 45;
+			data.bat_series = 1;
+			data.runtime_hi = 1020;
+			data.runtime_lo = 2340;
 			break;
 
 		case 52:
 			data.upscode = 52;
 			strncpy(data.upsdesc, "NHS COMPACT PLUS 1200VA", sizeof(data.upsdesc));
 			data.VA = 1200;
-			/* product sheet 90.C1.A01200 +1 */
+			/* product sheet 90.C1.A01200 +3 */
 			data.watts = 550;
 			data.eff_line = 95;
 			data.eff_line_conv = 90;
@@ -2042,6 +2251,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 900;
 			break;
 
 		case 55:
@@ -2055,6 +2266,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 840;
 			break;
 
 		case 56:
@@ -2073,6 +2286,14 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.upscode = 58;
 			strncpy(data.upsdesc, "LASER ONLINE 5000VA", sizeof(data.upsdesc));
 			data.VA = 5000;
+			/* product sheet 92.B3.050000 +2 */
+			data.watts = 4500;
+			data.eff_line = 90;
+			data.eff_inverter = 90;
+			data.battery_ah = 9;
+			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 660;
 			break;
 
 		case 59:
@@ -2085,6 +2306,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 94;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 660;
 			break;
 
 		case 60:
@@ -2103,6 +2326,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 94;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 1080;
 			break;
 
 		case 62:
@@ -2126,6 +2351,10 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_line = 95;
 			data.eff_line_conv = 90;
 			data.eff_inverter = 80;
+			data.battery_ah = 17;
+			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 1020;
 			break;
 
 		case 65:
@@ -2145,12 +2374,23 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 360;
+			data.runtime_lo = 840;
 			break;
 
 		case 67:
 			data.upscode = 67;
 			strncpy(data.upsdesc, "LASER PRIME SENOIDAL 3200VA GII", sizeof(data.upsdesc));
 			data.VA = 3200;
+			/* product sheet 91.C1.032300 */
+			data.watts = 2880;
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.eff_inverter = 80;
+			data.battery_ah = 9;
+			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 780;
 			break;
 
 		case 68:
@@ -2163,6 +2403,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 94;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 780;
 			break;
 
 		case 69:
@@ -2175,6 +2417,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 94;
 			data.battery_ah = 5;
 			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 660;
 			break;
 
 		case 70:
@@ -2229,6 +2473,15 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.upscode = 78;
 			strncpy(data.upsdesc, "PDV 600", sizeof(data.upsdesc));
 			data.VA = 600;
+			/* product sheet 90.A1.006300 +1 */
+			data.watts = 250;
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.eff_inverter = 80;
+			data.battery_ah = 45;
+			data.bat_series = 1;
+			data.runtime_hi = 3600;
+			data.runtime_lo = 8280;
 			break;
 
 		case 79:
@@ -2266,18 +2519,38 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 7;
 			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 1020;
 			break;
 
 		case 84:
 			data.upscode = 84;
 			strncpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
+			/* product sheet 91.B0.015100 +2 */
+			data.watts = 1500;
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.eff_inverter = 80;
+			data.battery_ah = 7;
+			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 960;
 			break;
 
 		case 85:
 			data.upscode = 85;
 			strncpy(data.upsdesc, "NHS PDV RACK 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
+			/* product sheet 91.B1.015200 */
+			data.watts = 1350;
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.eff_inverter = 80;
+			data.battery_ah = 9;
+			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 840;
 			break;
 
 		case 86:
@@ -2290,6 +2563,15 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.upscode = 87;
 			strncpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1500VA", sizeof(data.upsdesc));
 			data.VA = 1500;
+			/* product sheet 91.B0.015100 +2 */
+			data.watts = 1500;
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.eff_inverter = 80;
+			data.battery_ah = 7;
+			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 960;
 			break;
 
 		case 88:
@@ -2309,6 +2591,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 720;
 			break;
 
 		case 90:
@@ -2346,6 +2630,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 300;
+			data.runtime_lo = 720;
 			break;
 
 		case 95:
@@ -2371,6 +2657,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 75;
 			data.battery_ah = 36;
 			data.bat_series = 1;
+			data.runtime_hi = 720;
+			data.runtime_lo = 1680;
 			break;
 
 		case 98:
@@ -2384,6 +2672,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 75;
 			data.battery_ah = 58;
 			data.bat_series = 1;
+			data.runtime_hi = 1020;
+			data.runtime_lo = 2400;
 			break;
 
 		case 99:
@@ -2403,6 +2693,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 360;
+			data.runtime_lo = 840;
 			break;
 
 		case 101:
@@ -2427,12 +2719,23 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 94;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 600;
 			break;
 
 		case 104:
 			data.upscode = 104;
 			strncpy(data.upsdesc, "PDV SENOIDAL ISOLADOR 1000VA", sizeof(data.upsdesc));
 			data.VA = 1000;
+			/* product sheet 91.A0.010100 +2 */
+			data.watts = 1000;
+			data.eff_line = 95;
+			data.eff_line_conv = 90;
+			data.eff_inverter = 80;
+			data.battery_ah = 7;
+			data.bat_series = 1;
+			data.runtime_hi = 420;
+			data.runtime_lo = 960;
 			break;
 
 		case 105:
@@ -2452,6 +2755,8 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.eff_inverter = 80;
 			data.battery_ah = 9;
 			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 660;
 			break;
 
 		case 107:
@@ -2475,6 +2780,14 @@ static upsinfo getupsinfo(unsigned int upscode) {
 			data.upscode = 109;
 			strncpy(data.upsdesc, "LASER ONLINE 5000VA", sizeof(data.upsdesc));
 			data.VA = 5000;
+			/* product sheet 92.B3.050000 +2 */
+			data.watts = 4500;
+			data.eff_line = 90;
+			data.eff_inverter = 90;
+			data.battery_ah = 9;
+			data.bat_series = 1;
+			data.runtime_hi = 240;
+			data.runtime_lo = 660;
 			break;
 
 		case 113:
@@ -2528,6 +2841,33 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	data.r16_vout = get_flag_option("read16_vout", data.r16_vout);
 	data.r16_temp = get_flag_option("read16_temp", data.r16_temp);
 	data.r16_vbat = get_flag_option("read16_vbat", data.r16_vbat);
+	/* Order of the flags inside a byte of each packet, 0 or 1 */
+	data.inv_bits_data = get_flag_option("invert_bits_data", data.inv_bits_data);
+	data.inv_bits_hw = get_flag_option("invert_bits_hwinfo", data.inv_bits_hw);
+	/* Scale of battery.charge, 0 or 1 */
+	data.charge_scale = get_flag_option("charge_scale", data.charge_scale);
+	/*
+	 * Runtime calibration. "runtimecal" brings the two times and the two
+	 * loads. Without it the two times of the model stay, unless ups.conf
+	 * changed the battery set: the product sheet describes the factory one,
+	 * and its times say nothing about batteries of another capacity or
+	 * another number of them.
+	 */
+	if (runtimecal && sscanf(runtimecal, "%lf,%lf,%lf,%lf", &cal_runtime_hi, &cal_load_hi, &cal_runtime_lo, &cal_load_lo) == 4) {
+		data.runtime_hi = (float)cal_runtime_hi;
+		data.load_hi = (float)cal_load_hi;
+		data.runtime_lo = (float)cal_runtime_lo;
+		data.load_lo = (float)cal_load_lo;
+	}  /* end if */
+	else if ((ah && atoi(ah) > 0) || (vbat && atof(vbat) > 0) || getval("numbatteries")) {
+		data.runtime_hi = 0;
+		data.runtime_lo = 0;
+	}  /* end else if */
+	if (chargetime && atol(chargetime) > 0)
+		data.chargetime = (unsigned int)atol(chargetime);
+	value = get_float_option("idleload");
+	if (value > 0)
+		data.idleload = value;
 	/* 0 is a value here too: it turns the overload check off */
 	if (overload)
 		data.overload_perc = (unsigned int)atoi(overload);
@@ -2545,6 +2885,140 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	data.watts = (unsigned int)lrint((double)data.VA * (double)data.pf);
 
 	return data;
+}
+
+/*
+ * One flag out of a byte of flags of a packet.
+ *
+ * Three bytes of the protocol pack several yes/no flags each: the status
+ * byte of the data packet (byte [17]) and, in the hardware packet, the
+ * configuration byte (byte [6]) and the status byte (byte [14]). The
+ * protocol document lists the flags of each byte in order, and "number" is
+ * the place of a flag in that list, from 0 on.
+ *
+ *   inverted = 0   flag n is bit 7 - n, counting from the most significant
+ *   inverted = 1   flag n is bit n, counting from the least significant
+ *
+ * WHAT WAS HERE
+ *
+ * I wrote the first version reading every one of those bytes the first
+ * way. For the data packet it was wrong, and I found that out at the time:
+ * its flags only made sense in the reverse order, which is how another
+ * implementation of this protocol already had them (clyra's, in Python).
+ * I reversed the data packet and left a note asking for the hardware packet
+ * to be checked too, because I had no unit that could tell.
+ *
+ * WHY IT WAS WRONG
+ *
+ * A PDV SENOIDAL 1500VA fed from 223V mains, with its output at 120V, sends
+ * 0x19 (00011001) as the status byte of its hardware packet (reported on PR
+ * #3836). Read the first way, flag 0, "220V input", is bit 7, and that bit
+ * is 0: the driver took the unit as fed from 120V and gave it the 120V
+ * transfer points, thresholds and nominal input voltage. Read the second
+ * way, the same byte says 220V input (bit 0), no 220V output (bit 1), show
+ * the output voltage and the temperature (bits 3 and 4): the unit as it
+ * is. A LASER SENOIDAL 2600VA GII on 120V mains sends 0x38, and there both
+ * ways agree that the input and the output are 120V. So the hardware packet
+ * numbers its flags as the data packet does.
+ *
+ * WHAT IS HERE NOW
+ *
+ * Both packets are read inverted, and each one has a setting in ups.conf
+ * that turns the inversion off: invert_bits_data and invert_bits_hwinfo.
+ * The settings exist because the evidence is thin: two units for the
+ * status byte of the hardware packet, and none for its configuration byte,
+ * which is 0 on both. That byte is read inverted as well, since the
+ * document lists its flags in the same table and in the same way. A unit
+ * that turns out to be different can be set right from ups.conf.
+ */
+static bool packet_flag(unsigned char flags, unsigned int number, unsigned int inverted) {
+	return ((flags >> (inverted ? number : 7 - number)) & 1) != 0;
+}
+
+/*
+ * Runtime calibration: the curve that goes through the two (load, runtime)
+ * points of upsinfo, worked out as the blazer and nutdrv_qx drivers do.
+ *
+ * The runtime of a battery does not fall in proportion to the load: at
+ * twice the load it lasts less than half the time. Two points tell how much
+ * less, as an exponent:
+ *
+ *   exponent = ln(runtime_lo / runtime_hi) / ln(load_hi / load_lo)
+ *
+ * and from it comes the runtime at 100% of load, the "nominal" one:
+ *
+ *   nominal = runtime_hi * (load_hi / 100) ^ exponent
+ *
+ * With the 17 and 40 minutes that the product sheet of the LASER SENOIDAL
+ * 2600VA GII declares at full and at half load, 1020s and 2400s:
+ *
+ *   exponent = ln(2400 / 1020) / ln(100 / 50) = 1.234
+ *   nominal  = 1020 * (100 / 100) ^ 1.234     = 1020s
+ *
+ * Returns 1 and fills the two values when there is a calibration, and 0 when
+ * there is none, that is, when the model has no times and ups.conf no
+ * "runtimecal".
+ */
+static int runtime_calibration(const upsinfo *ups, double *exponent, double *nominal) {
+	if (!(ups->runtime_hi > 0 && ups->runtime_lo > ups->runtime_hi && ups->load_lo > 0 && ups->load_hi > ups->load_lo))
+		return 0;
+
+	*exponent = log((double)ups->runtime_lo / (double)ups->runtime_hi) / log((double)ups->load_hi / (double)ups->load_lo);
+	*nominal = (double)ups->runtime_hi * pow((double)ups->load_hi / 100.0, *exponent);
+	return 1;
+}
+
+/*
+ * How long, in seconds, full batteries last at a load by the calibrated
+ * curve. The load is in percent of the nominal power, as the UPS sends it.
+ *
+ *   effective load = (load / 100) ^ exponent
+ *   runtime        = nominal / effective load
+ *
+ * The effective load is not allowed below idleload / 100. Without that the
+ * runtime would grow without limit as the load goes to zero, when what
+ * happens is that the UPS itself goes on drawing from the batteries. The
+ * limit is applied to the effective load and not to the load, which is how
+ * blazer and nutdrv_qx apply their "idleload".
+ *
+ * With the calibration of the example above and the default idleload: at
+ * 50% of load, 0.5 ^ 1.234 = 0.425 and 1020 / 0.425 = 2400s; at 20%,
+ * 0.2 ^ 1.234 = 0.137 and 7438s; at 5%, 0.025 is below 0.10, so 10200s.
+ */
+static double runtime_calibrated(const upsinfo *ups, double exponent, double nominal, unsigned int load) {
+	double  effective = pow((double)load / 100.0, exponent);
+
+	if (effective < (double)ups->idleload / 100.0)
+		effective = (double)ups->idleload / 100.0;
+	return nominal / effective;
+}
+
+/*
+ * What is left of a full battery, as a share from 0 to 1, after "elapsed"
+ * seconds more:
+ *
+ *   on battery  left - elapsed / full_runtime   (it empties in full_runtime)
+ *   on mains    left + elapsed / chargetime     (it fills in chargetime)
+ *
+ * full_runtime is how long full batteries last at the present load. While
+ * it is not known (0) a discharge takes nothing away, because there is no
+ * telling how much it took.
+ */
+static double runtime_balance(double left, double elapsed, int on_battery, double full_runtime, unsigned int chargetime) {
+	if (elapsed > 0) {
+		if (on_battery) {
+			if (full_runtime > 0)
+				left -= elapsed / full_runtime;
+		}  /* end if */
+		else if (chargetime > 0)
+			left += elapsed / (double)chargetime;
+	}  /* end if */
+
+	if (left < 0)
+		left = 0;
+	if (left > 1)
+		left = 1;
+	return left;
 }
 
 /*
@@ -2688,15 +3162,29 @@ void upsdrv_initinfo(void) {
 	parse_battery_options();
 	parse_model_options();
 
+	init_packet = get_flag_option("init_packet", DEFAULTINITPACKET);
+
 	/* TODO: Any instant commands? */
-	if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
-		return;
-	usleep(250000);
-	if (!send_initialization_packet(string_initialization_short, 9, serial_fd))
-		return;
-	usleep(250000);
-	if (!send_initialization_packet(string_initialization_comptmode, 5, serial_fd))
-		return;
+	switch (init_packet) {
+		case 1:
+			if (!send_initialization_packet(string_initialization_short, 9, serial_fd))
+				return;
+			break;
+		case 2:
+			if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
+				return;
+			break;
+		default:
+			if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
+				return;
+			usleep(250000);
+			if (!send_initialization_packet(string_initialization_short, 9, serial_fd))
+				return;
+			usleep(250000);
+			if (!send_initialization_packet(string_initialization_comptmode, 5, serial_fd))
+				return;
+			break;
+	}  /* end switch */
 
 	upsdebugx(3, "%s: initialization commands sent", __func__);
 
@@ -2791,6 +3279,8 @@ static void parse_model_options(void)
 		{ "efficiency_line_conv", 1,    100,     "a percentage from 1 to 100" },
 		{ "efficiency_inverter",  1,    100,     "a percentage from 1 to 100" },
 		{ "overload_perc",        0,    255,     "a load percentage from 0 to 255 (0 turns the check off)" },
+		{ "chargetime",           1,    604800,  "the time to recharge an empty battery, in seconds, up to a week" },
+		{ "idleload",             1,    100,     "a percentage from 1 to 100" },
 	};
 	/* Settings that take only 0 or 1: the reading mode of each two-byte field. */
 	static const char  *flags[] = {
@@ -2822,6 +3312,42 @@ static void parse_model_options(void)
 		if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0)
 			fatalx(EXIT_FAILURE, "Invalid %s value '%s': expected 0 (read as \"first.second\") or 1 (read as a 16-bit number)", flags[i], value);
 	}  /* end for */
+
+	value = getval("invert_bits_data");
+	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0)
+		fatalx(EXIT_FAILURE, "Invalid invert_bits_data value '%s': expected 1 (flag n of the status byte is bit n) or 0 (flag n is bit 7 - n)", value);
+
+	value = getval("invert_bits_hwinfo");
+	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0)
+		fatalx(EXIT_FAILURE, "Invalid invert_bits_hwinfo value '%s': expected 1 (flag n of the hardware packet is bit n) or 0 (flag n is bit 7 - n)", value);
+
+	value = getval("charge_scale");
+	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0)
+		fatalx(EXIT_FAILURE, "Invalid charge_scale value '%s': expected 0 (from 10.8V to 13.2V for a 12V battery) or 1 (from 10.5V to 12.6V)", value);
+
+	value = getval("init_packet");
+	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0 && strcmp(value, "2") != 0)
+		fatalx(EXIT_FAILURE, "Invalid init_packet value '%s': expected 0 (long, short and compatibility requests), 1 (short request only) or 2 (long request only)", value);
+
+	/*
+	 * Runtime calibration: four numbers, the runtime in seconds and the load
+	 * in percent at the higher load, then at the lower one. The ranges are
+	 * the ones the blazer driver accepts, with one difference: the two loads
+	 * and the two runtimes have to differ, because the curve is drawn
+	 * through two distinct points.
+	 */
+	value = getval("runtimecal");
+	if (value) {
+		double  runtime_hi = 0, load_hi = 0, runtime_lo = 0, load_lo = 0;
+		char    extra = 0;
+
+		if (sscanf(value, "%lf,%lf,%lf,%lf%c", &runtime_hi, &load_hi, &runtime_lo, &load_lo, &extra) != 4)
+			fatalx(EXIT_FAILURE, "Invalid runtimecal value '%s': expected four numbers, the runtime in seconds and the load in percent at the higher load and then at the lower one, as in 240,100,720,50", value);
+		if (runtime_hi <= 0 || runtime_lo <= runtime_hi)
+			fatalx(EXIT_FAILURE, "Invalid runtimecal value '%s': the runtimes must be above 0 and the second one, at the lower load, longer than the first", value);
+		if (load_hi > 100 || load_lo <= 0 || load_lo >= load_hi)
+			fatalx(EXIT_FAILURE, "Invalid runtimecal value '%s': the loads must be above 0 and up to 100, the first one higher than the second", value);
+	}  /* end if */
 }
 
 /*
@@ -3101,6 +3627,8 @@ static void interpret_pkt_data(void) {
 	static int           min_input_power = 0;
 	static float         pf = 0;
 	static int           pf_settled = 0;  /* pf already resolved with the model known */
+	static double        runtime_left = -1;     /* share of a full battery still there, 0 to 1; below 0: not known yet */
+	static time_t        runtime_lastpoll = 0;  /* when runtime_left was last brought up to date */
 
 	int           got_hwinfo = (lastpkthwinfo.checksum_ok && lastpkthwinfo.size > 0);
 	char          data_scratch_buf[1024];  /* General-purpose string buffer */
@@ -3128,6 +3656,10 @@ static void interpret_pkt_data(void) {
 	float         actual_current = 0;   /* A through each battery, for the runtime */
 	float         inverter_eff = 0;     /* % used by the battery current and the runtime */
 	double        runtime_hours = 0;
+	double        full_runtime = 0;     /* s that full batteries last at the present load; 0: not known */
+	double        cal_exponent = 0;     /* runtime calibration: exponent of the curve */
+	double        cal_nominal = 0;      /* runtime calibration: s at 100% of load */
+	time_t        now = 0;
 	float         efficiency = 0;
 	unsigned int  i = 0;
 	upsinfo       ups;
@@ -3155,6 +3687,8 @@ static void interpret_pkt_data(void) {
 		pf = 0;
 		pf_settled = 0;
 		min_input_power = 0;
+		runtime_left = -1;
+		runtime_lastpoll = 0;
 		ups_replaced = false;
 	}  /* end if */
 
@@ -3208,6 +3742,18 @@ static void interpret_pkt_data(void) {
 		/* ON BATTERY */
 		upsdebugx(4, "UPS is on Battery Mode");
 		status_set("OB");
+		/*
+		 * On battery the batteries are discharging, and the status says
+		 * so. Since the first version this branch set only OB; DISCHRG
+		 * was set further down, for a unit that is not in battery mode
+		 * but has no usable mains. The NUT core then filled the gap by
+		 * itself: whenever battery.charge fell it added DISCHRG ("driver
+		 * did not report a (DIS)CHRG state"), and dropped it again when
+		 * the charge went back up. On a real model 98 the reading
+		 * hovered between 12.5V and 12.6V and ups.status went back and
+		 * forth between "OB" and "OB DISCHRG" every few seconds.
+		 */
+		status_set("DISCHRG");
 		if (lastpktdata.s_battery_low) {
 			/* If battery is LOW, warn user! */
 			upsdebugx(4, "UPS is on Battery Mode and in Low Battery State");
@@ -3668,7 +4214,7 @@ static void interpret_pkt_data(void) {
 	 *
 	 * The bank is never taken as having fewer batteries in series than
 	 * the reading covers. That keeps right a unit that reports a pair,
-	 * and while the number of batteries is not known yet (0) it makes the
+	 * and for a unit whose hardware packet says 0 batteries it makes the
 	 * driver publish the reading as it came instead of 0V.
 	 *
 	 * WHAT DOES NOT CHANGE
@@ -3696,40 +4242,74 @@ static void interpret_pkt_data(void) {
 	 *
 	 * WHAT WAS HERE
 	 *
-	 * The charge was the reading as a percentage of the nominal voltage,
-	 * limited to 100:
+	 * In the first version the charge was the reading as a percentage of the
+	 * nominal voltage, limited to 100:
 	 *
 	 *   charge = reading * 100 / nominal
 	 *
-	 * That is how I wrote it in the first version, and it does not work as
-	 * a charge. A 12V lead-acid battery is full at about 12.6V and is taken
-	 * as empty at 10.5V, so over a whole discharge that formula only goes
-	 * from 100% (anything from 12V up) down to 87%. The UPS raised its own
-	 * low battery flag with the driver showing 91%, and a rule such as
-	 * "shut down below 20%" could never fire.
+	 * It does not work as a charge. A 12V lead-acid battery is at 12V or more
+	 * for most of a discharge and my unit raises its low battery flag at
+	 * 10.8V, so that formula only goes from 100% down to 90%, and a rule such
+	 * as "shut down below 20%" could never fire.
+	 *
+	 * I then replaced it with a straight scale from 0% at 10.5V to 100% at
+	 * 12.6V, the end-of-discharge and the resting voltage of a full battery.
+	 * It was better, but still read too high for most of a discharge. That
+	 * scale is still here, as "charge_scale = 1".
 	 *
 	 * HOW IT WAS MEASURED
 	 *
 	 * The event log of the manufacturer's monitoring software (the SQLite
 	 * file nhsupsserver.dat, table "evento", columns "tensao_bateria",
-	 * "modo_inversor" and "bateria_baixa") has one complete discharge of my
-	 * own unit: 2024-11-22, from 05:15:18 to 05:48:51, 33.5 minutes and
-	 * 1343 readings at about 21% of load. The unit has 8 batteries and
-	 * reports the voltage of one. The reading was 13.6V on mains, fell to
-	 * 12.5V within the first minute of the discharge and was 10.4V when
-	 * the UPS shut down; the low battery bit came on at 10.9V, 1.8 minutes
-	 * before the end. Against the share of the time that was really left:
+	 * "modo_inversor" and "bateria_baixa") holds two and a half years of my
+	 * own unit, a 3200VA model with 8 batteries that reports the voltage of
+	 * one. From April 2023 to September 2025 it has 16 complete discharges,
+	 * from the loss of mains until the computer was shut down on the low
+	 * battery flag, at 7% to 18% of load. The first ones lasted from 53 to
+	 * 103 minutes; in 2025, with the batteries aged, most lasted from 5 to
+	 * 23.
 	 *
-	 *   time left   reading   old formula   this scale
-	 *      93%       12.5V       100%           95%
-	 *      44%       12.0V       100%           71%
-	 *      19%       11.6V        97%           52%
-	 *      12%       11.3V        94%           38%
-	 *       1%       10.5V        88%            0%
+	 * The reading is about 13.6V on mains and falls to about 12.4V within
+	 * the first minute of a discharge. In all 16 the low battery flag came
+	 * on between 10.7V and 10.9V. Against the share of the time that was
+	 * really left (the median of all the discharges at each voltage):
 	 *
-	 * The old formula stayed at 100% until only 38% of the time was left.
-	 * Its mean distance from the time left, over the 1343 readings, was 47
-	 * points of percentage; with this scale it is 21.
+	 *   reading   time left   10.5V-12.6V   10.8V-13.2V
+	 *    12.4V       90%          90%           67%
+	 *    12.0V       49%          71%           50%
+	 *    11.5V       21%          48%           29%
+	 *    11.0V        5%          24%            8%
+	 *    10.8V        1%          14%            0%
+	 *
+	 * Mean distance from the time left, in points of percentage, over the
+	 * whole of the 16 discharges, and the share of the discharge time in
+	 * which each formula stayed within 20 points of it:
+	 *
+	 *   reading * 100 / nominal   48 points   20% of the time
+	 *   10.5V to 12.6V            23 points   45% of the time
+	 *   10.8V to 13.2V            14 points   74% of the time
+	 *
+	 * The 10.5V to 12.6V scale errs almost always to the high side: for 54%
+	 * of the time it shows over 20 points more than what is left, and it
+	 * only crosses 20% with 3% of the time left, together with the low
+	 * battery flag. The 10.8V to 13.2V scale crosses 20% with 10% left.
+	 *
+	 * Among straight scales, the best pair of ends was 11.0V and 13.1V, at
+	 * 13 points. I kept 10.8V and 13.2V: the difference is within the noise
+	 * and 10.8V is where the UPS itself says that the battery is low, so the
+	 * scale reaches 0% together with the flag and not before it. They are
+	 * also the two voltages that the charge formula of the manufacturer's
+	 * monitoring software points to (nhsupsserver 3.1.36, routine
+	 * UpsEstimatedChargeRemaining::handle: the reading times 100, minus
+	 * 1080, over 240).
+	 *
+	 * I also tried a curve with six points fitted to the same discharges. It
+	 * is closer with new batteries (7 points against 12) and worse with aged
+	 * ones (19 against 16), and fitted to 15 discharges and checked on the
+	 * one left out it does no better than the straight scale. Counting the
+	 * time on battery against the runtime estimate was tried too: its error
+	 * is the error of that estimate, which cannot see the batteries age,
+	 * while the voltage follows the ageing by itself.
 	 *
 	 * THE SCALE
 	 *
@@ -3737,41 +4317,50 @@ static void interpret_pkt_data(void) {
 	 * nominal voltage so that they follow vbat and the number of batteries
 	 * that the reading covers:
 	 *
-	 *   100% at nominal * BATTERY_FULL_RATIO   (12.6V for a 12V battery)
-	 *     0% at nominal * BATTERY_EMPTY_RATIO  (10.5V for a 12V battery)
+	 *   100% at nominal * CHARGE_FULL_RATIO    (13.2V for a 12V battery)
+	 *     0% at nominal * CHARGE_EMPTY_RATIO   (10.8V for a 12V battery)
 	 *
 	 *   charge = (reading - empty) * 100 / (full - empty)
 	 *
 	 * limited to the range from 0 to 100. On mains the charger keeps the
-	 * battery above 12.6V (13.6V on my unit), so a healthy unit on mains
-	 * still shows 100%. The low battery bit of my unit, at 10.9V, falls at
-	 * 19%.
+	 * battery above 13.2V (13.6V on my unit), so a healthy unit on mains
+	 * shows 100%.
 	 *
-	 * I also tried 11.0V as the empty point. It brings the mean distance
-	 * down to 13 points, but the UPS kept running for almost two minutes
-	 * below it, and the scale would read 0% before the UPS itself said
-	 * that the battery was low. 10.5V stays.
+	 * "charge_scale = 1" in ups.conf selects the previous scale instead,
+	 * with BATTERY_FULL_RATIO and BATTERY_EMPTY_RATIO as its ends.
 	 *
 	 * LIMITS
 	 *
 	 *  - It is a voltage, not a measure of the energy left; the UPS reports
-	 *    nothing better. The discharge of a lead-acid battery is not a
-	 *    straight line: the voltage holds for most of the time and drops
-	 *    fast at the end, so in the middle of a discharge the scale still
-	 *    shows more than what is left (71% with 44% of the time left, in
-	 *    the table above).
+	 *    nothing better.
+	 *
+	 *  - Right after mains is lost the voltage drops from 13.6V to about
+	 *    12.4V in less than a minute, and the charge drops with it to about
+	 *    65% while over 90% of the time is still left. The previous scale
+	 *    shows about 90% at that point.
 	 *
 	 *  - The voltage sags with the load. Under a heavy load the same
 	 *    battery reads lower, and so does the charge.
 	 *
+	 *  - Aged batteries hold the voltage and then fall fast, so with them
+	 *    the scale reads high in the middle of the discharge (16 points off
+	 *    on average, against 12 with new ones).
+	 *
 	 *  - Right after mains returns the charger pulls the voltage up, and
 	 *    the charge shows more than the battery has taken back.
 	 *
-	 *  - It was checked against one discharge, of one unit, at a light
-	 *    load.
+	 *  - It was checked against the discharges of one unit, at light loads,
+	 *    and the log ends when the computer is shut down, 60 seconds after
+	 *    the low battery flag, not when the UPS itself gives up.
 	 */
-	battery_full = (double)battery_nominal * BATTERY_FULL_RATIO;
-	battery_empty = (double)battery_nominal * BATTERY_EMPTY_RATIO;
+	if (ups.charge_scale) {
+		battery_full = (double)battery_nominal * BATTERY_FULL_RATIO;
+		battery_empty = (double)battery_nominal * BATTERY_EMPTY_RATIO;
+	}  /* end if */
+	else {
+		battery_full = (double)battery_nominal * CHARGE_FULL_RATIO;
+		battery_empty = (double)battery_nominal * CHARGE_EMPTY_RATIO;
+	}  /* end else */
 	bcharge = lrint(((double)lastpktdata.vdcmed_real - battery_empty) * 100.0 / (battery_full - battery_empty));
 	if (bcharge > 100)
 		bcharge = 100;
@@ -3779,7 +4368,20 @@ static void interpret_pkt_data(void) {
 		bcharge = 0;
 	dstate_setinfo("battery.charge", "%ld", bcharge);
 	/* The whole bank, not the reading: see "Voltage of the whole bank" above. */
-	dstate_setinfo("battery.voltage", "%0.2f", (double)bank_volts);
+	/*
+	 * The voltage of the bank needs the number of batteries, which comes
+	 * with the hardware packet or from "numbatteries". Until one of them
+	 * is known the driver used to publish the reading of one battery here
+	 * (13.60 on a 24V unit, for the first second or two after startup),
+	 * beside a battery.packs of 0 and a nominal voltage of 12V. Now the
+	 * three variables wait for the number. A unit whose hardware packet
+	 * arrived saying 0 batteries is not held back: there the reading is
+	 * published as it came, as before.
+	 */
+	if (got_hwinfo || numbat > 0)
+		dstate_setinfo("battery.voltage", "%0.2f", (double)bank_volts);
+	else
+		dstate_delinfo("battery.voltage");
 	dstate_setinfo("battery.temperature", "%ld", lrint(round(lastpktdata.tempmed_real)));
 
 	/*
@@ -3877,9 +4479,16 @@ static void interpret_pkt_data(void) {
 
 	/* FIXME: Move nominal and other static settings to upsdrv_initinfo()
 	 *  or at worst to interpret_pkt_hwinfo() */
-	dstate_setinfo("battery.packs", "%u", numbat);
-	/* Nominal voltage of what battery.voltage reports, the whole bank. */
-	dstate_setinfo("battery.voltage.nominal", "%0.2f", (double)bank_nominal);
+	if (got_hwinfo || numbat > 0) {
+		dstate_setinfo("battery.packs", "%u", numbat);
+		/* Nominal voltage of what battery.voltage reports, the whole bank. */
+		dstate_setinfo("battery.voltage.nominal", "%0.2f", (double)bank_nominal);
+	}  /* end if */
+	else {
+		/* Not known yet: see battery.voltage above. */
+		dstate_delinfo("battery.packs");
+		dstate_delinfo("battery.voltage.nominal");
+	}  /* end else */
 	/*
 	 * A capacity of 0 is "not known" (it is what the UNKNOWN device holds),
 	 * so battery.capacity and, below, battery.runtime are left out rather
@@ -3918,9 +4527,71 @@ static void interpret_pkt_data(void) {
 	}  /* end if */
 	dstate_setinfo("battery.runtime.low", "%d", 30);
 
-	if (vpower > 0 && ah > 0 && numbat > 0) {
+	/*
+	 * Battery runtime, in seconds: battery.runtime.
+	 *
+	 * It is worked out in two steps. First, how long FULL batteries last
+	 * at the present load (full_runtime), from one of two sources:
+	 *
+	 *   - the runtime calibration, when the model or ups.conf has one;
+	 *   - otherwise the battery capacity, as before.
+	 *
+	 * Then, how much of a full battery is still there (runtime_left),
+	 * which goes down while the UPS runs on battery and comes back on
+	 * mains. What is published is one times the other.
+	 *
+	 * THE RUNTIME CALIBRATION
+	 *
+	 * The estimate from the capacity, further down, needs the capacity,
+	 * the number of batteries, the inverter efficiency and the power
+	 * factor to be right, and it treats every battery as the textbook
+	 * one. A user who has timed his own unit could not tell the driver
+	 * what he measured. NUT already has a way of doing that, in the
+	 * blazer and nutdrv_qx drivers, and it is used here with the same
+	 * three settings and the same arithmetic. From
+	 * docs/man/blazer-common.txt:
+	 *
+	 *   runtimecal = value,value,value,value
+	 *   "Parameter used in the (optional) runtime estimation. This takes
+	 *    two runtimes at different loads. Typically, this uses the
+	 *    runtime at full load and the runtime at half load. For
+	 *    instance, if your UPS has a rated runtime of 240 seconds at
+	 *    full load and 720 seconds at half load, you would enter
+	 *    runtimecal = 240,100,720,50. The first load should always be
+	 *    higher than the second."
+	 *
+	 *   chargetime = value
+	 *   "The time needed to fully recharge the battery after being fully
+	 *    discharged. If not specified, the driver defaults to 43200
+	 *    seconds (12 hours)."
+	 *
+	 *   idleload = value
+	 *   "Minimum battery load used by the driver to estimate the
+	 *    runtime. If not specified, the driver defaults to 10%."
+	 *
+	 * The NHS product sheets give exactly those two points, the runtime
+	 * at full load and at half load, so a model whose sheets have them
+	 * is calibrated without any setting, and "runtimecal" in ups.conf
+	 * replaces them. A unit whose battery set was changed ("ah",
+	 * "numbatteries" or "vbat" in ups.conf) no longer matches its sheet:
+	 * it goes back to the estimate from the capacity, unless its owner
+	 * gives a "runtimecal" of his own. The arithmetic is at
+	 * runtime_calibration() and runtime_calibrated().
+	 *
+	 * The driver differs from blazer in one thing. There, with
+	 * "runtimecal" set, battery.charge also comes from the time counted
+	 * on battery. Here battery.charge stays the voltage scale: against
+	 * the 16 discharges described at the battery charge, the voltage
+	 * follows the ageing of the batteries by itself, and a count of time
+	 * cannot see it.
+	 */
+	if (runtime_calibration(&ups, &cal_exponent, &cal_nominal)) {
+		full_runtime = runtime_calibrated(&ups, cal_exponent, cal_nominal, lastpktdata.potrms);
+	}  /* end if */
+	else if (vpower > 0 && ah > 0 && numbat > 0) {
 		/*
-		 * Battery runtime, in seconds.
+		 * Runtime of full batteries from their capacity, in seconds. It is
+		 * what the driver uses when there is no runtime calibration.
 		 *
 		 * WHAT WAS HERE
 		 *
@@ -4021,7 +4692,7 @@ static void interpret_pkt_data(void) {
 		 *     0.03346 ^ 1.25             = 0.01431
 		 *     20h x 0.01431              = 0.286h, or 17.2 minutes
 		 *
-		 * battery.runtime is published as 1030, in seconds. The sheet
+		 * That is 1030 seconds for full batteries. The sheet
 		 * declares 17 minutes; the old formula, 58Ah / (1560W / 12V), gave
 		 * 26.8 minutes.
 		 *
@@ -4040,18 +4711,17 @@ static void interpret_pkt_data(void) {
 		 *  - It is an estimate. Against the sheets, most results are within
 		 *    one third; the sheets themselves describe new batteries.
 		 *
-		 *  - It does not count down while the batteries discharge: it answers
-		 *    "how long would full batteries last at this load" and changes
-		 *    only when the load changes. The old formula had the same limit.
-		 *    The UPS still raises its own low battery flag, which is what sets
-		 *    LB.
+		 *  - By itself it answers "how long would full batteries last at this
+		 *    load". How much of that is left during a discharge is worked
+		 *    out after this branch, at "WHAT IS LEFT OF THE RUNTIME". The UPS
+		 *    still raises its own low battery flag, which is what sets LB.
 		 *
 		 *  - It is only as good as the capacity and the number of batteries
 		 *    it is given.
 		 *
 		 *  - Without a load reading (0W), a capacity or a battery count
 		 *    there is nothing to calculate from, and battery.runtime is
-		 *    removed: see the else branch below.
+		 *    removed: see where it is published, below.
 		 */
 		inverter_eff = ups.eff_inverter > 0 ? ups.eff_inverter : (float)RUNTIME_ASSUMED_INVERTER_EFF;
 
@@ -4063,13 +4733,60 @@ static void interpret_pkt_data(void) {
 		if ((double)actual_current > (double)ah / RUNTIME_RATING_HOURS)
 			runtime_hours = RUNTIME_RATING_HOURS * pow((double)ah / ((double)actual_current * RUNTIME_RATING_HOURS), RUNTIME_PEUKERT_EXPONENT);
 
-		autonomy_secs = (unsigned int)lrint(runtime_hours * 3600.0);
+		full_runtime = runtime_hours * 3600.0;
+	}  /* end else if */
+
+	/*
+	 * WHAT IS LEFT OF THE RUNTIME
+	 *
+	 * Until here battery.runtime was the runtime of full batteries, and
+	 * that is what the driver published: it did not go down during a
+	 * discharge, it only followed the load. In the test of a real unit
+	 * (model 98, on PR #3836) it even went up in the middle of a
+	 * discharge, from 17249s to 18456s, when the load fell from 19% to
+	 * 18%.
+	 *
+	 * runtime_left is the share of a full battery that is still there,
+	 * from 0 to 1, kept from one packet to the next:
+	 *
+	 *  - The first packet sets it from battery.charge, the only thing
+	 *    known at that point about the state of the batteries. On mains
+	 *    with the charger at its float voltage that is 1.
+	 *
+	 *  - On battery it goes down by the time elapsed over full_runtime,
+	 *    so it reaches 0 after full_runtime seconds at a steady load,
+	 *    and it goes down faster when the load grows.
+	 *
+	 *  - On mains it goes up by the time elapsed over "chargetime", so
+	 *    an empty battery is taken as full again after that time.
+	 *
+	 * It is the method of the blazer driver (there the same quantity is
+	 * kept in seconds at full load), and the arithmetic is at
+	 * runtime_balance(). It is kept apart from battery.charge on
+	 * purpose, as said above.
+	 *
+	 * Limits: it is a count of time, so it knows nothing about how the
+	 * batteries have aged, and a driver that is restarted in the middle
+	 * of a discharge starts again from what battery.charge says at that
+	 * moment. The UPS still raises its own low battery flag, which is
+	 * what sets LB.
+	 */
+	time(&now);
+	if (runtime_left < 0)
+		runtime_left = (double)bcharge / 100.0;
+	else
+		runtime_left = runtime_balance(runtime_left, difftime(now, runtime_lastpoll), lastpktdata.s_battery_mode ? 1 : 0, full_runtime, ups.chargetime);
+	runtime_lastpoll = now;
+
+	if (full_runtime > 0) {
+		autonomy_secs = (unsigned int)lrint(runtime_left * full_runtime);
 
 		dstate_setinfo("battery.runtime", "%u", autonomy_secs);
 	} else {
 		/*
-		 * Nothing to calculate from: the UPS reports no load (0W), or
-		 * the capacity or the number of batteries is not known.
+		 * Nothing to calculate from: there is no runtime calibration, and
+		 * the UPS reports no load (0W), or the capacity or the number of
+		 * batteries is not known.
 		 *
 		 * This case used to skip the calculation and nothing else, so
 		 * battery.runtime kept the value of the last packet that had a
@@ -4154,7 +4871,7 @@ static void interpret_pkt_data(void) {
 		 *  - perc_output was the first divided by the second, that is, the
 		 *    battery charge by the formula that battery.charge no longer
 		 *    uses. With the diagnostics on it showed 91% beside a
-		 *    battery.charge of 19% for the same reading.
+		 *    battery.charge of 4% for the same reading.
 		 *
 		 *  - timeremain was declared, printed and published but never
 		 *    calculated: it was always 0. The estimate is battery.runtime.
@@ -4338,7 +5055,15 @@ void upsdrv_updateinfo(void) {
 		 * Send six times the extended initialization string,
 		 * but, on fail, try randomly send extended, normal or compatibility.
 		 */
-		if (send_extended < 6) {
+		if (init_packet == 1) {
+			upsdebugx(4, "Sending short initialization packet (init_packet = 1)");
+			bwritten = write_serial_int(serial_fd, string_initialization_short, 9);
+		}  /* end if */
+		else if (init_packet == 2) {
+			upsdebugx(4, "Sending long initialization packet (init_packet = 2)");
+			bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
+		}  /* end else if */
+		else if (send_extended < 6) {
 			upsdebugx(4, "Sending extended initialization packet. Try %u", send_extended+1);
 			bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
 			send_extended++;
@@ -4563,6 +5288,13 @@ void upsdrv_makevartable(void) {
 	addvar(VAR_VALUE, "read16_vout", "Output voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
 	addvar(VAR_VALUE, "read16_temp", "Temperature bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
 	addvar(VAR_VALUE, "read16_vbat", "Battery voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number in tenths of a volt");
+	addvar(VAR_VALUE, "charge_scale", "Scale of battery.charge for a 12V battery: 0 from 10.8V to 13.2V (default), 1 from 10.5V to 12.6V");
+	addvar(VAR_VALUE, "init_packet", "Hardware packet requested from the UPS: 0 long, short and compatibility (default), 1 short only, 2 long only");
+	addvar(VAR_VALUE, "invert_bits_data", "Flags of the status byte of the data packet: 1 flag n is bit n (default), 0 flag n is bit 7 - n");
+	addvar(VAR_VALUE, "invert_bits_hwinfo", "Flags of the configuration and status bytes of the hardware packet: 1 flag n is bit n (default), 0 flag n is bit 7 - n");
+	addvar(VAR_VALUE, "runtimecal", "Runtime calibration: runtime in s and load in % at a higher load, then at a lower one, as in 240,100,720,50 (replaces the built-in model values)");
+	addvar(VAR_VALUE, "chargetime", "Time to recharge an empty battery, in s, used with the runtime calibration (default 43200)");
+	addvar(VAR_VALUE, "idleload", "Smallest effective load, in %, used by the runtime calibration (default 10)");
 
 	snprintf(help, sizeof(help), "Load, in percent, above which the UPS is reported as overloaded (OVER); 0 turns the check off. Default is %d", DEFAULTOVERLOAD);
 	addvar(VAR_VALUE, "overload_perc", help);
