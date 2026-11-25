@@ -1088,6 +1088,12 @@ https://github.com/networkupstools/nut/milestone/13
       names not exposed with dynamic linking metadata (e.g. some Mozilla NSS
       dependencies were not previously discovered and bundled). [issue #3420,
       PRs #3429, #3432]
+    * Reduced the CodeQL matrix in GHA jobs to cover just the independently
+      different code paths with different compilers, running about 3x fewer
+      builds for a faster turnaround. Fixed CodeQL results analysis, so that
+      interleaved successes and failures in different matrix cells do not
+      cancel out. Also revised CodeQL Python check to detect and inspect
+      non-standard named script sources too (templates, etc.) [PR #3869]
     * Updated a NUT CI farm worker to FreeBSD 15 and updated the recipes and
       documentation according to problems that were found along the way. [#3453]
     * Various recipe portability fixes for AIX, NetBSD and OmniOS at least.
