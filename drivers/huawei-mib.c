@@ -210,6 +210,17 @@ static snmp_info_t huawei_mib[] = {
 
 	snmp_info_default("output.frequency", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.7.1", NULL, SU_FLAG_OK, NULL),
 
+	/* The following 6 lines are in fact tricky. Several HUAWEI-UPS-MIB
+	 * resources found online suggest that the readings are integers
+	 * representing kW or kVA respectively. Practical data dumps indicate
+	 * they are in fact tenths of kW/kVA, e.g. `22` meaning `2.2 (kW)`
+	 * and maths with Volts, Amps and factor readings confirm that.
+	 * Until MIB 0.40 the multiplier below was `0.1` (and deployments
+	 * had to multiply the result by 1000 separately), fixed now to `100`
+	 * to return base units per NUT standards, e.g. `2200 (W)` for the
+	 * example above.
+	 * For more details see https://github.com/networkupstools/nut/pull/3863#issuecomment-7169436618
+	 */
 	snmp_info_default("output.L1.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.8.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
 	snmp_info_default("output.L2.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.9.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
 	snmp_info_default("output.L3.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.10.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
