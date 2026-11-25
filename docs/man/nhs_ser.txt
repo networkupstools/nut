@@ -191,6 +191,17 @@ Margin below the high transfer point for `input.voltage.high.warning`
 Margin below the high transfer point for `input.voltage.high.critical`
 (default: 2.00).
 
+*vin_warn_factor*='num'::
+How many times the critical margin the warning margin is, on a side (low
+or high) whose warning and critical percentages are the same, as they are
+by default (default: 2; values from 1 to 10, decimals accepted). It keeps
+the two thresholds of a side apart: with the default margins of 2% the
+critical threshold is 2% away from the transfer point and the warning one
+4%. For a low transfer point of 170V that is 173.40V critical and 176.80V
+warning; with *vin_warn_factor* = 3 the warning moves to 180.20V. On a
+side where you set two different percentages this setting is not used:
+each threshold then has exactly the margin you wrote for it.
+
 *numbatteries*='num'::
 Number of batteries (a positive integer). It replaces the count reported
 by the UPS, which is what to use when the battery set was changed from
@@ -237,6 +248,29 @@ Smallest effective load, in percent, used by the runtime calibration
 (default: 10), so that the estimate does not grow without limit when the
 load is close to zero. Only used when there is a runtime calibration.
 
+*battery_rating_hours*='num'::
+*peukert_exponent*='num'::
+The two figures of the runtime that is estimated from the battery capacity.
+They are only used when there is no runtime calibration: a model without
+the two runtimes in its product sheet, or a battery set that you declared
+with *ah*, *numbatteries* or *vbat* without giving *runtimecal*.
++
+*battery_rating_hours* is the discharge time, in hours, for which the
+capacity printed on the battery is valid (default: 20; values from 1 to
+100, decimals accepted). A lead-acid battery marked 58Ah delivers 2.9A for
+20 hours, not 58A for one hour. Use 10 for batteries rated over 10 hours.
++
+*peukert_exponent* tells how fast the usable capacity shrinks as the
+current grows (default: 1.25; values from 1 to 2). It only enters the
+estimate above the rated current, which is the capacity divided by
+*battery_rating_hours*; below that the runtime is simply the capacity
+divided by the current. With 1 the capacity does not shrink at all, and the
+estimate comes out too long at high loads; 1.25 is the value that best
+reproduces the runtimes of the NHS product sheets. For a unit with two
+58Ah batteries at full load (86.67A through each battery) the estimate is
+17.2 minutes with 1.25, against 17 minutes in the sheet, and about 40
+minutes with 1.
+
 *overload_perc*='num'::
 Load, in percent of the nominal power, above which the driver reports the
 UPS as overloaded (`OVER` in `ups.status`). The UPS has no flag of its own
@@ -271,6 +305,14 @@ Temperature.
 
 *read16_vbat*='0|1'::
 Battery voltage, which the UPS sends in tenths of a volt.
+
+*charger_unit_ma*='num'::
+Charger current, in mA, that each unit of the charger reading sent by the
+UPS stands for (default: 30; values from 1 to 1000). The manufacturer's
+protocol document gives 25 units as 750mA. The result is the charger
+current shown among the `experimental.nhs.data` variables. Change it only
+if you measured the charger current of your unit and it does not match
+what the driver shows.
 
 *vbat*='num'::
 Nominal voltage of ONE battery, in V (default: 12.00). Every NHS model
@@ -317,6 +359,42 @@ battery, the usual end-of-discharge voltage of a lead-acid battery, to
 discharges that scale stayed within 20 points of the time left for 45% of
 the discharge time and read too high for most of the rest; it is kept for
 installations whose alerts were tuned to it.
++
+The two ends of the scale in use are published as `battery.voltage.high`
+(the voltage that counts as 100%) and `battery.voltage.low` (the one that
+counts as 0%), as voltages of the whole bank, like `battery.voltage`: with
+two 12V batteries in series and the default scale they are 26.40 and
+21.60.
+
+Three values are changed with the standard prefixes of linkman:ups.conf[5]
+instead of settings of this driver, because NUT already has a way to set
+them:
+
+*override.battery.voltage.high*='num'::
+*override.battery.voltage.low*='num'::
+Your own ends for the `battery.charge` scale, in V, as voltages of the
+whole bank. These are the same two variables that linkman:blazer_ser[8]
+and linkman:nutdrv_qx[8] use for their charge estimate. One of them may be
+given without the other. For a bank of two 12V batteries whose charger
+holds 27.2V and whose UPS gives up at 21V:
++
+    override.battery.voltage.high = 27.2
+    override.battery.voltage.low = 21.0
++
+If the two ends that result are not in order (the high one above the low
+one), the scale of the driver is used. The `default.` prefix has no effect
+on these two, because the driver always has a value of its own for them.
+
+*override.battery.runtime.low*='num'::
+Value published as `battery.runtime.low`, in seconds (the driver publishes
+30). The driver only publishes this value: the low battery status comes
+from the flag that the UPS itself raises, not from the runtime.
+
+*default.input.transfer.low*='num'::
+Low transfer voltage, in V, used to tell mains from no mains during the
+first moments after startup, while the hardware information packet, which
+brings the real figure of the unit, has not arrived yet (the driver uses
+96). The figure of the UPS replaces it as soon as it arrives.
 
 *overridemodel*='string'::
 Replace the model name published as `device.model` and `ups.model`.
@@ -342,18 +420,94 @@ unit fed from 220V mains with a permanent `ALARM` status. Working at 220V
 is not a fault and these alarms are no longer raised. The voltages are
 reported in `input.voltage.nominal` and `output.voltage.nominal`.
 
-*init_packet*='0|1|2'::
+*init_packet*='0|1|2|3'::
 Which request for the hardware information packet the driver sends to the
 UPS. That packet tells the model, the firmware version, the number of
 batteries and the voltage limits, and it comes in two sizes: a short one,
-and a long one that also carries the serial number. With 0, the default,
-the driver does what it has always done: at startup it sends the long
-request, the short one and the compatibility one in a row, and while it
-waits for an answer it repeats the long request and then tries one of the
-three at random. With 1 it only sends the short request, and with 2 only
-the long one. Use 2 if `device.serial` shows up in some runs and as
-`----------------` in others. It is not a cure for every case: some units
-send the serial number as dashes whatever the packet.
+and a long one that also carries the serial number. There are three
+requests: the compatibility one, for older units, the short one and the
+long one. With 0, the default, at startup the driver sends the three in a
+row, compatibility, short and long, each followed by the pause of
+*command_delay*; the long one goes last so that its answer, the one with
+the serial number, is the one the driver keeps. While it waits for an
+answer it repeats the long request and then tries one of the three at
+random. With 1 it only sends the compatibility request, with 2 only the
+short one, and with 3 only the long one. Use 3 if `device.serial` shows up
+in some runs and as `----------------` in others. It is not a cure for
+every case: some units send the serial number as dashes whatever the
+packet.
++
+Before any of these requests the driver tells the UPS to stop sending
+packets, with two stop requests, each followed by the pause of
+*command_delay*, and discards what had already arrived, so that the answer
+does not get mixed with a stream left running by a previous run. It sends
+the same two stop requests when it exits. See *stop_packet*.
+
+NOTE: Earlier versions sent the long request first, then the short and the
+compatibility ones, 250 ms apart and without stopping the UPS first. In the
+development versions that already had this setting, 1 meant the short
+request and 2 the long one.
+
+*stop_packet*='0|1'::
+Whether the driver sends the stop requests described under *init_packet*.
+With 1, the default, they are sent before the start sequence and when the
+driver exits. With 0 they are never sent, and the driver starts and ends as
+earlier versions did. Set it to 0 only if your unit stops answering, or
+answers wrongly, with the default, and please report it.
+
+*command_delay*='num'::
+Pause, in milliseconds, that follows each request of the start sequence and
+each stop request (see *init_packet*). Values from 0 to 2000 are accepted
+(default: 1000). It gives the UPS the time to answer one request before the
+next one is sent. At 2400 baud the long answer alone takes about 210 ms, so
+values much smaller than the default may bring back a serial number that
+comes and goes. The limit of 2000 exists because the driver waits this long
+twice when it exits, and `upsdrvctl stop` gives a driver 5 seconds to end.
+
+*silence_timeout*='num'::
+Time, in seconds, without any packet from the UPS after which the driver
+gives its data as stale and asks for the hardware information packet again
+(default: 10). Values from 0 to 3600 are accepted; 0 turns the check off.
+The request is repeated, in the mode chosen by *init_packet*, until the
+UPS sends packets again. Keep it well above the interval between two
+packets of your unit and above `pollinterval`.
+
+NOTE: Earlier versions had no such check. When the UPS stopped sending
+while the port stayed open, for example with a loose cable on a real serial
+port, the last values read remained published as current with no time
+limit.
+
+*init_long_tries*='num'::
+*init_retry_delay*='num'::
+*init_retry_step*='num'::
+*init_retry_max*='num'::
+How the request for the hardware information packet is repeated while that
+packet has not arrived, or while the UPS is silent (see *silence_timeout*).
+Earlier versions had these four numbers fixed in the code; the defaults are
+those numbers.
++
+*init_long_tries* is how many times the long request is repeated before
+the driver starts picking one of the three requests at random (default: 6;
+values from 0 to 100). It only matters with *init_packet* = 0; with 0 here
+the driver goes straight to the random pick.
++
+*init_retry_delay* is the wait, in milliseconds, after a repeated request,
+for its answer to arrive (default: 2000). *init_retry_step* is how much
+that wait grows after each repetition (default: 100; 0 keeps it constant),
+and *init_retry_max* is the longest it may grow to (default: 6000). The
+three accept values from 0 to 10000, and *init_retry_max* cannot be smaller
+than *init_retry_delay*. With the defaults the waits are 2.1s, 2.2s, 2.3s
+and so on, up to about 6s. Shorter waits make the driver find the UPS
+sooner after a start or a silence, at the price of asking a slow unit
+again before it had the time to answer.
+
+*reopen_tries*='num'::
+How many times, in one poll, the driver tries to reopen the port after a
+read or write error before it gives the data as stale (default: 3; values
+from 1 to 100). Between two attempts it waits as it does between two
+repeated requests (see *init_retry_delay*). It keeps trying at the next
+polls either way; this only sets how long one poll insists before saying
+so.
 
 *invert_bits_data*='0|1'::
 *invert_bits_hwinfo*='0|1'::

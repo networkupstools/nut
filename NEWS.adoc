@@ -450,10 +450,50 @@ https://github.com/networkupstools/nut/milestone/13
       battery. The driver only set `OB`, and the NUT core added and removed
       `DISCHRG` by itself as `battery.charge` moved, so on a real unit the
       status alternated between `OB` and `OB DISCHRG` every few seconds.
+    * Reworked how the driver starts talking to the UPS, after the sequence
+      that the Python monitor this driver was ported from has always used.
+      It now tells the UPS to stop sending packets (two stop requests) and
+      discards what had already arrived before it asks for the hardware
+      information packet, and it sends the compatibility, the short and the
+      long request in that order, each followed by a pause, instead of
+      long, short and compatibility 250 ms apart. With the long request
+      last, its answer, the one with the serial number, is the one the
+      driver keeps; before, the serial number could show up in one run and
+      as dashes in the next. The stop requests are also sent when the
+      driver exits. The new `command_delay` setting is that pause, in
+      milliseconds (default 1000), named after the setting of the
+      `tripplitesu` driver, and the new `stop_packet` setting turns the
+      stop requests off (`stop_packet = 0`) for a unit that does not take
+      them well.
     * Added the `init_packet` setting, to choose which request for the
-      hardware information packet is sent to the UPS: all of them as
-      before (0, the default), only the short one (1) or only the long one
-      (2), which is the one answered with the serial number.
+      hardware information packet is sent to the UPS: the three of them
+      (0, the default), only the compatibility one (1), only the short one
+      (2) or only the long one (3), which is the one answered with the
+      serial number.
+    * The driver now notices a UPS that stops sending packets while the
+      port stays open, for example with a loose cable on a real serial
+      port. After `silence_timeout` seconds without a packet (new setting,
+      default 10, 0 to turn it off) the data are given as stale and the
+      hardware information packet is requested again until the UPS
+      answers. Before, the last values read stayed published as current
+      with no time limit.
+    * Numbers that were fixed in the code are now settings, each with the
+      old number as its default: `init_long_tries`, `init_retry_delay`,
+      `init_retry_step` and `init_retry_max` for the repetition of the
+      request for the hardware information packet (6 long requests, a wait
+      of 2s growing by 0.1s up to 6s), `reopen_tries` for the attempts to
+      reopen the port (3), `vin_warn_factor` for the doubling of the
+      warning margin of the input voltage thresholds (2),
+      `battery_rating_hours` and `peukert_exponent` for the runtime
+      estimated from the battery capacity (20 and 1.25) and
+      `charger_unit_ma` for the scale of the charger current (30).
+    * The two ends of the `battery.charge` scale are now published as
+      `battery.voltage.high` and `battery.voltage.low`, as voltages of the
+      whole bank, and `override.battery.voltage.high` and
+      `override.battery.voltage.low` in `ups.conf` replace them with your
+      own, the way the `blazer` and `nutdrv_qx` drivers take theirs. The
+      low transfer voltage assumed before the hardware information packet
+      arrives can be given with `default.input.transfer.low`.
     * Fixed the flags of the hardware information packet (220V input, 220V
       output, buzzer and others), which were read from the wrong end of
       their byte. A unit fed from 220V mains was taken as a 120V one and

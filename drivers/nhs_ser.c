@@ -40,7 +40,7 @@
 #include <math.h>
 
 #define DRIVER_NAME     "NHS Nobreak Drivers"
-#define DRIVER_VERSION  "0.07"
+#define DRIVER_VERSION  "0.08"
 #define MANUFACTURER    "NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD     2400
@@ -60,8 +60,40 @@
 #define DEFAULTREAD16   0       /* two-byte fields read as "first.second" (1: as 16 bits) */
 #define DEFAULTOVERLOAD 105     /* load, in %, above which the UPS is overloaded */
 #define DEFAULTCHARGESCALE 0    /* battery.charge scale: 0 from 10.8V to 13.2V, 1 from 10.5V to 12.6V */
-#define DEFAULTINITPACKET  0    /* hardware packet requested: 0 long, short and compatibility, 1 short, 2 long */
+#define DEFAULTINITPACKET  0    /* hardware packet requested: 0 compatibility, short and long in a row, 1 compatibility, 2 short, 3 long */
+#define DEFAULTSTOPPACKET  1    /* stop requests before the start sequence and on exit: 1 sent, 0 never sent */
 #define DEFAULTINVERTBITS  1    /* flags packed in a byte: 1 flag n is bit n (inverted), 0 flag n is bit 7 - n */
+#define DEFAULTWARNFACTOR  2.0  /* warning margin of an input threshold, in times the critical one, when both percentages are equal */
+#define DEFAULTCHARGERMA   30   /* charger current, in mA, of each unit of the reading: the protocol says 25 units = 750mA */
+
+/*
+ * Two values that are published, or used, when the UPS has nothing to say
+ * about them. Neither is a driver setting of its own, because NUT already
+ * has a way to set them in ups.conf (docs/man/ups.conf.txt):
+ *
+ *   "override.<variable>"  "Set a value for <value> that overrides any
+ *                          value that may be read from the UPS."
+ *   "default.<variable>"   "Set a default value for <variable> which is
+ *                          used in case the UPS doesn't provide a value,
+ *                          but will be overwritten if a value is available
+ *                          from the UPS."
+ *
+ * DEFAULTRUNTIMELOW   battery.runtime.low, in seconds: the remaining
+ *                     runtime at which the battery counts as low. The
+ *                     protocol has no such figure, the driver always
+ *                     published 30, and only publishes it: LB comes from
+ *                     the low battery flag of the UPS. To publish another
+ *                     value: "override.battery.runtime.low = 60".
+ *
+ * DEFAULTTRANSFERLOW  low transfer voltage, in V, used to tell mains from
+ *                     no mains while the hardware packet, which brings the
+ *                     real figure, has not arrived yet. It was the bare
+ *                     number 96. To use another one for that short time:
+ *                     "default.input.transfer.low = 170"; the figure of the
+ *                     UPS replaces it as soon as it arrives.
+ */
+#define DEFAULTRUNTIMELOW  30
+#define DEFAULTTRANSFERLOW 96
 
 /*
  * Resting voltage of a fully charged lead-acid battery, as a ratio of its
@@ -102,14 +134,19 @@
 /*
  * Discharge time, in hours, at which the capacity printed on a lead-acid
  * battery is valid: "58Ah" means 2.9A for 20 hours (the C20 rating), not 58A
- * for one hour.
+ * for one hour. It is the value of the UNKNOWN device, which every model
+ * keeps; "battery_rating_hours" in ups.conf replaces it, for batteries whose
+ * capacity is rated over another time (10 hours, for example).
  */
 #define RUNTIME_RATING_HOURS            20.0
 
 /*
  * Peukert exponent: how fast the usable capacity shrinks as the discharge
  * current grows. 1.0 would mean no shrinking at all. 1.25 is the value that
- * best reproduces the runtimes NHS declares in its product sheets.
+ * best reproduces the runtimes NHS declares in its product sheets. It is the
+ * value of the UNKNOWN device, which every model keeps; "peukert_exponent"
+ * in ups.conf replaces it, for batteries of another kind (a lithium battery
+ * is close to 1.05).
  */
 #define RUNTIME_PEUKERT_EXPONENT        1.25
 
@@ -234,8 +271,79 @@
 #define MAX_SERIAL_READ_TIMEOUT_MS      60000
 #define MAX_SERIAL_SEND_PACE_US         999999
 
-/* comms revival attempts before declaring them stale */
-#define MAXTRIES    3
+/*
+ * Pause, in milliseconds, that follows each request of the start sequence and
+ * each stop request ("command_delay" in ups.conf). The name and the unit are
+ * the ones the tripplitesu driver already uses for the delay it applies
+ * before each command (docs/man/tripplitesu.txt, "command_delay"), so that
+ * NUT has one name for this kind of setting.
+ *
+ * The default is the pause my Python monitor of these UPSes uses between its
+ * requests (NHS-SENOIDAL, temposleepread = 1 second).
+ *
+ * The maximum comes from NUT itself, not from the UPS: when the driver is
+ * told to stop, it sends two stop requests and waits this long after each of
+ * them, and "upsdrvctl stop" waits 5 seconds for the driver to end before it
+ * kills it (stop_driver() in drivers/upsdrvctl.c: five checks one second
+ * apart, then SIGKILL). Two pauses of 2000 ms take 4 seconds, which is the
+ * longest that still fits.
+ */
+#define DEFAULT_COMMAND_DELAY_MS        1000
+#define MAX_COMMAND_DELAY_MS            2000
+
+/*
+ * Time, in seconds, without any packet from the UPS after which the driver
+ * gives its data as stale and asks for the hardware information again
+ * ("silence_timeout" in ups.conf; 0 turns the check off). The default is the
+ * "timeout" of my Python monitor. The maximum is one hour: beyond that the
+ * setting would no longer protect anyone, and 0 is the way to turn it off.
+ */
+#define DEFAULT_SILENCE_TIMEOUT         10
+#define MAX_SILENCE_TIMEOUT             3600
+
+/*
+ * Attempts to reopen the port, in one poll, before the data are given as
+ * stale ("reopen_tries" in ups.conf). This was the fixed MAXTRIES. Between
+ * two attempts the driver waits as it does between two repeated requests
+ * for the hardware packet (checktime, which starts at "init_retry_delay").
+ */
+#define DEFAULT_REOPEN_TRIES            3
+#define MAX_REOPEN_TRIES                100
+
+/*
+ * Repetition of the request for the hardware packet, while that packet is
+ * missing or the UPS is silent. These four numbers were written straight
+ * into the code; each one is now a setting of ups.conf with the old number
+ * as its default.
+ *
+ *   "init_long_tries"   how many times the long request is repeated before
+ *                       the driver starts picking one of the three requests
+ *                       at random (only with init_packet = 0). It was 6.
+ *
+ *   "init_retry_delay"  wait, in milliseconds, after a repeated request,
+ *                       for its answer to arrive. It was 2000.
+ *
+ *   "init_retry_step"   how much that wait grows after each repetition, in
+ *                       milliseconds, so that a UPS that is slow to answer
+ *                       is given more time at each attempt. It was 100.
+ *
+ *   "init_retry_max"    the longest the wait may grow to, in milliseconds.
+ *                       It was 6000.
+ *
+ * The limit of the three waits is 10 seconds. The NUT developer
+ * documentation warns about long waits inside upsdrv_updateinfo()
+ * (docs/new-drivers.txt: "Don't spent more than a couple of seconds in this
+ * function. Typically five (5) seconds is the maximum time allowed before
+ * you risk that the server declares the driver stale"). The old 6000 already
+ * went past that figure; it does no harm here because these waits only
+ * happen while the driver has no fresh data to give anyway.
+ */
+#define DEFAULT_INIT_LONG_TRIES         6
+#define MAX_INIT_LONG_TRIES             100
+#define DEFAULT_INIT_RETRY_DELAY_MS     2000
+#define DEFAULT_INIT_RETRY_STEP_MS      100
+#define DEFAULT_INIT_RETRY_MAX_MS       6000
+#define MAX_INIT_RETRY_MS               10000
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -595,6 +703,36 @@ typedef struct {
  *                ups.conf: vin_low_warn_perc, vin_low_crit_perc,
  *                vin_high_warn_perc and vin_high_crit_perc, one for each
  *                threshold. UNKNOWN device: DEFAULTPERC.
+ *
+ * warn_factor    How many times the critical margin the warning margin of
+ *                an input threshold is, when the warning and the critical
+ *                percentage of that side are the same, which is the default
+ *                state. It keeps the two thresholds apart: with the default
+ *                margin of 2% and a factor of 2, the critical threshold is
+ *                2% away from the transfer point and the warning one 4%.
+ *                It is not used on a side whose two percentages differ:
+ *                there each threshold has the margin written for it. It was
+ *                the bare number 2 in the code. ups.conf: vin_warn_factor.
+ *                UNKNOWN device: DEFAULTWARNFACTOR.
+ *
+ * rating_hours   Discharge time, in hours, for which the capacity printed
+ *                on the batteries is valid. Used only by the runtime
+ *                estimated from the battery capacity, that is, when the
+ *                model has no runtime calibration. ups.conf:
+ *                battery_rating_hours. UNKNOWN device: RUNTIME_RATING_HOURS.
+ *
+ * peukert        Peukert exponent of the batteries: how fast the usable
+ *                capacity shrinks as the discharge current grows. Used with
+ *                rating_hours, and only above the rated current (the
+ *                capacity divided by rating_hours). ups.conf:
+ *                peukert_exponent. UNKNOWN device: RUNTIME_PEUKERT_EXPONENT.
+ *
+ * charger_ma     Charger current, in mA, that each unit of the charger
+ *                reading of the data packet stands for. The protocol
+ *                document gives "25 units = 750mA", that is 30. Published
+ *                through experimental.nhs.data.icarregrms_real. It is here
+ *                for a unit whose charger is scaled differently.
+ *                ups.conf: charger_unit_ma. UNKNOWN device: DEFAULTCHARGERMA.
  */
 typedef struct {
 	unsigned int  upscode;        /* model code reported by the UPS */
@@ -627,12 +765,31 @@ typedef struct {
 	float         idleload;       /* smallest effective load, % */
 	unsigned int  overload_perc;  /* load % above which OVER is set */
 	float         vin_perc;       /* % margin for the input thresholds */
+	float         warn_factor;    /* warning margin, in times the critical one */
+	float         rating_hours;   /* h for which the battery Ah is valid */
+	float         peukert;        /* Peukert exponent of the batteries */
+	unsigned int  charger_ma;     /* mA of each unit of the charger reading */
 } upsinfo;
 
 
 static const unsigned int  string_initialization_long[9] = {0xFF, 0x09, 0x53, 0x83, 0x00, 0x00, 0x00, 0xDF, 0xFE};
 static const unsigned int  string_initialization_short[9] = {0xFF, 0x09, 0x53, 0x03, 0x00, 0x00, 0x00, 0x5F, 0xFE};
 static const unsigned int  string_initialization_comptmode[5] = {0xFF, 0x05, 0x01, 0x06, 0xFE};
+
+/*
+ * Stop requests: they tell the UPS to stop sending packets. They are the
+ * short and the long request above with the "start" bit of the fourth byte
+ * cleared (0x03 becomes 0x01 and 0x83 becomes 0x81); the eighth byte is the
+ * checksum, the sum of the second to the seventh byte (0x09 + 0x53 + 0x01 =
+ * 0x5D and 0x09 + 0x53 + 0x81 = 0xDD).
+ *
+ * The driver never sent them. My Python monitor of these UPSes always did,
+ * before asking for anything and again when it ends ("Finalizacao" and
+ * "Finalizacao Extendida" in its enviapacote()), and the C port left them
+ * out. See the start sequence in upsdrv_initinfo() and upsdrv_cleanup().
+ */
+static const unsigned int  string_stop_short[9] = {0xFF, 0x09, 0x53, 0x01, 0x00, 0x00, 0x00, 0x5D, 0xFE};
+static const unsigned int  string_stop_long[9] = {0xFF, 0x09, 0x53, 0x81, 0x00, 0x00, 0x00, 0xDD, 0xFE};
 
 static int  debug_pkt_data = 0, debug_pkt_hwinfo = 0, debug_pkt_raw = 0;
 
@@ -642,28 +799,99 @@ static size_t         datapacket_index = 0;
 static unsigned int   datapacketsize = 0;
 static bool           datapacketstart = false;
 static time_t         lastdp = 0;
-static unsigned int   checktime = 2000000;      /* 2 seconds */
-static unsigned int   max_checktime = 6000000;  /* max wait time: 6 seconds */
+/*
+ * Repetition of the request for the hardware packet; see
+ * DEFAULT_INIT_LONG_TRIES. The four settings are kept as read from ups.conf
+ * (the waits in milliseconds). checktime is the wait in use at the moment,
+ * in microseconds because that is what usleep() takes: it starts at
+ * "init_retry_delay", grows by "init_retry_step" after each repetition up to
+ * "init_retry_max", and goes back to the start after a reconnection or when
+ * a silence is noticed. send_extended counts the long requests already sent
+ * in the present round.
+ */
+static unsigned int   init_long_tries = DEFAULT_INIT_LONG_TRIES;
+static unsigned int   init_retry_delay_ms = DEFAULT_INIT_RETRY_DELAY_MS;
+static unsigned int   init_retry_step_ms = DEFAULT_INIT_RETRY_STEP_MS;
+static unsigned int   init_retry_max_ms = DEFAULT_INIT_RETRY_MAX_MS;
+static unsigned int   checktime = DEFAULT_INIT_RETRY_DELAY_MS * 1000;
 static unsigned int   send_extended = 0;
+
+/* Attempts to reopen the port in one poll, from "reopen_tries" in ups.conf;
+ * see DEFAULT_REOPEN_TRIES. */
+static unsigned int   reopen_tries = DEFAULT_REOPEN_TRIES;
 
 /*
  * Which request for the hardware packet the driver sends to the UPS, from
- * "init_packet" in ups.conf:
+ * "init_packet" in ups.conf. The numbers are the ones of
+ * modo_envio_inicializacao in my Python monitor:
  *
- *   0  what the driver has always done: at startup the long request, the
- *      short one and the compatibility one, in a row; while polling, six
- *      times the long one and then one of the three at random;
- *   1  only the short request;
- *   2  only the long request.
+ *   0  the three requests in a row at startup, compatibility, short and
+ *      long, each followed by the pause of "command_delay"; while the
+ *      hardware packet is missing, six times the long one and then one of
+ *      the three at random;
+ *   1  only the compatibility request;
+ *   2  only the short request;
+ *   3  only the long request.
+ *
+ * WHAT WAS HERE
+ *
+ * With 0 the driver sent the long request, the short one and the
+ * compatibility one, in that order and 250 ms apart. The settings 1 and 2
+ * meant "short only" and "long only", and there was no way to send only the
+ * compatibility request.
+ *
+ * WHY IT WAS WRONG
  *
  * The hardware packet comes in two sizes: 18 bytes, and 50 bytes with the
- * serial number and the clock as well. With 0 the driver keeps whichever
- * arrives, and in two runs of the same unit (model 98) it got the serial
- * number in one and "----------------" in the other. 1 and 2 let the user
- * settle which request is sent. This is not a cure for the dashes: some
- * units send the serial number as dashes whatever the packet.
+ * serial number and the clock as well. The driver keeps the last valid one
+ * that arrives (see upsdrv_updateinfo()). At 2400 bps a byte takes about
+ * 4 ms on the wire, so the 50-byte answer takes about 210 ms: with only
+ * 250 ms between the requests the answers ran into the next request, and
+ * with the long request sent FIRST the packet left at the end could be the
+ * answer to a later, shorter request. In two runs of the same unit (model
+ * 98) the driver got the serial number in one and "----------------" in the
+ * other.
+ *
+ * WHAT IS HERE NOW
+ *
+ * The order of my Python monitor, which has run on my units for years: the
+ * long request goes LAST, so its 50-byte answer is the one that stays, and
+ * each request has the pause of "command_delay" (1 second by default) for
+ * its answer to arrive whole. A unit that only answers the compatibility or
+ * the short request keeps that answer, because nothing is discarded between
+ * the three requests.
+ *
+ * The numbers of the fixed modes changed to match the Python monitor: what
+ * was 1 (short) is now 2, and what was 2 (long) is now 3. This setting only
+ * ever existed in this pull request, so no released version is affected.
+ * It is not a cure for the dashes in every case: some units send the serial
+ * number as dashes whatever the packet.
  */
 static unsigned int   init_packet = DEFAULTINITPACKET;
+
+/*
+ * Whether the stop requests are sent, from "stop_packet" in ups.conf: 1 (the
+ * default) before the start sequence and when the driver exits, 0 never.
+ *
+ * The stop requests are new in the driver (see string_stop_short), and I
+ * have only seen them at work on my own units, through the Python monitor.
+ * With 0 the driver starts and ends as it did before them, so that someone
+ * whose unit does not take them well can turn them off in ups.conf, and
+ * tell me, instead of being left without a working driver.
+ */
+static unsigned int   stop_packet = DEFAULTSTOPPACKET;
+
+/* Pause after each request of the start and stop sequences, from
+ * "command_delay" in ups.conf; see DEFAULT_COMMAND_DELAY_MS. */
+static unsigned int   command_delay_ms = DEFAULT_COMMAND_DELAY_MS;
+
+/* Seconds without a packet before the data are given as stale, from
+ * "silence_timeout" in ups.conf (0: never); see DEFAULT_SILENCE_TIMEOUT. */
+static unsigned int   silence_timeout = DEFAULT_SILENCE_TIMEOUT;
+
+/* true from the moment the silence was noticed and logged until a packet
+ * arrives again, so that it is logged once and not at every poll */
+static bool           silence_reported = false;
 static int            bwritten = 0;
 static unsigned char  datapacket[DATAPACKETSIZE];
 static char           porta[NUT_PATH_MAX + 1] = DEFAULTPORT;
@@ -998,6 +1226,14 @@ static void parse_serial_options(void)
 	snprintf(serial_flow_control, sizeof(serial_flow_control), "%s", DEFAULT_SERIAL_FLOW_CONTROL);
 	serial_read_timeout_ms = DEFAULT_SERIAL_READ_TIMEOUT_MS;
 	serial_send_pace_us = DEFAULT_SERIAL_SEND_PACE_US;
+	command_delay_ms = DEFAULT_COMMAND_DELAY_MS;
+	silence_timeout = DEFAULT_SILENCE_TIMEOUT;
+	stop_packet = DEFAULTSTOPPACKET;
+	init_long_tries = DEFAULT_INIT_LONG_TRIES;
+	init_retry_delay_ms = DEFAULT_INIT_RETRY_DELAY_MS;
+	init_retry_step_ms = DEFAULT_INIT_RETRY_STEP_MS;
+	init_retry_max_ms = DEFAULT_INIT_RETRY_MAX_MS;
+	reopen_tries = DEFAULT_REOPEN_TRIES;
 
 	/*
 	 * The existing table is authoritative: platform-dependent entries guarded
@@ -1075,6 +1311,97 @@ static void parse_serial_options(void)
 		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_SERIAL_SEND_PACE_US)
 			fatalx(EXIT_FAILURE, "Invalid serial_send_pace_us value '%s': expected 0 to %d", value, MAX_SERIAL_SEND_PACE_US);
 		serial_send_pace_us = (unsigned int)number;
+	}  /* end if */
+
+	value = getval("command_delay");
+	if (value) {
+		/* Zero sends the requests of a sequence one right after the other. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_COMMAND_DELAY_MS)
+			fatalx(EXIT_FAILURE, "Invalid command_delay value '%s': expected 0 to %d (milliseconds)", value, MAX_COMMAND_DELAY_MS);
+		command_delay_ms = (unsigned int)number;
+	}  /* end if */
+
+	value = getval("silence_timeout");
+	if (value) {
+		/* Zero turns the check off: the data are never given as stale for silence. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_SILENCE_TIMEOUT)
+			fatalx(EXIT_FAILURE, "Invalid silence_timeout value '%s': expected 0 (never) to %d (seconds)", value, MAX_SILENCE_TIMEOUT);
+		silence_timeout = (unsigned int)number;
+	}  /* end if */
+
+	/*
+	 * Read here, with the settings of the port, and not with the other
+	 * 0/1 settings in upsdrv_initinfo(): upsdrv_cleanup() uses it, and it
+	 * can run when the driver ends before upsdrv_initinfo() was reached.
+	 */
+	value = getval("stop_packet");
+	if (value) {
+		if (strcmp(value, "0") != 0 && strcmp(value, "1") != 0)
+			fatalx(EXIT_FAILURE, "Invalid stop_packet value '%s': expected 1 (stop requests sent before the start sequence and on exit) or 0 (never sent)", value);
+		stop_packet = (unsigned int)atoi(value);
+	}  /* end if */
+
+	value = getval("init_long_tries");
+	if (value) {
+		/* Zero goes straight to picking one of the three requests at random. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_INIT_LONG_TRIES)
+			fatalx(EXIT_FAILURE, "Invalid init_long_tries value '%s': expected 0 to %d", value, MAX_INIT_LONG_TRIES);
+		init_long_tries = (unsigned int)number;
+	}  /* end if */
+
+	value = getval("init_retry_delay");
+	if (value) {
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_INIT_RETRY_MS)
+			fatalx(EXIT_FAILURE, "Invalid init_retry_delay value '%s': expected 0 to %d (milliseconds)", value, MAX_INIT_RETRY_MS);
+		init_retry_delay_ms = (unsigned int)number;
+	}  /* end if */
+
+	value = getval("init_retry_step");
+	if (value) {
+		/* Zero keeps the wait at "init_retry_delay" for every repetition. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_INIT_RETRY_MS)
+			fatalx(EXIT_FAILURE, "Invalid init_retry_step value '%s': expected 0 to %d (milliseconds)", value, MAX_INIT_RETRY_MS);
+		init_retry_step_ms = (unsigned int)number;
+	}  /* end if */
+
+	value = getval("init_retry_max");
+	if (value) {
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_INIT_RETRY_MS)
+			fatalx(EXIT_FAILURE, "Invalid init_retry_max value '%s': expected 0 to %d (milliseconds)", value, MAX_INIT_RETRY_MS);
+		init_retry_max_ms = (unsigned int)number;
+	}  /* end if */
+
+	/* The wait starts at "init_retry_delay" and may only grow from there. */
+	if (init_retry_max_ms < init_retry_delay_ms)
+		fatalx(EXIT_FAILURE, "Invalid init_retry_max value %u: it cannot be smaller than init_retry_delay, which is %u (milliseconds)", init_retry_max_ms, init_retry_delay_ms);
+	checktime = init_retry_delay_ms * 1000;
+
+	value = getval("reopen_tries");
+	if (value) {
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || number < 1 || number > MAX_REOPEN_TRIES)
+			fatalx(EXIT_FAILURE, "Invalid reopen_tries value '%s': expected 1 to %d", value, MAX_REOPEN_TRIES);
+		reopen_tries = (unsigned int)number;
 	}  /* end if */
 }
 
@@ -1390,8 +1717,9 @@ static pkt_data mount_datapacket(unsigned char *datapkt, size_t size, double tem
 	pktdata.tempmed = read_pair(pktdata.tempmed_high, pktdata.tempmed_low, ups.r16_temp);
 	pktdata.tempmed_real = pktdata.tempmed;
 	pktdata.icarregrms = (int)datapkt[16];
-	/* 25 units = 750mA, then 1 unit = 30mA */
-	pktdata.icarregrms_real = pktdata.icarregrms * 30;
+	/* 25 units = 750mA, then 1 unit = 30mA: that 30 was written here, and is
+	 * now the charger_ma of the model ("charger_unit_ma" in ups.conf) */
+	pktdata.icarregrms_real = (unsigned int)pktdata.icarregrms * ups.charger_ma;
 	pktdata.statusval = datapkt[17];
 	for (i = 0; i < 8; i++)
 		pktdata.status[i] = get_bit_in_position(&datapkt[17], sizeof(datapkt[17]), i, 0);
@@ -1679,7 +2007,11 @@ static const upsinfo  ups_unknown_device = {
 	.chargetime    = DEFAULTCHARGETIME,
 	.idleload      = (float)DEFAULTIDLELOAD,
 	.overload_perc = DEFAULTOVERLOAD,
-	.vin_perc      = (float)DEFAULTPERC
+	.vin_perc      = (float)DEFAULTPERC,
+	.warn_factor   = (float)DEFAULTWARNFACTOR,
+	.rating_hours  = (float)RUNTIME_RATING_HOURS,
+	.peukert       = (float)RUNTIME_PEUKERT_EXPONENT,
+	.charger_ma    = DEFAULTCHARGERMA
 };
 
 /*
@@ -2880,6 +3212,21 @@ static upsinfo getupsinfo(unsigned int upscode) {
 	value = get_float_option("efficiency_inverter");
 	if (value > 0)
 		data.eff_inverter = value;
+	/* Warning margin of the input thresholds, in times the critical one */
+	value = get_float_option("vin_warn_factor");
+	if (value > 0)
+		data.warn_factor = value;
+	/* The two figures of the runtime estimated from the battery capacity */
+	value = get_float_option("battery_rating_hours");
+	if (value > 0)
+		data.rating_hours = value;
+	value = get_float_option("peukert_exponent");
+	if (value > 0)
+		data.peukert = value;
+	/* mA of each unit of the charger reading */
+	value = get_float_option("charger_unit_ma");
+	if (value > 0)
+		data.charger_ma = (unsigned int)lrint((double)value);
 
 	/* The nominal W always follows the resolved VA and power factor. */
 	data.watts = (unsigned int)lrint((double)data.VA * (double)data.pf);
@@ -3165,23 +3512,95 @@ void upsdrv_initinfo(void) {
 	init_packet = get_flag_option("init_packet", DEFAULTINITPACKET);
 
 	/* TODO: Any instant commands? */
+
+	/*
+	 * START SEQUENCE
+	 *
+	 * WHAT WAS HERE
+	 *
+	 * The driver went straight to the requests for the hardware packet,
+	 * whatever the UPS was doing at that moment.
+	 *
+	 * WHY IT WAS WRONG
+	 *
+	 * These UPSes keep sending data packets for as long as they were asked
+	 * to, also after the program that asked has gone. When the driver
+	 * starts, the UPS may still be in the middle of the stream that a
+	 * previous run (or another program) left running, and the answer to the
+	 * request gets mixed with that stream. My Python monitor never started
+	 * like that: it first tells the UPS to stop, and only then asks.
+	 *
+	 * WHAT IS HERE NOW
+	 *
+	 * The same steps as the Python monitor:
+	 *
+	 *  1. the short stop request, then the pause of "command_delay";
+	 *  2. the long stop request, then the same pause, so that the UPS has
+	 *     the time to finish the packet it was sending and go quiet;
+	 *  3. whatever arrived until now is thrown away: it belongs to the old
+	 *     stream, and the hardware packet has to come from a clean line;
+	 *  4. the request, or the requests, chosen by "init_packet".
+	 *
+	 * Two details differ from the Python monitor, on purpose:
+	 *
+	 *  - it sends the first request right after the long stop request, with
+	 *    no pause, and throws the input away after EVERY request it sends.
+	 *    Here the pause also follows the long stop request (step 2), because
+	 *    throwing the input away only helps after the UPS went quiet;
+	 *
+	 *  - here nothing is thrown away between the three requests of
+	 *    init_packet = 0. The answers are read later, in the order they
+	 *    arrived, by upsdrv_updateinfo(), which keeps the last valid
+	 *    hardware packet. On a unit that answers the three requests that is
+	 *    the long one, as in the Python monitor; a unit that only answers
+	 *    the compatibility or the short request keeps the answer it gave,
+	 *    instead of losing it and waiting for the retries.
+	 *
+	 * With the default pause of 1 second the sequence takes about 2 seconds
+	 * for the two stop requests, and 2 seconds more with init_packet = 0,
+	 * for the pauses after the compatibility and the short request.
+	 *
+	 * Steps 1 and 2 come first, unless "stop_packet = 0" turned the stop
+	 * requests off.
+	 */
+	if (stop_packet) {
+		if (!send_initialization_packet(string_stop_short, 9, serial_fd))
+			return;
+		usleep((useconds_t)command_delay_ms * 1000);
+		if (!send_initialization_packet(string_stop_long, 9, serial_fd))
+			return;
+		usleep((useconds_t)command_delay_ms * 1000);
+	}  /* end if */
+
+	/* Step 3. The reader starts from scratch too: no packet is half read. */
+	ser_flush_in(serial_fd, "", 0);
+	datapacketstart = false;
+	datapacket_index = 0;
+	datapacketsize = 0;
+
 	switch (init_packet) {
 		case 1:
-			if (!send_initialization_packet(string_initialization_short, 9, serial_fd))
+			if (!send_initialization_packet(string_initialization_comptmode, 5, serial_fd))
 				return;
 			break;
 		case 2:
+			if (!send_initialization_packet(string_initialization_short, 9, serial_fd))
+				return;
+			break;
+		case 3:
 			if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
 				return;
 			break;
 		default:
-			if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
+			/* The long request goes last: its answer, the one with the
+			 * serial number, is the one that stays. */
+			if (!send_initialization_packet(string_initialization_comptmode, 5, serial_fd))
 				return;
-			usleep(250000);
+			usleep((useconds_t)command_delay_ms * 1000);
 			if (!send_initialization_packet(string_initialization_short, 9, serial_fd))
 				return;
-			usleep(250000);
-			if (!send_initialization_packet(string_initialization_comptmode, 5, serial_fd))
+			usleep((useconds_t)command_delay_ms * 1000);
+			if (!send_initialization_packet(string_initialization_long, 9, serial_fd))
 				return;
 			break;
 	}  /* end switch */
@@ -3281,6 +3700,10 @@ static void parse_model_options(void)
 		{ "overload_perc",        0,    255,     "a load percentage from 0 to 255 (0 turns the check off)" },
 		{ "chargetime",           1,    604800,  "the time to recharge an empty battery, in seconds, up to a week" },
 		{ "idleload",             1,    100,     "a percentage from 1 to 100" },
+		{ "vin_warn_factor",      1,    10,      "how many times the critical margin the warning margin is, from 1 to 10" },
+		{ "battery_rating_hours", 1,    100,     "the discharge time the battery capacity is rated for, in hours, from 1 to 100" },
+		{ "peukert_exponent",     1,    2,       "a Peukert exponent from 1 to 2" },
+		{ "charger_unit_ma",      1,    1000,    "the charger current of each unit of the reading, in mA, from 1 to 1000" },
 	};
 	/* Settings that take only 0 or 1: the reading mode of each two-byte field. */
 	static const char  *flags[] = {
@@ -3326,8 +3749,8 @@ static void parse_model_options(void)
 		fatalx(EXIT_FAILURE, "Invalid charge_scale value '%s': expected 0 (from 10.8V to 13.2V for a 12V battery) or 1 (from 10.5V to 12.6V)", value);
 
 	value = getval("init_packet");
-	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0 && strcmp(value, "2") != 0)
-		fatalx(EXIT_FAILURE, "Invalid init_packet value '%s': expected 0 (long, short and compatibility requests), 1 (short request only) or 2 (long request only)", value);
+	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0 && strcmp(value, "2") != 0 && strcmp(value, "3") != 0)
+		fatalx(EXIT_FAILURE, "Invalid init_packet value '%s': expected 0 (compatibility, short and long requests), 1 (compatibility request only), 2 (short request only) or 3 (long request only)", value);
 
 	/*
 	 * Runtime calibration: four numbers, the runtime in seconds and the load
@@ -3374,7 +3797,7 @@ static TYPE_FD_SER reconnect_ups_if_needed(void) {
 			upsdebugx(1, "%s: Trying to reopen serial...", __func__);
 			serial_fd = openfd(porta, baudrate);
 			retries++;
-			if (retries >= MAXTRIES) {
+			if (retries >= reopen_tries) {
 				upsdebugx(1, "%s: serial port reopen failed", __func__);
 				retry_limit_reached = true;
 			}  /* end if */
@@ -3383,7 +3806,7 @@ static TYPE_FD_SER reconnect_ups_if_needed(void) {
 		}  /* end while */
 
 		if (VALID_FD_SER(serial_fd)) {
-			if (retries > MAXTRIES && may_log_reconnect_trying(1))
+			if (retries > reopen_tries && may_log_reconnect_trying(1))
 				upslogx(LOG_NOTICE, "Communications with UPS re-established");
 
 			/* A reopened serial port may now be connected to a different UPS.
@@ -3392,12 +3815,12 @@ static TYPE_FD_SER reconnect_ups_if_needed(void) {
 			 */
 			lastpkthwinfo.checksum_ok = false;
 			send_extended = 0;
-			checktime = 2000000;
+			checktime = init_retry_delay_ms * 1000;
 			retries = 0;
 			reconnect_trying(RECONNECT_SUCCESS);
 		}  /* end if */
 		else {
-			if (retries == MAXTRIES && may_log_reconnect_trying(1))
+			if (retries == reopen_tries && may_log_reconnect_trying(1))
 				upslogx(LOG_WARNING, "Communications with UPS lost: port reopen failed!");
 			dstate_datastale();
 		}  /* end else */
@@ -3632,9 +4055,15 @@ static void interpret_pkt_data(void) {
 
 	int           got_hwinfo = (lastpkthwinfo.checksum_ok && lastpkthwinfo.size > 0);
 	char          data_scratch_buf[1024];  /* General-purpose string buffer */
+	const char    *setting = NULL;      /* a NUT variable as it stands in the driver state */
+	char          own_high[32];         /* battery.voltage.high as the driver works it out */
+	char          own_low[32];          /* battery.voltage.low as the driver works it out */
+	double        bank_ratio = 1;       /* batteries of the bank for each battery the reading covers */
+	double        user_full = 0;        /* battery.voltage.high set in ups.conf, as a reading, V */
+	double        user_empty = 0;       /* battery.voltage.low set in ups.conf, as a reading, V */
 	unsigned int  vin_underv = 0;
 	unsigned int  vin_overv = 0;
-	unsigned int  perc = 0;
+	float         perc = 0;             /* warning margin, in times the critical one */
 	unsigned int  vin = 0;
 	unsigned int  vout = 0;
 	unsigned int  autonomy_secs = 0;
@@ -3711,11 +4140,10 @@ static void interpret_pkt_data(void) {
 	 * TRIM    -- UPS is trimming incoming voltage (called "buck" in some hardware)
 	 * BOOST   -- UPS is boosting incoming voltage
 	 * FSD     -- Forced Shutdown (restricted use, see the note below)
+	 *
+	 * Decision Chain commented below.
+	 * First we check if system is on battery or not.
 	 */
-
-	/* Decision Chain commented below */
-
-	/* First we check if system is on battery or not */
 	upsdebugx(4, "Set UPS status as OFF and start checking. s_battery_mode is %d", lastpktdata.s_battery_mode);
 
 	if (got_hwinfo) {
@@ -3730,7 +4158,22 @@ static void interpret_pkt_data(void) {
 	}  /* end if */
 	else {
 		if (!min_input_power) {
-			min_input_power = 96;
+			/*
+			 * The hardware packet, which brings the low transfer voltage
+			 * of the unit, has not arrived yet. Until it does, mains is
+			 * told from no mains with a stand-in.
+			 *
+			 * That stand-in was the bare number 96. It is still 96
+			 * (DEFAULTTRANSFERLOW) unless ups.conf says otherwise, in the
+			 * way NUT already has for a value the UPS does not provide:
+			 * "default.input.transfer.low = 170". The NUT core puts that
+			 * value in input.transfer.low before the driver starts, and
+			 * this is where it is read back. The driver only writes
+			 * input.transfer.low itself after the hardware packet arrived
+			 * (below), so whatever is found there now came from ups.conf.
+			 */
+			setting = dstate_getinfo("input.transfer.low");
+			min_input_power = (setting && atoi(setting) > 0) ? atoi(setting) : DEFAULTTRANSFERLOW;
 			upsdebugx(4, "I'm on unknown input!. My undervoltage is default %d", min_input_power);
 		}  /* end if */
 	}  /* end else */
@@ -3807,8 +4250,7 @@ static void interpret_pkt_data(void) {
 	 *  interpret_pkt_hwinfo() if needed, but not here?
 	 * NOTE: values are cached in static C vars so as to
 	 *  not re-getval on every loop.
-	 */
-	/*
+	 *
 	 * The ratings come from getupsinfo(), which settles ups.conf, the case of
 	 * the model and the UNKNOWN device. The model is known only after HWINFO,
 	 * so a value that may still change with it is resolved again on every
@@ -4064,14 +4506,19 @@ static void interpret_pkt_data(void) {
 		 * The doubling of the warning margin was also decided only once, from
 		 * the low pair of settings, and reused for the high pair. Each side now
 		 * looks at its own pair.
+		 *
+		 * That doubling was the bare number 2. It is now the warn_factor of
+		 * the model, which "vin_warn_factor" in ups.conf replaces: with 3,
+		 * for example, the warning margin is three times the critical one,
+		 * and with 1 the two thresholds of a side fall on the same voltage.
 		 */
-		perc = f_equal(get_vin_perc("vin_low_warn_perc", (int)lastpkthwinfo.model), get_vin_perc("vin_low_crit_perc", (int)lastpkthwinfo.model)) ?  2 : 1;
+		perc = f_equal(get_vin_perc("vin_low_warn_perc", (int)lastpkthwinfo.model), get_vin_perc("vin_low_crit_perc", (int)lastpkthwinfo.model)) ? ups.warn_factor : 1.0f;
 		vin_low_warn = vin_underv + (vin_underv * ((get_vin_perc("vin_low_warn_perc", (int)lastpkthwinfo.model) * perc) / 100.0));
 		dstate_setinfo("input.voltage.low.warning", "%0.2f", vin_low_warn);
 		vin_low_crit = vin_underv + (vin_underv * (get_vin_perc("vin_low_crit_perc", (int)lastpkthwinfo.model) / 100.0));
 		dstate_setinfo("input.voltage.low.critical", "%0.2f", vin_low_crit);
 
-		perc = f_equal(get_vin_perc("vin_high_warn_perc", (int)lastpkthwinfo.model), get_vin_perc("vin_high_crit_perc", (int)lastpkthwinfo.model)) ?  2 : 1;
+		perc = f_equal(get_vin_perc("vin_high_warn_perc", (int)lastpkthwinfo.model), get_vin_perc("vin_high_crit_perc", (int)lastpkthwinfo.model)) ? ups.warn_factor : 1.0f;
 		vin_high_warn = vin_overv - (vin_overv * ((get_vin_perc("vin_high_warn_perc", (int)lastpkthwinfo.model) * perc) / 100.0));
 		dstate_setinfo("input.voltage.high.warning", "%0.2f", vin_high_warn);
 		vin_high_crit = vin_overv - (vin_overv * (get_vin_perc("vin_high_crit_perc", (int)lastpkthwinfo.model) / 100.0));
@@ -4361,14 +4808,103 @@ static void interpret_pkt_data(void) {
 		battery_full = (double)battery_nominal * CHARGE_FULL_RATIO;
 		battery_empty = (double)battery_nominal * CHARGE_EMPTY_RATIO;
 	}  /* end else */
+
+	/*
+	 * THE TWO ENDS OF THE SCALE AS NUT VARIABLES, AND HOW TO SET OTHERS
+	 *
+	 * WHAT WAS HERE
+	 *
+	 * The two ends existed only inside this function. "charge_scale" chose
+	 * between two pairs of fixed ratios, and there was no way to give a
+	 * third pair: someone with batteries of another kind, or who measured
+	 * the real full and empty voltages of an aged bank, had nothing to set.
+	 *
+	 * WHAT NUT HAS FOR THIS
+	 *
+	 * NUT already names the two ends (docs/nut-names.txt):
+	 *
+	 *   battery.voltage.high   "Maximum battery voltage (i.e.
+	 *                          battery.charge = 100)"
+	 *   battery.voltage.low    "Minimum battery voltage, that triggers FSD
+	 *                          status"
+	 *
+	 * and the blazer and nutdrv_qx drivers take them from ups.conf to work
+	 * out battery.charge (docs/man/blazer-common.txt, "BATTERY CHARGE
+	 * GUESSTIMATION": the high one is the "Maximum battery voltage that is
+	 * reached after about 12 to 24 hours charging" and the low one the
+	 * "Minimum battery voltage just before the UPS automatically shuts
+	 * down"). So this driver uses the same two variables instead of
+	 * settings of its own. It does not raise FSD from the low one: here the
+	 * two are only the ends of the battery.charge scale.
+	 *
+	 * WHAT IS HERE NOW
+	 *
+	 * The driver publishes the two ends of the scale in use, as voltages of
+	 * the whole bank, like battery.voltage and battery.voltage.nominal: for
+	 * a bank of two 12V batteries in series and the default scale,
+	 * battery.voltage.high is 26.40 and battery.voltage.low is 21.60.
+	 *
+	 * To use other ends, set them in ups.conf with the "override." prefix,
+	 * which is how NUT replaces a value a driver publishes
+	 * (docs/man/ups.conf.txt: "Set a value for <value> that overrides any
+	 * value that may be read from the UPS"), also as voltages of the whole
+	 * bank:
+	 *
+	 *   override.battery.voltage.high = 27.2
+	 *   override.battery.voltage.low = 21.0
+	 *
+	 * The NUT core stores an overridden value before the driver starts and
+	 * ignores what the driver writes over it afterwards. So, after writing
+	 * its own figure, the driver reads the variable back: when what is
+	 * there differs from what it has just written, the figure of ups.conf
+	 * is in force and is the one used. The "default." prefix does not work
+	 * here, because the driver always has a figure of its own to write.
+	 *
+	 * One end may be overridden without the other. If the two ends that
+	 * result are not in order (full above empty) the figures of the driver
+	 * are used and a message goes to the debug output.
+	 *
+	 * As with battery.voltage, nothing is published, and nothing is read
+	 * back, until the number of batteries is known: before that the driver
+	 * cannot tell what a voltage of the whole bank means.
+	 */
+	if (got_hwinfo || numbat > 0) {
+		bank_ratio = (double)bank_units / (double)battery_units;
+		snprintf(own_high, sizeof(own_high), "%0.2f", battery_full * bank_ratio);
+		snprintf(own_low, sizeof(own_low), "%0.2f", battery_empty * bank_ratio);
+		dstate_setinfo("battery.voltage.high", "%s", own_high);
+		dstate_setinfo("battery.voltage.low", "%s", own_low);
+
+		user_full = battery_full;
+		user_empty = battery_empty;
+		setting = dstate_getinfo("battery.voltage.high");
+		if (setting && strcmp(setting, own_high) != 0 && atof(setting) > 0)
+			user_full = atof(setting) / bank_ratio;
+		setting = dstate_getinfo("battery.voltage.low");
+		if (setting && strcmp(setting, own_low) != 0 && atof(setting) > 0)
+			user_empty = atof(setting) / bank_ratio;
+
+		if (user_full > user_empty) {
+			battery_full = user_full;
+			battery_empty = user_empty;
+		}  /* end if */
+		else
+			upsdebugx(1, "%s: battery.voltage.high and battery.voltage.low from ups.conf are not in order (full %0.2fV, empty %0.2fV for the reading); using the scale of the driver", __func__, user_full, user_empty);
+	}  /* end if */
+	else {
+		dstate_delinfo("battery.voltage.high");
+		dstate_delinfo("battery.voltage.low");
+	}  /* end else */
+
 	bcharge = lrint(((double)lastpktdata.vdcmed_real - battery_empty) * 100.0 / (battery_full - battery_empty));
 	if (bcharge > 100)
 		bcharge = 100;
 	if (bcharge < 0)
 		bcharge = 0;
 	dstate_setinfo("battery.charge", "%ld", bcharge);
-	/* The whole bank, not the reading: see "Voltage of the whole bank" above. */
 	/*
+	 * The whole bank, not the reading: see "Voltage of the whole bank" above.
+	 *
 	 * The voltage of the bank needs the number of batteries, which comes
 	 * with the hardware packet or from "numbatteries". Until one of them
 	 * is known the driver used to publish the reading of one battery here
@@ -4525,7 +5061,10 @@ static void interpret_pkt_data(void) {
 		dstate_setinfo("battery.capacity", "%u", ah);
 		dstate_setinfo("battery.capacity.nominal", "%u", ah);
 	}  /* end if */
-	dstate_setinfo("battery.runtime.low", "%d", 30);
+	/* It was the bare number 30. The driver only publishes it; to publish
+	 * another value, "override.battery.runtime.low" in ups.conf, the NUT way
+	 * to replace a published value: see DEFAULTRUNTIMELOW. */
+	dstate_setinfo("battery.runtime.low", "%d", DEFAULTRUNTIMELOW);
 
 	/*
 	 * Battery runtime, in seconds: battery.runtime.
@@ -4728,10 +5267,14 @@ static void interpret_pkt_data(void) {
 		/* a) and b): W taken from the batteries, then A through each battery */
 		actual_current = (vpower / (inverter_eff / 100.0f)) / ((float)numbat * vbat);
 
-		/* d) is the starting point, c) replaces it above the rated current */
+		/* d) is the starting point, c) replaces it above the rated current.
+		 * H and k are the rating_hours and the peukert of the model, which
+		 * "battery_rating_hours" and "peukert_exponent" in ups.conf replace;
+		 * they were the constants RUNTIME_RATING_HOURS and
+		 * RUNTIME_PEUKERT_EXPONENT, now the values of the UNKNOWN device. */
 		runtime_hours = (double)ah / (double)actual_current;
-		if ((double)actual_current > (double)ah / RUNTIME_RATING_HOURS)
-			runtime_hours = RUNTIME_RATING_HOURS * pow((double)ah / ((double)actual_current * RUNTIME_RATING_HOURS), RUNTIME_PEUKERT_EXPONENT);
+		if ((double)actual_current > (double)ah / (double)ups.rating_hours)
+			runtime_hours = (double)ups.rating_hours * pow((double)ah / ((double)actual_current * (double)ups.rating_hours), (double)ups.peukert);
 
 		full_runtime = runtime_hours * 3600.0;
 	}  /* end else if */
@@ -4914,6 +5457,7 @@ void upsdrv_updateinfo(void) {
 	int            randval = 0;
 	unsigned char  rb = 0;
 	pkt_hwinfo     received_hwinfo;
+	bool           silent = false;  /* no packet for longer than silence_timeout */
 
 	upsdebugx(3, "%s: starting...", __func__);
 
@@ -4970,6 +5514,14 @@ void upsdrv_updateinfo(void) {
 							tempodecorrido = difftime(now, lastdp);
 
 						lastdp = now;
+
+						/* A packet after a silence: say so once. The data
+						 * become good again where each packet is accepted,
+						 * below, by dstate_dataok(). */
+						if (silence_reported) {
+							upslogx(LOG_NOTICE, "The UPS on %s is sending packets again", porta);
+							silence_reported = false;
+						}  /* end if */
 
 						switch (datapacketsize) {
 							case 18:
@@ -5038,6 +5590,76 @@ void upsdrv_updateinfo(void) {
 		dstate_datastale();
 		return;
 	}  /* end if */
+
+	/*
+	 * SILENCE
+	 *
+	 * WHAT WAS HERE
+	 *
+	 * Nothing. The driver only gave its data as stale when reading or
+	 * writing the port failed, and it only asked for the hardware packet
+	 * while it did not have one. The time of the last packet (lastdp) was
+	 * kept, but only to measure the interval between two packets.
+	 *
+	 * WHY IT WAS WRONG
+	 *
+	 * A UPS that stops sending is not an error of the port: the port stays
+	 * open and every read just ends in its normal timeout. That is what
+	 * happens when the cable comes loose on a real serial port, when the
+	 * UPS is switched off, or when it simply stops its stream. The driver
+	 * then kept the values of the last packet, and NUT went on showing them
+	 * as current: a unit left on "OL" would stay "OL" with no time limit.
+	 *
+	 * The NUT developer documentation asks for the opposite. In
+	 * docs/new-drivers.txt, section "Staleness control": "If you're not
+	 * talking to a polled UPS, then you must ensure that it is still out
+	 * there and is alive before calling dstate_dataok()", and "If the
+	 * attempts to contact the UPS fail, you must call dstate_datastale() to
+	 * inform the server and clients". The same section says where:
+	 * "Basically, don't call them from any other function than from within
+	 * upsdrv_updateinfo()", which is why this is done here and not in a
+	 * helper.
+	 *
+	 * My Python monitor had this from the start: after "timeout" seconds
+	 * without a packet it clears what it publishes and asks the UPS again.
+	 * It was lost in the C port.
+	 *
+	 * WHAT IS HERE NOW
+	 *
+	 * When the last packet is older than "silence_timeout" seconds
+	 * (10 by default, 0 turns this off):
+	 *
+	 *  - the data are given as stale at every poll, until a packet arrives;
+	 *
+	 *  - a packet left half read is dropped: its other half is not coming,
+	 *    and the reader has to be free for the next one;
+	 *
+	 *  - the request for the hardware packet is sent again, by the same
+	 *    code that sends it while that packet is missing (below), in the
+	 *    mode chosen by "init_packet" and with the same waits between the
+	 *    attempts, so the UPS is not flooded. The count of long requests
+	 *    and the wait start over when the silence is noticed.
+	 *
+	 * The hardware data already known are kept: if the same unit answers
+	 * again nothing is lost, and if another one answers, the code that
+	 * accepts the hardware packet (same_ups(), above) drops the old data.
+	 *
+	 * Before the first packet ever arrives lastdp is 0 and there is no
+	 * silence to measure: the data were never given as good, and the
+	 * requests are already repeated because the hardware packet is missing.
+	 */
+	if (silence_timeout > 0 && lastdp != 0 && difftime(time(NULL), lastdp) > (double)silence_timeout) {
+		silent = true;
+		if (!silence_reported) {
+			upslogx(LOG_WARNING, "No packet from the UPS on %s for more than %u seconds: the data are stale, asking for the hardware information again", porta, silence_timeout);
+			silence_reported = true;
+			send_extended = 0;
+			checktime = init_retry_delay_ms * 1000;
+		}  /* end if */
+		dstate_datastale();
+		datapacketstart = false;
+	}  /* end if */
+
 	if (datapacketstart) {
 		upsdebugx(2, "%s: packet reading did not finish, not interpreting yet", __func__);
 		return;
@@ -5048,22 +5670,27 @@ void upsdrv_updateinfo(void) {
 	 * like number of batteries, to calculate some data
 	 * FIXME: move (semi)static info discovery to upsdrv_initinfo() or so
 	 */
-	if (!lastpkthwinfo.checksum_ok) {
-		upsdebugx(4, "pkt_hwinfo loss -- Requesting");
+	if (!lastpkthwinfo.checksum_ok || silent) {
+		upsdebugx(4, "pkt_hwinfo loss or silent UPS -- Requesting");
 		/* If size == 0, packet maybe not initizated,
 		 * then send an initialization packet to obtain data.
-		 * Send six times the extended initialization string,
-		 * but, on fail, try randomly send extended, normal or compatibility.
+		 * With init_packet = 0, send the extended initialization string
+		 * "init_long_tries" times (six by default) but, on fail, try
+		 * randomly send extended, normal or compatibility.
 		 */
 		if (init_packet == 1) {
-			upsdebugx(4, "Sending short initialization packet (init_packet = 1)");
-			bwritten = write_serial_int(serial_fd, string_initialization_short, 9);
+			upsdebugx(4, "Sending compatibility initialization packet (init_packet = 1)");
+			bwritten = write_serial_int(serial_fd, string_initialization_comptmode, 5);
 		}  /* end if */
 		else if (init_packet == 2) {
-			upsdebugx(4, "Sending long initialization packet (init_packet = 2)");
+			upsdebugx(4, "Sending short initialization packet (init_packet = 2)");
+			bwritten = write_serial_int(serial_fd, string_initialization_short, 9);
+		}  /* end else if */
+		else if (init_packet == 3) {
+			upsdebugx(4, "Sending long initialization packet (init_packet = 3)");
 			bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
 		}  /* end else if */
-		else if (send_extended < 6) {
+		else if (send_extended < init_long_tries) {
 			upsdebugx(4, "Sending extended initialization packet. Try %u", send_extended+1);
 			bwritten = write_serial_int(serial_fd, string_initialization_long, 9);
 			send_extended++;
@@ -5102,15 +5729,18 @@ void upsdrv_updateinfo(void) {
 			close_serial_port();
 		}  /* end if */
 		else {
-			if (checktime > max_checktime)
-				checktime = max_checktime;
+			/* The wait for the answer: it grows by "init_retry_step" at
+			 * each repetition and is brought back to "init_retry_max" once
+			 * it has gone past it. These were the fixed 100 ms and 6 s. */
+			if (checktime > init_retry_max_ms * 1000)
+				checktime = init_retry_max_ms * 1000;
 			else {
-				upsdebugx(3, "Increase checktime to %u", checktime + 100000);
-				checktime = checktime + 100000;
+				upsdebugx(3, "Increase checktime to %u", checktime + init_retry_step_ms * 1000);
+				checktime = checktime + init_retry_step_ms * 1000;
 			}  /* end else */
 			usleep(checktime);
 		}  /* end else */
-	}  /* end if lastpkthwinfo good/bad checksum */  /* end if */
+	}  /* end if lastpkthwinfo good/bad checksum, or silent UPS */
 
 	upsdebugx(3, "%s: finished", __func__);
 }
@@ -5127,6 +5757,44 @@ void upsdrv_shutdown(void) {
 
 void upsdrv_cleanup(void) {
 	upsdebugx(3, "%s: starting...", __func__);
+
+	/*
+	 * STOP REQUESTS ON EXIT
+	 *
+	 * WHAT WAS HERE
+	 *
+	 * The driver just closed the port.
+	 *
+	 * WHY IT WAS WRONG
+	 *
+	 * The UPS was left sending packets to a port nobody reads, and the next
+	 * start found it in the middle of that stream. My Python monitor always
+	 * ended by telling the UPS to stop (the "finally" block of nhs.py).
+	 *
+	 * WHAT IS HERE NOW
+	 *
+	 * The two stop requests of the start sequence, short and long, each
+	 * followed by the pause of "command_delay". The pause after the second
+	 * one is what gives its bytes the time to leave before the port is
+	 * closed: at 2400 bps the nine bytes take about 40 ms.
+	 *
+	 * This is a courtesy to the UPS, not something the driver depends on:
+	 * a failure to write is ignored, there is no attempt to reopen a port
+	 * that is already closed, and a driver that is killed never gets here.
+	 * That is why the start sequence sends the stop requests as well.
+	 *
+	 * The two pauses are the reason for the 2000 ms limit of
+	 * "command_delay"; see MAX_COMMAND_DELAY_MS. "stop_packet = 0" turns
+	 * the stop requests off here as it does in the start sequence.
+	 */
+	if (stop_packet && VALID_FD_SER(serial_fd)) {
+		upsdebugx(3, "%s: sending the stop requests on %s", __func__, porta);
+		if (write_serial_int(serial_fd, string_stop_short, 9) > 0) {
+			usleep((useconds_t)command_delay_ms * 1000);
+			if (write_serial_int(serial_fd, string_stop_long, 9) > 0)
+				usleep((useconds_t)command_delay_ms * 1000);
+		}  /* end if */
+	}  /* end if */
 
 	close_serial_port();
 
@@ -5230,8 +5898,9 @@ void upsdrv_initups(void) {
 void upsdrv_makevartable(void) {
 	char  help[4096];
 
-	/* Standard variable in main.c */
-	/* //addvar(VAR_VALUE, "port", "Port to communication"); */
+	/* Standard variable in main.c:
+	 * //addvar(VAR_VALUE, "port", "Port to communication");
+	 */
 
 	/* Expose only the seven conventional serial settings supported above. */
 	addvar(VAR_VALUE, "baud", "Serial baud rate from the rates compiled into this driver (default: 2400)");
@@ -5289,7 +5958,19 @@ void upsdrv_makevartable(void) {
 	addvar(VAR_VALUE, "read16_temp", "Temperature bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
 	addvar(VAR_VALUE, "read16_vbat", "Battery voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number in tenths of a volt");
 	addvar(VAR_VALUE, "charge_scale", "Scale of battery.charge for a 12V battery: 0 from 10.8V to 13.2V (default), 1 from 10.5V to 12.6V");
-	addvar(VAR_VALUE, "init_packet", "Hardware packet requested from the UPS: 0 long, short and compatibility (default), 1 short only, 2 long only");
+	addvar(VAR_VALUE, "init_packet", "Hardware packet requested from the UPS: 0 compatibility, short and long in a row (default), 1 compatibility only, 2 short only, 3 long only");
+	addvar(VAR_VALUE, "stop_packet", "Stop requests sent to the UPS before the start sequence and on exit: 1 sent (default), 0 never sent");
+	addvar(VAR_VALUE, "command_delay", "Pause after each request of the start and stop sequences: 0 to 2000 ms (default: 1000)");
+	addvar(VAR_VALUE, "silence_timeout", "Time without a packet from the UPS before the data are given as stale and the hardware packet is requested again: 1 to 3600 s, 0 never (default: 10)");
+	addvar(VAR_VALUE, "init_long_tries", "Long requests for the hardware packet before one of the three requests is picked at random, with init_packet = 0: 0 to 100 (default: 6)");
+	addvar(VAR_VALUE, "init_retry_delay", "Wait after a repeated request for the hardware packet: 0 to 10000 ms (default: 2000)");
+	addvar(VAR_VALUE, "init_retry_step", "Growth of that wait after each repetition: 0 to 10000 ms (default: 100)");
+	addvar(VAR_VALUE, "init_retry_max", "Longest that wait may grow to: 0 to 10000 ms, not below init_retry_delay (default: 6000)");
+	addvar(VAR_VALUE, "reopen_tries", "Attempts to reopen the port in one poll before the data are given as stale: 1 to 100 (default: 3)");
+	addvar(VAR_VALUE, "vin_warn_factor", "Warning margin of an input voltage threshold, in times the critical one, when both percentages are equal: 1 to 10 (default: 2)");
+	addvar(VAR_VALUE, "battery_rating_hours", "Discharge time the battery capacity is rated for, used by the runtime estimated from the capacity: 1 to 100 h (default: 20)");
+	addvar(VAR_VALUE, "peukert_exponent", "Peukert exponent of the batteries, used by the runtime estimated from the capacity: 1 to 2 (default: 1.25)");
+	addvar(VAR_VALUE, "charger_unit_ma", "Charger current of each unit of the charger reading: 1 to 1000 mA (default: 30)");
 	addvar(VAR_VALUE, "invert_bits_data", "Flags of the status byte of the data packet: 1 flag n is bit n (default), 0 flag n is bit 7 - n");
 	addvar(VAR_VALUE, "invert_bits_hwinfo", "Flags of the configuration and status bytes of the hardware packet: 1 flag n is bit n (default), 0 flag n is bit 7 - n");
 	addvar(VAR_VALUE, "runtimecal", "Runtime calibration: runtime in s and load in % at a higher load, then at a lower one, as in 240,100,720,50 (replaces the built-in model values)");
