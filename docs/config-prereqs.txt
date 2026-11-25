@@ -879,7 +879,7 @@ tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
 ----
 ======
 
-FreeBSD 12.2 - 15.0
+FreeBSD 12.2 - 15.1
 ~~~~~~~~~~~~~~~~~~~
 
 [NOTE]
@@ -914,6 +914,14 @@ below.
     cppcheck \
     pkgconf \
     gcc
+
+# NOTE: Compared to FreeBSD 15.0p9, the 15.1p7 worker includes
+# a broken automake 1.19 release which did not detect `bsdtar`
+# as suitable. It should be fixed in later automake releases,
+# but for now if your configure script detects `tar` as `none`
+# or `false` and fails `make dist`, work around by installing
+# real GNU tar:
+# :; pkg install gtar
 
 # Name for LLVM CLANG compiler may vary on old and new systems:
 :; pkg install -y clang || pkg install -y llvm
