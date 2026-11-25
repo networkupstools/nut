@@ -450,6 +450,7 @@ static subdriver_aux_t ugreen_aux = {
 	NULL,
 	NULL,
 	ugreen_updateinfo,
+	NULL,
 	NULL
 };
 
