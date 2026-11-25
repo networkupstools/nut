@@ -1072,6 +1072,8 @@ https://github.com/networkupstools/nut/milestone/13
       dictionary for verified terms. [PR #3699]
 
  - Recipes, CI and helper script updates not classified above:
+    * Out-of-tree USB builds now find the udev rules template in the source
+      tree and install the rules when the udev directory is detected. [PR #3865]
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
       minimal friction. [#3608]
     * Introduced `SECURITY.md` for rules about responsible disclosure of
