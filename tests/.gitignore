@@ -7,6 +7,9 @@
 /driver_methods_utest
 /driver_methods_utest.log
 /driver_methods_utest.trs
+/dstate-poll-test
+/dstate-poll-test.log
+/dstate-poll-test.trs
 /ecoflow-cdc-protocol.c
 /ecoflow_cdc_protocol_utest
 /ecoflow_cdc_protocol_utest.log
