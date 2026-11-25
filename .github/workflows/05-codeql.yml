@@ -214,7 +214,7 @@ jobs:
             cp "${SRC}" "${DST}" || exit
         done < .github/codeql/python-templates.txt
         find . -name '*.py.in' | while read SRC ; do
-            DST="`basename \"${SRC}\" .in`" && [ -n "${DST}" ] && [ x"${DST}" != x"${SRC}" ] || exit
+            DST="`dirname \"${SRC}\"`/`basename \"${SRC}\" .in`" && [ -n "${DST}" ] && [ x"${DST}" != x"${SRC}" ] || exit
             cp "${SRC}" "${DST}" || exit
         done
 
