@@ -288,6 +288,16 @@ endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
+# The dstate_poll_test_LDADD below look odd, because dstate-poll-test
+# includes dstate.c directly. So we have to link the existing mock
+# main.lo object and common libraries instead of the complete mock
+# archive, which can import a second dstate binary implementation and
+# cause duplicate symbols when building with shared private libraries
+# as seen at least on macOS.
+# Linux build/check and distcheck-light, native macOS test suites in both
+# library modes, and both affected Windows tests in each mode passed.
+$(top_builddir)/drivers/libdummy_mockdrv_la-main.lo: $(top_builddir)/drivers/libdummy_mockdrv.la
+
 TESTS += dstate-poll-test
 dstate_poll_test_SOURCES = dstate-poll-test.c
 dstate_poll_test_LDADD = $(top_builddir)/drivers/libdummy_mockdrv_la-main.lo \
