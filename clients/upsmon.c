@@ -591,7 +591,7 @@ static int apply_for_primary(utype_t *ups)
 	return 0;
 }
 
-/* authenticate to upsd, plus do LOGIN and apply for PRIMARY/MASTER privileges
+/* authenticate to upsd, plus do ATTACH and apply for PRIMARY/MASTER privileges
  * if applicable to this ups device MONITORing configuration */
 static int do_upsd_auth(utype_t *ups)
 {
@@ -611,7 +611,7 @@ static int do_upsd_auth(utype_t *ups)
 	}
 
 	/* password is set, let's login */
-	snprintf(buf, sizeof(buf), "LOGIN %s\n", ups->upsname);
+	snprintf(buf, sizeof(buf), "ATTACH %s\n", ups->upsname);
 
 	if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0) {
 		upslogx(LOG_ERR, "Login to UPS [%s] failed: %s",
@@ -623,6 +623,18 @@ static int do_upsd_auth(utype_t *ups)
 		upslogx(LOG_ERR, "Can't login to UPS [%s]: %s",
 			ups->sys, upscli_strerror(&ups->conn));
 		return 0;
+	}
+
+	/* A lost reply may follow a successful attachment: never retry it. */
+	if (!strcmp(buf, "ERR UNKNOWN-COMMAND")) {
+		snprintf(buf, sizeof(buf), "LOGIN %s\n", ups->upsname);
+		if (upscli_sendline(&ups->conn, buf, strlen(buf)) < 0
+		||  upscli_readline(&ups->conn, buf, sizeof(buf)) < 0
+		) {
+			upslogx(LOG_ERR, "Can't login to UPS [%s]: %s",
+				ups->sys, upscli_strerror(&ups->conn));
+			return 0;
+		}
 	}
 
 	/* catch insanity from the server - not ERR and not OK either */
@@ -1256,7 +1268,7 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 	numq = 0;
 
 	if (!strcmp(var, "numlogins")) {
-		query[0] = "NUMLOGINS";
+		query[0] = "NUMATTACH";
 		query[1] = ups->upsname;
 		numq = 2;
 	}
@@ -1298,6 +1310,14 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 	upsdebugx(3, "%s: %s / %s", __func__, ups->sys, var);
 
 	ret = upscli_get(&ups->conn, numq, query, &numa, &answer);
+	if (ret < 0 && !strcmp(query[0], "NUMATTACH")
+	&&  (upscli_upserror(&ups->conn) == UPSCLI_ERR_INVALIDARG
+	 ||  upscli_upserror(&ups->conn) == UPSCLI_ERR_UNKCOMMAND)
+	) {
+		query[0] = "NUMLOGINS";
+		ret = upscli_get(&ups->conn, numq, query, &numa, &answer);
+	}
+
 
 	if (ret < 0) {
 
