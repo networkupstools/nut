@@ -1,8 +1,2 @@
-scripts/python/module/PyNUT.py.in scripts/python/module/PyNUT.py
-scripts/python/module/setup.py.in scripts/python/module/setup.py
 scripts/python/app/NUT-Monitor-py3qt.in scripts/python/app/NUT-Monitor-py3qt.py
 scripts/python/app/NUT-Monitor-py2gtk2.in scripts/python/app/NUT-Monitor-py2gtk2.py
-scripts/augeas/gen-nutupsconf-aug.py.in scripts/augeas/gen-nutupsconf-aug.py
-scripts/Solaris/precheck.py.in scripts/Solaris/precheck.py
-tools/gitlog2changelog.py.in tools/gitlog2changelog.py
-tools/nut-snmpinfo.py.in tools/nut-snmpinfo.py
