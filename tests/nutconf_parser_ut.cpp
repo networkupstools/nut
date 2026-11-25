@@ -43,6 +43,7 @@ extern "C" {
 class NutConfTest : public CppUnit::TestFixture
 {
 	CPPUNIT_TEST_SUITE( NutConfTest );
+		CPPUNIT_TEST( testUpsdPolicyOptions );
 		CPPUNIT_TEST( testOptions );
 		CPPUNIT_TEST( testParseCHARS );
 		CPPUNIT_TEST( testParseSTRCHARS );
@@ -60,6 +61,7 @@ public:
 	void setUp() override;
 	void tearDown() override;
 
+	void testUpsdPolicyOptions();
 	void testOptions();
 	void testParseCHARS();
 	void testParseSTRCHARS();
@@ -650,6 +652,40 @@ void NutConfTest::testNutConfConfigParser()
 	CPPUNIT_ASSERT_MESSAGE("Cannot find a MODE", conf.mode.set());
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a MODE=standalone", nut::NutConfiguration::MODE_STANDALONE, *conf.mode);
 }
+
+void NutConfTest::testUpsdPolicyOptions()
+{
+	const std::string tlsOn("DISABLE_WEAK_SSL 1\n"), tlsOff("DISABLE_WEAK_SSL 0\n");
+	const std::string listenOn("ALLOW_NOT_ALL_LISTENERS 1\n"), listenOff("ALLOW_NOT_ALL_LISTENERS 0\n");
+	const struct {
+		const char *input;
+		std::string tls, listeners;
+	} cases[] = {
+		{"DISABLE_WEAK_SSL yes\nALLOW_NOT_ALL_LISTENERS no\n", tlsOn, listenOff},
+		{"ALLOW_NOT_ALL_LISTENERS no\nDISABLE_WEAK_SSL yes\n", tlsOn, listenOff},
+		{"DISABLE_WEAK_SSL off\nALLOW_NOT_ALL_LISTENERS on\n", tlsOff, listenOn},
+		{"ALLOW_NOT_ALL_LISTENERS TrUe\nDISABLE_WEAK_SSL OFF\n", tlsOff, listenOn},
+		{"DISABLE_WEAK_SSL YeS\n", tlsOn, ""},
+		{"DISABLE_WEAK_SSL 0\n", tlsOff, ""},
+		{"ALLOW_NOT_ALL_LISTENERS 2\n", "", listenOn},
+		{"DISABLE_WEAK_SSL true\nDISABLE_WEAK_SSL maybe\n", tlsOn, ""},
+		{"ALLOW_NOT_ALL_LISTENERS false\nALLOW_NOT_ALL_LISTENERS ok\n", "", listenOff},
+		{"DISABLE_WEAK_SSL ok\nALLOW_NOT_ALL_LISTENERS maybe\n", "", ""}
+	};
+
+	for (const auto &entry : cases) {
+		UpsdConfiguration conf;
+		NutMemory stream;
+		std::string saved;
+		conf.parseFromString(entry.input);
+		CPPUNIT_ASSERT(conf.writeTo(stream));
+		CPPUNIT_ASSERT_EQUAL(NutStream::NUTS_OK, stream.getString(saved));
+		// The directives are independent; either output order is valid.
+		CPPUNIT_ASSERT_MESSAGE(entry.input, saved == entry.tls + entry.listeners
+			|| saved == entry.listeners + entry.tls);
+	}
+}
+
 
 void NutConfTest::testUpsdConfigParser()
 {
