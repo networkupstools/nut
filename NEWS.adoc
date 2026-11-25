@@ -658,7 +658,8 @@ https://github.com/networkupstools/nut/milestone/13
  - `snmp-ups` driver updates:
     * The `huawei` subdriver now reports output real power and power factor
       separately for each phase. It reports real power in watts and apparent
-      power in volt-amperes. [PR #3863]
+      power in volt-amperes. Unavailable phase power readings are omitted.
+      [PR #3863]
     * Corrected the IETF fallback warning so it is emitted for automatic
       IETF selection rather than vendor-specific mappings. [issue #3585, PR #3767]
     * Fixed a NULL pointer dereference when setting exact outlet mappings

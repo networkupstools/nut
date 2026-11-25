@@ -82,6 +82,12 @@ static info_lkp_t huawei_freqrating_info[] = {
 	info_lkp_sentinel
 };
 
+/* The UPS2000 reports INT32_MAX for power on an unavailable output phase. */
+static info_lkp_t huawei_output_power_info[] = {
+	info_lkp_default(INT32_MAX, "N/A"),
+	info_lkp_sentinel
+};
+
 static info_lkp_t huawei_pwrrating_info[] = {
 	info_lkp_default(1, "80000"),
 	info_lkp_default(2, "100000"),
@@ -204,13 +210,13 @@ static snmp_info_t huawei_mib[] = {
 
 	snmp_info_default("output.frequency", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.7.1", NULL, SU_FLAG_OK, NULL),
 
-	snmp_info_default("output.L1.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.8.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L2.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.9.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L3.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.10.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L1.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.8.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L2.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.9.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L3.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.10.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
 
-	snmp_info_default("output.L1.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.11.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L2.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.12.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L3.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.13.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L1.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.11.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L2.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.12.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L3.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.13.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
 
 	snmp_info_default("output.L1.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.14.1", NULL, SU_FLAG_OK, NULL),
 	snmp_info_default("output.L2.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.15.1", NULL, SU_FLAG_OK, NULL),

@@ -287,7 +287,10 @@ typedef struct {
 /* Note: older releases defined the following flag, but removed it by 2.8.0:
  * #define SU_FLAG_SETINT	(1UL << 6)*/	/* save value */
 #define SU_FLAG_ZEROINVALID	(1UL << 6)	/* Invalid if "0" value */
-#define SU_FLAG_NAINVALID	(1UL << 7)	/* Invalid if "N/A" value */
+#define SU_FLAG_NAINVALID	(1UL << 7)
+	/* When probing a template index, skip strings beginning with "N/A".
+	 * When a numeric lookup yields "N/A", withdraw the published reading
+	 * and keep polling so a valid reading can be published again. */
 #define SU_CMD_OFFSET		(1UL << 8)	/* Add +1 to the OID index */
 
 #define SU_FLAG_SEMI_STATIC	(1UL << 9)
