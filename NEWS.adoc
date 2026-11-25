@@ -119,10 +119,16 @@ https://github.com/networkupstools/nut/milestone/13
       It captured the standard output, which went to a file, so the message
       was always empty. [PR #3809]
 
+ - USB drivers have a new `usb_request_min_gap_us` option, a minimum time
+   between USB control requests, for devices that refuse requests sent too
+   soon and then stop answering until a USB reset. `usbhid-ups` subdrivers
+   can provide a default; the CyberPower one uses `100` for `0764:0501`.
+   [issue #3808, PR #3814]
+
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
    complete descriptor available on affected River 3 Plus firmware while
-   retaining the shorter length as a fallback.
+   retaining the shorter length as a fallback. [PR #3568]
 
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
