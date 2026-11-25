@@ -19,7 +19,13 @@ EXTRA_DIST = README.adoc
 
 if WITH_DEV
 if WITH_PKG_CONFIG
- pkgconfig_DATA = libupsclient.pc libnutscan.pc libnutclient.pc libnutclientstub.pc
+ pkgconfig_DATA = libupsclient.pc
+if WITH_NUT_SCANNER
+ pkgconfig_DATA += libnutscan.pc
+endif WITH_NUT_SCANNER
+if HAVE_CXX11
+ pkgconfig_DATA += libnutclient.pc libnutclientstub.pc
+endif HAVE_CXX11
 if WITH_DEV_LIBNUTCONF
  pkgconfig_DATA += libnutconf.pc
 endif WITH_DEV_LIBNUTCONF
