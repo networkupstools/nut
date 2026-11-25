@@ -209,6 +209,7 @@ jobs:
     - if: matrix.language == 'python'
       name: Copy Python templates to *.py for CodeQL
       run: |
+        set -x
         while read -r SRC DST ; do
             cp "${SRC}" "${DST}" || exit
         done < .github/codeql/python-templates.txt
