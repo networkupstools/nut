@@ -147,7 +147,7 @@ int main(void)
 	failures += check_value("input.transfer.low", "178");
 	failures += check_value("input.transfer.high", "275");
 	failures += check_value("ups.beeper.status", "enabled");
-	failures += check_value("battery.runtime.low", "1");
+	failures += check_value("battery.runtime.low", "60");
 
 	failures += check_absent("input.transfer.delay");
 	failures += check_absent("battery.charge.restart");
