@@ -34,6 +34,7 @@
 int nutscan_unload_neon_library(void);
 
 #if (defined WITH_NEON) && WITH_NEON
+#include "nutscan-thread.h"
 
 #ifndef WIN32
 # include <sys/types.h>
@@ -529,7 +530,6 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 		sem_t * semaphore_scantype = NULL;
 #  endif
 # endif /* HAVE_SEMAPHORE_UNNAMED || HAVE_SEMAPHORE_NAMED */
-		pthread_t thread;
 		nutscan_thread_t * thread_array = NULL;
 		size_t thread_count = 0, i;
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
@@ -593,32 +593,23 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 			 */
 
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-			/* Just wait for someone to free a semaphored slot,
-			 * if none are available, and then/otherwise grab one
-			 */
-			if (thread_array == NULL) {
-				/* Starting point, or after a wait to complete
-				 * all earlier runners */
-				if (max_threads_scantype > 0)
-					sem_wait(semaphore_scantype);
-				sem_wait(semaphore);
-				pass = TRUE;
-			} else {
-				/* If successful (the lock was acquired),
-				 * sem_wait() and sem_trywait() will return 0.
-				 * Otherwise, -1 is returned and errno is set,
-				 * and the state of the semaphore is unchanged.
-				 */
-				int	stwST = sem_trywait(semaphore_scantype);
-				int	stwS  = sem_trywait(semaphore);
-				pass = ((max_threads_scantype == 0 || stwST == 0) && stwS == 0) ? TRUE : FALSE;
+			{
+				int admitted = nut_scanner_semaphore_acquire(semaphore,
+					semaphore_scantype, max_threads_scantype, thread_array == NULL);
+
+				if (admitted < 0) {
+					upsdebug_with_errno(0, "%s: Semaphore admission failed", __func__);
+					break;
+				}
+				pass = admitted > 0 ? TRUE : FALSE;
+
 				upsdebugx(4, "%s: max_threads_scantype=%" PRIuSIZE
 					" curr_threads=%" PRIuSIZE
 					" thread_count=%" PRIuSIZE
-					" stwST=%d stwS=%d pass=%u",
+					" pass=%u",
 					__func__, max_threads_scantype,
 					curr_threads, thread_count,
-					stwST, stwS, pass
+					(unsigned int)pass
 				);
 			}
 # else
@@ -702,6 +693,9 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				tmp_sec = (nutscan_xml_t*)malloc(sizeof(nutscan_xml_t));
 				if (tmp_sec == NULL) {
 					upsdebugx(0, "%s: Memory allocation error", __func__);
+#if defined HAVE_PTHREAD && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
+					nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+#endif
 					break;
 				}
 
@@ -712,32 +706,20 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				}
 
 #ifdef HAVE_PTHREAD
-				if (pthread_create(&thread, NULL, nutscan_scan_xml_http_thready, (void*)tmp_sec) == 0) {
-					nutscan_thread_t	*new_thread_array;
-# ifdef HAVE_PTHREAD_TRYJOIN
-					pthread_mutex_lock(&threadcount_mutex);
-					curr_threads++;
-# endif /* HAVE_PTHREAD_TRYJOIN */
-
-					thread_count++;
-					new_thread_array = (nutscan_thread_t*)realloc(thread_array,
-						thread_count * sizeof(nutscan_thread_t));
-					if (new_thread_array == NULL) {
-						upsdebugx(1, "%s: Failed to realloc thread array", __func__);
-# ifdef HAVE_PTHREAD_TRYJOIN
-						pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
-						break;
+				{
+					int ret = nut_scanner_thread_create(&thread_array, &thread_count,
+						nutscan_scan_xml_http_thready, (void *)tmp_sec);
+					if (ret != 0) {
+						free(tmp_sec);
+						free(ip_str);
+						ip_str = NULL;
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+						nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+# endif
+						if (ret < 0) {
+							break;
+						}
 					}
-					else {
-						thread_array = new_thread_array;
-					}
-					thread_array[thread_count - 1].thread = thread;
-					thread_array[thread_count - 1].active = TRUE;
-
-# ifdef HAVE_PTHREAD_TRYJOIN
-					pthread_mutex_unlock(&threadcount_mutex);
-# endif /* HAVE_PTHREAD_TRYJOIN */
 				}
 #else	/* if not HAVE_PTHREAD */
 				nutscan_scan_xml_http_thready(tmp_sec);
@@ -766,9 +748,6 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 							 * but handle it just in case */
 							upsdebugx(0, "WARNING: %s: Midway clean-up: did not expect thread %" PRIuSIZE " to be not active",
 								__func__, i);
-							sem_post(semaphore);
-							if (max_threads_scantype > 0)
-								sem_post(semaphore_scantype);
 							continue;
 						}
 						thread_array[i].active = FALSE;
@@ -777,9 +756,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 							upsdebugx(0, "WARNING: %s: Midway clean-up: pthread_join() returned code %i",
 								__func__, ret);
 						}
-						sem_post(semaphore);
-						if (max_threads_scantype > 0)
-							sem_post(semaphore_scantype);
+						nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 					}
 					thread_count = 0;
 					free(thread_array);
@@ -793,6 +770,9 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 #endif   /* HAVE_PTHREAD */
 			} /* if: could we "pass" or not? */
 		} /* while */
+
+		free(ip_str);
+		ip_str = NULL;
 
 #ifdef HAVE_PTHREAD
 		if (thread_array != NULL) {
@@ -809,9 +789,7 @@ nutscan_device_t * nutscan_scan_ip_range_xml_http(nutscan_ip_range_list_t * irl,
 				}
 				thread_array[i].active = FALSE;
 # if (defined HAVE_SEMAPHORE_UNNAMED) || (defined HAVE_SEMAPHORE_NAMED)
-				sem_post(semaphore);
-				if (max_threads_scantype > 0)
-					sem_post(semaphore_scantype);
+				nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
 # else
 #  ifdef HAVE_PTHREAD_TRYJOIN
 				pthread_mutex_lock(&threadcount_mutex);
