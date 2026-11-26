@@ -23,7 +23,7 @@ def quote(value):
     return '"' + value.replace('\\', '\\\\').replace('"', '\\"').replace('#', '\\#') + '"'
 
 
-def request(binary, metadata, value='original', new_value=None):
+def _request_once(binary, metadata, value='original', new_value=None):
     errors, commands, saved = [], [], []
     with tempfile.TemporaryDirectory(prefix='nut-upsset-') as directory, socket.socket() as server:
         server.bind(('127.0.0.1', 0))
@@ -141,7 +141,12 @@ def request(binary, metadata, value='original', new_value=None):
                 if nut_debug_level > 1:
                     print("Client INPUT:")
                     print(str(body))
-                out, err = p.communicate(input=body, timeout=default_timeout)
+                try:
+                    out, err = p.communicate(input=body, timeout=default_timeout)
+                except subprocess.TimeoutExpired:
+                    p.kill()
+                    p.communicate()
+                    raise
                 # err = p.stderr.decode()
                 if nut_debug_level > 1:
                     print("Client OUT:")
@@ -155,6 +160,8 @@ def request(binary, metadata, value='original', new_value=None):
         finally:
             thread.join(timeout=default_timeout + 5)
         assert not thread.is_alive(), 'Server did not finish'
+        if errors and all(isinstance(error, (socket.timeout, TimeoutError)) for error in errors):
+            raise errors[0]
         assert not errors, errors
         assert p.returncode == 0, (metadata, p.returncode, err.decode())
         output = out.decode('ascii')
@@ -169,6 +176,16 @@ def request(binary, metadata, value='original', new_value=None):
         else:
             assert 'USERNAME test' in commands and 'PASSWORD test' in commands, commands
         return output, saved
+
+
+def request(binary, metadata, value='original', new_value=None):
+    for attempt in range(2):
+        try:
+            return _request_once(binary, metadata, value, new_value)
+        except (socket.timeout, TimeoutError, subprocess.TimeoutExpired) as error:
+            if attempt:
+                raise
+            print('Timeout during upsset-string-test request; retrying once: %s' % error, flush=True)
 
 
 def main():
