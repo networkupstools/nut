@@ -243,4 +243,5 @@ subdriver_aux_t ecoflow_hid_aux_cdc = {
 	ecoflow_cdc_initinfo,
 	ecoflow_cdc_updateinfo,
 	ecoflow_cdc_cleanup,
+	NULL,	/* request_min_gap_default */
 };

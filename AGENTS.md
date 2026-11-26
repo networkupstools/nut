@@ -70,6 +70,21 @@ Follow more specific guidance in those files if this summary differs from it.
   acceptance from CI jobs which did not exercise it.
 - Diagnose the first relevant CI failure before changing code, distinguishing
   the proposed change from baseline or CI-environment failures.
+- When introducing test programs or scripts, prefer adding them to the `tests/`
+  directory and not into arbitrary locations in the code base. Update needed
+  dependency or symlink recipes in `tests/Makefile.am` accordingly. List any
+  created files or symlinks in `CLEANFILES`.
+- If using `mkdtemp` or similar methods to create test data and configurations,
+  be sure to base them under the build directory -- e.g. by exporting `TMPDIR`,
+  `TEMP` or `TMP` environment variable(s) from the Makefile goal.
+- When adding new items into the automake standard flow as `TESTS += program`
+  in a `Makefile.am`, update the nearby `.gitignore` file with a triplet based
+  on the program name:
+```
+/program
+/program.log
+/program.trs
+```
 
 ## Preserve human responsibility
 

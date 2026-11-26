@@ -879,7 +879,7 @@ tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,noexec,relatime,inode64)
 ----
 ======
 
-FreeBSD 12.2 - 15.0
+FreeBSD 12.2 - 15.1
 ~~~~~~~~~~~~~~~~~~~
 
 [NOTE]
@@ -914,6 +914,14 @@ below.
     cppcheck \
     pkgconf \
     gcc
+
+# NOTE: Compared to FreeBSD 15.0p9, the 15.1p7 worker includes
+# a broken automake 1.19 release which did not detect `bsdtar`
+# as suitable. It should be fixed in later automake releases,
+# but for now if your configure script detects `tar` as `none`
+# or `false` and fails `make dist`, work around by installing
+# real GNU tar:
+# :; pkg install gtar
 
 # Name for LLVM CLANG compiler may vary on old and new systems:
 :; pkg install -y clang || pkg install -y llvm
@@ -2066,22 +2074,13 @@ export PATH
     mingw-w64-x86_64-winpthreads-git \
     mingw-w64-clang-x86_64-winpthreads-git
 
-# Note that MSYS2 includes libusb-1.0 "natively"
-# The NUT codebase adjustments for Windows might at this moment expect older
-# ecosystem via https://github.com/mcuee/libusb-win32 -- subject to fix then.
+# Note that MSYS2 includes libusb-1.0 "natively"; it is the only libusb
+# supported by NUT on Windows (libusb-win32 and libusb-compat, i.e. the
+# libusb-0.1 API, are not). The UPS must be bound to the WinUSB driver
+# (e.g. with Zadig) for libusb-1.0 to open it.
 :; pacman -S --needed \
     mingw-w64-x86_64-libusb \
     mingw-w64-clang-x86_64-libusb
-
-# Seems that the older libusb-win32 (libusb-0.1) is also available as:
-:; pacman -S --needed \
-    mingw-w64-x86_64-libusb-win32 \
-    mingw-w64-clang-x86_64-libusb-win32
-
-# Alternately there is libusb-compat (libusb-1.0 codebase exposing the older
-# libusb-0.1 API) which SHOULD NOT be installed along with the real libusb-0.1:
-# :; pacman -S --needed mingw-w64-x86_64-libusb-compat-git \
-#        mingw-w64-clang-x86_64-libusb-compat-git
 
 # This also pulls *-devel of several other projects:
 :; pacman -S --needed \

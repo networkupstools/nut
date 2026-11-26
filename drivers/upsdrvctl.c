@@ -1720,6 +1720,7 @@ static void send_all_drivers(void (*command_func)(const ups_t *))
 
 	/* Orderly processing of shutdowns */
 	for (i = 0; i <= maxsdorder; i++) {
+		ups = upstable;
 		while (ups) {
 			if (ups->sdorder == i)
 				command_func(ups);

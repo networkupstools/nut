@@ -115,6 +115,8 @@ $(GENERATED_SNMP_FILES): $(GENERATED_SNMP_DEPS)
 # To facilitate "make distcheck" and out-of-tree builds, we try to
 # use files pre-generated in SRCDIR if those in BUILDDIR dir are empty
 # or did not appear.
+# Leave disabled udev input in the source tree so a later autogen.sh run
+# can replace it without a stale copy shadowing it in the build tree.
 $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	@test -s '$@' || echo "WARNING: GENERATED_USB_OS_FILES: '$@' is empty or missing; do not use this build to generate 'dist' tarballs" >&2
 	@$(MKDIR_P) "$(@D)"
@@ -122,13 +124,16 @@ $(GENERATED_USB_OS_FILES): $(GENERATED_USB_FILES)
 	    if test x"$(top_srcdir)" != x"$(top_builddir)" ; then \
 	        RELNAME="`echo '$@' | sed 's,^$(abs_top_builddir)/*,,'`" ; \
 	        SRCNAME="$(top_srcdir)/$${RELNAME}" ; \
+	        if test x"$${RELNAME}" = xscripts/udev/nut-usbups.rules.in && test -f "$${SRCNAME}.AUTOGEN_WITHOUT" ; then \
+	            exit 0 ; \
+	        fi ; \
 	        if test -s "$${SRCNAME}" ; then \
 	            echo "WARNING: GENERATED_USB_OS_FILES: using '$${SRCNAME}' for '$@'" >&2 ; \
-	            cp "$${SRCNAME}" '$@' ; \
+	            cp "$${SRCNAME}" '$@' || exit 1 ; \
 	        fi ; \
 	    fi ; \
-	 fi
-	@touch '$@'
+	 fi ; \
+	 touch '$@'
 
 # FIXME: Make use of @PERL[@] substitution and HAVE_PERL conditional?
 $(GENERATED_USB_FILES): $(GENERATED_USB_DEPS)

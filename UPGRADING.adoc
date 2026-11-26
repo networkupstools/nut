@@ -45,6 +45,13 @@ Changes from 2.8.5 to 2.8.6
   `*.pc` files, packaging recipes and tarball names are not changed.
   [PR #3754 follow-up]
 
+- Windows builds of NUT now support only libusb-1.0; libusb-0.1
+  (libusb-win32 or libusb-compat) is no longer supported there, and
+  `--with-usb=libusb-0.1` fails. Packagers should depend on libusb-1.0
+  instead. USB devices previously bound to the libusb-win32
+  `libusb0.sys` driver must be re-bound to the WinUSB driver (e.g. with
+  the updated `wdi-simple` or with Zadig). [issue #1507, PR #3791]
+
 - The Perl `UPS::Nut` module now decodes NUT quoting and backslash escapes
   in query/list values and `nutauth.conf`, including include paths. Remove
   manual decoding of these returned values and pass literal credentials
@@ -164,6 +171,13 @@ NOTE: In a future NUT release, the default `configure` script handling for the
   systems, check any dashboards or alerts that used `output.L1.realpower`
   or `output.L2.powerfactor` for phase C. Use `output.L3.realpower` and
   `output.L3.powerfactor` for that phase. [PR #3863]
+
+- Deployments using `usbhid-ups` with a Minuteman UPS which reports USB ID
+  `05dd:a0a0` and has `productid` set in `ups.conf` used to get the
+  `delta_ups-hid` subdriver. The `tripplite-hid` subdriver, which corrects
+  this device's voltage and frequency readings, now handles it in all
+  cases, so the set of published variables changes somewhat (for example
+  `input.source` is no longer reported). [issue #1852, PR #3764]
 
 - The `huawei-ups2000` driver fixed two serious problems that affected all
   previous NUT versions. All `huawei-ups2000` users are strongly recommended
