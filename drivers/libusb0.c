@@ -31,6 +31,10 @@
 
 #include "config.h" /* for HAVE_USB_DETACH_KERNEL_DRIVER_NP flag */
 
+#if (defined WIN32) || (defined _WIN32)
+# error "libusb-0.1 is not supported for Windows builds, use libusb-1.0 (see https://github.com/networkupstools/nut/issues/1507)"
+#endif
+
 #if (defined ENABLE_SHARED_PRIVATE_LIBS) && ENABLE_SHARED_PRIVATE_LIBS
 # if (defined BUILD_FOR_SHARED_PRIVATE_LIBS) && BUILD_FOR_SHARED_PRIVATE_LIBS
 #  define suggest_NDE_conflict          LIBNUTPRIVATE_suggest_NDE_conflict
@@ -42,13 +46,10 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
-#ifdef WIN32
-# include "wincompat.h"
-#endif	/* WIN32 */
 #include "strcasestr-static.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.54"
+#define USB_DRIVER_VERSION	"0.55"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -102,6 +103,11 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_hid_ep_in",	"Deeper tuning of USB communications for complex devices");
 	addvar(VAR_VALUE, "usb_hid_ep_out",	"Deeper tuning of USB communications for complex devices");
 
+	addvar(VAR_VALUE, "usb_request_min_gap_us",
+		"Minimum time in microseconds from the end of one USB control request "
+		"to the start of the next, for devices that refuse requests sent too "
+		"soon (default 0: off)");
+
 	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
 
 	upsdebugx(1, "Using USB implementation: %s", dstate_getinfo("driver.version.usb"));
@@ -134,7 +140,7 @@ static inline int typesafe_control_msg(
 	usb_ctrl_charbufsize size,
 	usb_ctrl_timeout_msec timeout)
 {
-	return usb_control_msg(dev, requesttype, request, value, index,
+	return nut_usb_control_msg_with_gap(dev, requesttype, request, value, index,
 		(char *) bytes, (int) size, timeout);
 }
 
@@ -282,6 +288,10 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 		}
 #include "nut-pragmas-range-checks-end.h"
 
+		if ((s = getval("usb_request_min_gap_us"))) {
+			nut_usb_set_request_min_gap(s);
+		}
+
 		usb_hid_number_opts_parsed = 1;
 	}
 
@@ -290,15 +300,7 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 	usb_find_busses();
 	usb_find_devices();
 
-#ifdef WIN32
-	busses = usb_get_busses();
-#else	/* !WIN32 */
-	/* libusb built-in; not sure why original NUT for WIN32
-	 * code differed or if it is actually better? Or why
-	 * this was not tackled in a few other files for USB?..
-	 */
 	busses = usb_busses;
-#endif	/* !WIN32 */
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
@@ -466,9 +468,6 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 			/* this method requires at least libusb 0.1.8:
 			 * it force device claiming by unbinding
 			 * attached driver... From libhid */
-#ifdef WIN32
-			usb_set_configuration(udev, 1);
-#endif	/* WIN32 */
 			retries = 3;
 			while ((ret = usb_claim_interface(udev, usb_subdriver.hid_rep_index)) < 0) {
 				upsdebugx(2, "failed to claim USB device: %s",
@@ -663,23 +662,9 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 
 				if (res < rdlen)
 				{
-#ifndef WIN32
 					upsdebugx(2, "Warning: report descriptor too short "
 						"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
 						", got %d)", rdlen, res);
-#else	/* WIN32 */
-					/* https://github.com/networkupstools/nut/issues/1690#issuecomment-1455206002 */
-					upsdebugx(0, "Warning: report descriptor too short "
-						"(expected %" PRI_NUT_USB_CTRL_CHARBUFSIZE
-						", got %d)", rdlen, res);
-					upsdebugx(0, "Please check your Windows Device Manager: "
-						"perhaps the UPS was recognized by default OS\n"
-						"driver such as HID UPS Battery (hidbatt.sys, "
-						"hidusb.sys or similar). It could have been\n"
-						"\"restored\" by Windows Update. You can try "
-						"https://zadig.akeo.ie/ to handle it with\n"
-						"either WinUSB, libusb0.sys or libusbK.sys.");
-#endif	/* WIN32 */
 					rdlen = res; /* correct rdlen if necessary */
 				}
 
@@ -762,16 +747,6 @@ static int nut_libusb_open(usb_dev_handle **udevp,
 			"https://github.com/networkupstools/nut/wiki/%%22Insufficient-permissions%%22-when-starting-USB-drivers");
 	}
 
-#ifdef WIN32
-	upsdebugx(0, "Please check your Windows Device Manager: "
-		"perhaps the UPS was recognized by default OS\n"
-		"driver such as HID UPS Battery (hidbatt.sys, "
-		"hidusb.sys or similar). It could have been\n"
-		"\"restored\" by Windows Update. You can try "
-		"https://zadig.akeo.ie/ to handle it with\n"
-		"either WinUSB, libusb0.sys or libusbK.sys.");
-#endif	/* WIN32 */
-
 	return -1;
 }
 
@@ -803,16 +778,12 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 		upsdebugx(2, "%s: Connection timed out", desc);
 		return 0;
 
-/* libusb-win32 does not know EPROTO and EOVERFLOW,
- * it only returns EIO for any IO errors */
-#ifndef WIN32
 	case -EOVERFLOW:	/* Value too large for defined data type */
-# ifdef EPROTO
+#ifdef EPROTO
 	case -EPROTO:	/* Protocol error */
-# endif
+#endif
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		return 0;
-#endif	/* !WIN32 */
 
 	case 0: 	/** TOTHINK: Should this (probably LIBUSB_SUCCESS) be quiet? */
 	default:	/* Undetermined, log only */
@@ -850,10 +821,6 @@ static int nut_libusb_get_report(
 		usb_subdriver.hid_rep_index,
 		raw_buf, ReportSize, USB_TIMEOUT);
 
-#ifdef WIN32
-	errno = -ret;
-#endif	/* WIN32 */
-
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
 		return 0;
@@ -884,10 +851,6 @@ static int nut_libusb_set_report(
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		usb_subdriver.hid_rep_index,
 		raw_buf, ReportSize, USB_TIMEOUT);
-
-#ifdef WIN32
-	errno = -ret;
-#endif	/* WIN32 */
 
 	/* Ignore "protocol stall" (for unsupported request) on control endpoint */
 	if (ret == -EPIPE) {
@@ -954,10 +917,6 @@ static int nut_libusb_get_string(
 
 	ret = nut_usb_get_string(udev, StringIdx, buf, (size_t)buflen);
 
-#ifdef WIN32
-	errno = -ret;
-#endif	/* WIN32 */
-
 	/** 0 can be seen as an empty string, or as a success for
 	 * logging below - also tends to happen */
 	if (ret == 0) {
@@ -991,10 +950,6 @@ static int nut_libusb_get_interrupt(
 
 	/* Interrupt EP is USB_ENDPOINT_IN with offset defined in hid_ep_in, which is 0 by default, unless overridden in subdriver. */
 	ret = usb_interrupt_read(udev, USB_ENDPOINT_IN + usb_subdriver.hid_ep_in, (char *)buf, bufsize, timeout);
-
-#ifdef WIN32
-	errno = -ret;
-#endif	/* WIN32 */
 
 	/* Clear stall condition */
 	if (ret == -EPIPE) {

@@ -38,6 +38,7 @@ At the present time, usbhid-ups supports:
  - some Powercom models,
  - some PowerWalker models,
  - some TrippLite models,
+ - some UGREEN models (US2000),
  - some Vertiv models (Liebert GXT5).
 
 For a more complete list, refer to the NUT hardware compatibility list,

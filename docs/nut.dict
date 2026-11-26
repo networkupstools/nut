@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3924 utf-8
+personal_ws-1.1 en 3943 utf-8
 AAC
 AAS
 ABI
@@ -218,6 +218,7 @@ CXX
 CXXCPP
 CXXFLAGS
 Casar
+CbU
 CentOS
 Centralion
 ChangeLog
@@ -371,6 +372,7 @@ ESV
 ESXi
 ETIME
 ETIMEDOUT
+ETR
 EUROCASE
 EVeRr
 EXtreme
@@ -902,6 +904,7 @@ Niels
 Niemueller
 Niklas
 Niro
+Nitro
 NixOS
 Nobreak
 Nobreaks
@@ -1196,6 +1199,7 @@ Ragtech
 RatedVA
 ReadDevID
 RealSmart
+Rebadged
 RedHat
 Redhat
 Regados
@@ -1590,6 +1594,7 @@ WALKMODE
 WARNFATAL
 WARNOPT
 WCH
+WDK
 WELI
 WH
 WHAD
@@ -1877,6 +1882,7 @@ brazil
 brcm
 brotli
 bsd
+bsdtar
 bt
 bti
 btn
@@ -1907,6 +1913,7 @@ cafile
 calc
 calib
 calloc
+cancelDischarge
 capath
 cb
 cbe
@@ -2254,6 +2261,7 @@ execve
 expandsize
 expr
 extapi
+extbatt
 extern
 externalConsole
 extradata
@@ -2376,6 +2384,7 @@ gmail
 gmake
 gmtime
 gnuplot
+gnutar
 gnutls
 goodspeed
 google
@@ -2391,6 +2400,7 @@ graphmin
 graphviz
 groupadd
 groupname
+gtar
 gtec
 gtk
 guesstimate
@@ -2673,6 +2683,8 @@ libtool
 libupsclient
 libusb
 libusb's
+libusbK
+libusbk
 libusbugen
 libusbx
 libvirt
@@ -2707,6 +2719,7 @@ lm
 lmodbus
 ln
 lnetsnmp
+lntdll
 loadPercentage
 localcalculation
 localhost
@@ -2721,6 +2734,7 @@ login
 logins
 logout
 logrotate
+lole
 lookup
 loopback
 lowbatt
@@ -2729,6 +2743,7 @@ lr
 lregex
 ls
 lsd
+lsetupapi
 lst
 lsusb
 lt
@@ -2737,6 +2752,7 @@ lu
 lua
 lv
 lvo
+lwdi
 lws
 lxc
 lxcbr
@@ -2987,6 +3003,7 @@ nvi
 nvo
 nwfilter
 objdump
+obload
 odette
 offdelay
 offsite
@@ -3226,6 +3243,7 @@ reconnection
 recurses
 recursing
 recv
+redistributable
 redistributors
 reentrancy
 refactored
@@ -3404,6 +3422,7 @@ slaveaddr
 slaveid
 slavesync
 slibtool
+sln
 sm
 smartslot
 smartups
@@ -3658,6 +3677,7 @@ udevadm
 udq
 ufw
 ugen
+ugreen
 ui
 uid
 uint
@@ -3665,6 +3685,7 @@ ukUNV
 ul
 ulimit
 ulink
+umask
 umount
 un
 uname
@@ -3742,11 +3763,11 @@ upstype
 upsuser
 upswired
 uptime
+urandom
 urb
 uri
 url
 urpmi
-urandom
 usb
 usbconfig
 usbfs
@@ -3831,6 +3852,7 @@ waitbeforereconnect
 wakeup
 wc
 wdi
+wdkdir
 webserver
 wf
 wg
@@ -3844,6 +3866,7 @@ wininit
 winnutclient
 winpthreads
 winsymlinks
+winusb
 withGiven
 withdoc
 wix

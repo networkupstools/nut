@@ -1919,6 +1919,15 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	if ((strcasecmp(su_info_p->info_type, "ups.status"))
 	&&  (strcasecmp(strrchr(su_info_p->info_type, '.'), ".alarm"))
 	) {
+		/* A numeric lookup can identify an unavailable reading before scaling.
+		 * Withdraw the previous reading and keep polling for its return. */
+		if ((su_info_p->flags & SU_FLAG_NAINVALID)
+		&& !(su_info_p->info_flags & ST_FLAG_STRING)
+		&& value != NULL && !strcmp(value, "N/A")) {
+			dstate_delinfo(info_type);
+			return;
+		}
+
 		if (value != NULL)
 			dstate_setinfo(info_type, "%s", value);
 		else if (su_info_p->dfl != NULL)

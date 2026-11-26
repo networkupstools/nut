@@ -20,6 +20,7 @@
 #include "config.h"	/* must be first */
 #include "common.h"
 #include "usb-common.h"
+#include "state.h"
 
 int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *device)
 {
@@ -445,7 +446,13 @@ static int nut_usb_get_string_descriptor(
 	int tries = MAX_STRING_DESC_TRIES;
 
 	while (tries--) {
+#if WITH_LIBUSB_0_1
+		/* usb_get_string() as libusb-0.1 does it, but with the gap */
+		ret = nut_usb_control_msg_with_gap(udev, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
+			(USB_DT_STRING << 8) + StringIdx, langid, buf, (int)buflen, 1000);
+#else
 		ret = usb_get_string(udev, (usb_ctrl_strindex)StringIdx, langid, (usb_ctrl_charbuf)buf, buflen);
+#endif
 		if (ret >= 0) {
 			break;
 		} else if (tries) {
@@ -522,4 +529,98 @@ int nut_usb_get_string(
 		(len >= 0 && (size_t)len < buflen ? (size_t)len : buflen));
 
 	return len;
+}
+
+/* See usb_request_min_gap_us in usb-common.h */
+static long	usb_request_min_gap_conf = -1;	/* -1: not set in ups.conf */
+static long	usb_request_min_gap_us = 0;
+static st_tree_timespec_t	usb_request_last_end;
+static int	usb_request_have_last_end = 0;
+
+/* This many refused requests in a row, the first sent sooner than this after
+ * the previous answer, look like the failure the gap prevents: log a hint */
+#define USB_REQUEST_REFUSED_HINT_RUN	10
+#define USB_REQUEST_REFUSED_HINT_GAP_US	1000.0
+
+void nut_usb_set_request_min_gap(const char *val)
+{
+	long	l = 0;
+
+	if (!str_to_long(val, &l, 10) || l < 0) {
+		fatalx(EXIT_FAILURE, "%s: could not parse usb_request_min_gap_us '%s'",
+			__func__, val);
+	}
+
+	if (l > USB_REQUEST_MIN_GAP_US_MAX) {
+		upslogx(LOG_WARNING, "%s: usb_request_min_gap_us %ld is too large, using %ld",
+			__func__, l, USB_REQUEST_MIN_GAP_US_MAX);
+		l = USB_REQUEST_MIN_GAP_US_MAX;
+	}
+
+	usb_request_min_gap_conf = l;
+	usb_request_min_gap_us = l;
+}
+
+long nut_usb_set_request_min_gap_default(long usec)
+{
+	if (usb_request_min_gap_conf >= 0) {
+		return -1;
+	}
+
+	usb_request_min_gap_us = usec;
+	return usec;
+}
+
+/* Wait for what is left of the gap since the previous request ended;
+ * returns the time since then in microseconds, or -1 for the first one */
+double nut_usb_request_gap_wait(void)
+{
+	st_tree_timespec_t	now;
+	double	gap_us;
+
+	if (!usb_request_have_last_end) {
+		return -1;
+	}
+
+	state_get_timestamp(&now);
+	gap_us = difftime_st_tree_timespec(now, usb_request_last_end) * 1000000.0;
+	if (gap_us >= 0 && gap_us < usb_request_min_gap_us) {
+		usleep((useconds_t)(usb_request_min_gap_us - gap_us));
+		state_get_timestamp(&now);
+		gap_us = difftime_st_tree_timespec(now, usb_request_last_end) * 1000000.0;
+	}
+
+	return gap_us;
+}
+
+void nut_usb_request_gap_done(int ret, double gap_us)
+{
+	static int	refused = 0, hinted = 0;
+	static double	first_gap_us = -1;
+
+	state_get_timestamp(&usb_request_last_end);
+	usb_request_have_last_end = 1;
+
+	/* A device refusing a request stalls it: a pipe error, or an
+	 * overflow from some host controllers */
+	if (ret != LIBUSB_ERROR_PIPE && ret != LIBUSB_ERROR_OVERFLOW) {
+		refused = 0;
+		return;
+	}
+
+	if (refused == 0) {
+		first_gap_us = gap_us;
+	}
+	refused++;
+
+	if (refused == USB_REQUEST_REFUSED_HINT_RUN && !hinted
+	&&  first_gap_us >= 0 && first_gap_us < USB_REQUEST_REFUSED_HINT_GAP_US
+	) {
+		upslogx(LOG_WARNING, "%s: device refused %d requests in a row, the first "
+			"sent %.1f us after the previous answer; if this repeats, try "
+			"usb_request_min_gap_us = %ld",
+			__func__, refused, first_gap_us,
+			usb_request_min_gap_us > 0 ? 2 * usb_request_min_gap_us : 100);
+		hinted = 1;
+	}
 }

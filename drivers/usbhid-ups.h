@@ -230,6 +230,7 @@ typedef struct {
 	void (*initinfo)(void);        /* called after the initial HID data walk */
 	void (*updateinfo)(void);      /* called after each successful HID update */
 	void (*cleanup)(void);         /* called before the HID device is closed */
+	long (*request_min_gap_default)(HIDDevice_t *hd); /* default usb_request_min_gap_us (0: off) */
 } subdriver_aux_t;
 
 typedef struct {
