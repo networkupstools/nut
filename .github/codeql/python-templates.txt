@@ -1,0 +1,2 @@
+scripts/python/app/NUT-Monitor-py3qt.in scripts/python/app/NUT-Monitor-py3qt.py
+scripts/python/app/NUT-Monitor-py2gtk2.in scripts/python/app/NUT-Monitor-py2gtk2.py

@@ -1853,6 +1853,7 @@ static models_name_t mge_model_names [] =
 	{ "Eaton 5PX", "1500", EATON_5P, NULL },
 	{ "Eaton 5PX", "2200", EATON_5P, NULL },
 	{ "Eaton 5PX", "3000", EATON_5P, NULL },
+	{ "Eaton 5PX", "2200i RT3U G2", EATON_5P, NULL },
 
 	/* Eaton 5SC, names assumed per VA numbers in
 	 * https://www.eaton.com/gb/en-gb/site-search.html.searchTerm$5sc.tabs$all.html

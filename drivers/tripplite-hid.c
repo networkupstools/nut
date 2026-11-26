@@ -29,12 +29,19 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.87"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.88"
 
 /* HID PDC unit for watts / VA, and the Unit Exponent NUT's HIDUnits table
  * (drivers/libhid.c) expects it to be declared with. */
 #define TRIPPLITE_HID_POWER_UNIT	0x0000D121L
 #define TRIPPLITE_HID_POWER_UNIT_EXPO	7
+
+/* HID PDC units for volts, hertz and amperes, and the exponent NUT
+ * normalizes volts against (see HIDUnits in drivers/libhid.c) */
+#define TRIPPLITE_HID_VOLT_UNIT		0x00F0D121L
+#define TRIPPLITE_HID_VOLT_UNIT_EXPO	7
+#define TRIPPLITE_HID_HERTZ_UNIT		0x0000F001L
+#define TRIPPLITE_HID_AMPERE_UNIT	0x00100001L
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -566,6 +573,73 @@ static int tripplite_claim(HIDDevice_t *hd) {
 	}
 }
 
+/* Minuteman UPSes with USB ID 05dd:a0a0 (Delta's vendor ID) send input and
+ * output voltage, input and output frequency, output current and battery
+ * voltage as tenths in 16-bit report fields, but their Report Descriptor gets
+ * two things wrong about these items:
+ * - Most of the 16-bit fields declare a Logical Maximum of 255, so GetValue()
+ *   masks the reports to their low 8 bits: an input of 123.3 V, sent as 1233,
+ *   becomes 209.
+ * - The items declare a Unit Exponent of 1 rather than the exponent which
+ *   means tenths. NUT normalizes the volt unit against an exponent of 7, so
+ *   volts get scaled by 1e-6, while hertz and amperes get scaled by 10.
+ * Combined, input.voltage, output.voltage and battery.voltage read 0.0, and a
+ * 59.9 Hz frequency (599, masked to 87) reads 870.0.
+ *
+ * Widen such Logical Maximums to the size of their fields, and set the Unit
+ * Exponents which mean tenths: 6 for volts, -1 for hertz and amperes.
+ * Tested on a Minuteman Entrust ETR1500LCD; GitHub issue #1852 shows the same
+ * readings from a PRO1500RT2U. */
+static int minuteman_a0a0_fix_report_desc(HIDDesc_t *pDesc_arg) {
+	size_t	i;
+	int	retval = 0;
+
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t	*pData = &pDesc_arg->item[i];
+
+		if (pData->LogMin == 0 && pData->LogMax == 255
+		 && pData->Size > 8 && pData->Size <= 16
+		) {
+			long	logmax = (1L << pData->Size) - 1;
+
+			upsdebugx(3, "Fixing Report Descriptor: "
+				"ReportID 0x%02x is %u bits wide but "
+				"declares LogMax %ld; setting LogMax = %ld",
+				pData->ReportID, (unsigned int)pData->Size,
+				pData->LogMax, logmax);
+
+			pData->LogMax = logmax;
+			retval = 1;
+		}
+
+		if (pData->UnitExp != 1)
+			continue;
+
+		if (pData->Unit == TRIPPLITE_HID_VOLT_UNIT) {
+			upsdebugx(3, "Fixing Report Descriptor: "
+				"ReportID 0x%02x declares volts in tenths "
+				"with UnitExp 1; setting UnitExp = %d",
+				pData->ReportID,
+				TRIPPLITE_HID_VOLT_UNIT_EXPO - 1);
+
+			pData->UnitExp = TRIPPLITE_HID_VOLT_UNIT_EXPO - 1;
+			retval = 1;
+		} else if (pData->Unit == TRIPPLITE_HID_HERTZ_UNIT
+		 || pData->Unit == TRIPPLITE_HID_AMPERE_UNIT
+		) {
+			upsdebugx(3, "Fixing Report Descriptor: "
+				"ReportID 0x%02x declares unit 0x%08lx in "
+				"tenths with UnitExp 1; setting UnitExp = -1",
+				pData->ReportID, (unsigned long)pData->Unit);
+
+			pData->UnitExp = -1;
+			retval = 1;
+		}
+	}
+
+	return retval;
+}
+
 /* The tested Tripp Lite SMART1500LCD (09ae:2012) declares its ActivePower item
  * with the HID PDC unit for watts / VA (0x0000D121) but leaves the Unit
  * Exponent at 0, while the report already carries a plain integer expressed in
@@ -589,6 +663,10 @@ static int tripplite_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 			(unsigned int)pDev->VendorID,
 			(unsigned int)pDev->ProductID);
 		return 0;
+	}
+
+	if (pDev->VendorID == DELTA_VENDORID && pDev->ProductID == 0xa0a0) {
+		retval = minuteman_a0a0_fix_report_desc(pDesc_arg);
 	}
 
 	for (i = 0; i < pDesc_arg->nitems; i++) {
@@ -627,8 +705,7 @@ static int tripplite_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg) {
 	}
 
 	if (!retval) {
-		upsdebugx(3, "Report Descriptor: no ActivePower item "
-			"needed a Unit Exponent fix");
+		upsdebugx(3, "Report Descriptor: no item needed a fix");
 	}
 
 	return retval;

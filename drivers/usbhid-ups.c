@@ -29,7 +29,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION	"0.74"
+#define DRIVER_VERSION	"0.75"
 
 #define HU_VAR_WAITBEFORERECONNECT "waitbeforereconnect"
 
@@ -70,6 +70,7 @@
 #	include "powervar-hid.h"
 #	include "salicru-hid.h"
 #	include "tripplite-hid.h"
+#	include "ugreen-hid.h"
 #	include "vertiv-hid.h"
 #endif	/* !SHUT_MODE => USB */
 
@@ -97,6 +98,7 @@ static subdriver_t *subdriver_list[] = {
 	&powervar_subdriver,
 	&salicru_subdriver,
 	&tripplite_subdriver,
+	&ugreen_subdriver,
 	&vertiv_subdriver,
 #endif	/* !SHUT_MODE => USB */
 	NULL
@@ -975,12 +977,38 @@ found:
  */
 
 #if !((defined SHUT_MODE) && SHUT_MODE)
+/* The subdriver's usb_request_min_gap_us for the device, unless set in
+ * ups.conf: applied as soon as a subdriver claims the device, so the
+ * descriptor reads which follow keep the gap too */
+static void set_request_min_gap_default(subdriver_t *sd, HIDDevice_t *arghd)
+{
+	static long	logged = 0;
+	long	usec = 0;
+
+	if (sd && sd->aux && sd->aux->request_min_gap_default) {
+		usec = sd->aux->request_min_gap_default(arghd);
+	}
+
+	usec = nut_usb_set_request_min_gap_default(usec);
+	if (usec > 0) {
+		dstate_setinfo("driver.parameter.usb_request_min_gap_us", "%ld", usec);
+		if (usec != logged) {
+			upslogx(LOG_INFO, "Using usb_request_min_gap_us = %ld (subdriver default)", usec);
+			logged = usec;
+		}
+	} else if (usec == 0) {
+		dstate_delinfo("driver.parameter.usb_request_min_gap_us");
+	}
+}
+
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int	i;
+	subdriver_t	*sd;
 	NUT_UNUSED_VARIABLE(privdata);
 
-	if (match_function_subdriver_name(1)) {
+	if ((sd = match_function_subdriver_name(1))) {
 		/* This driver can handle this device. Guessing so... */
+		set_request_min_gap_default(sd, d);
 		return 1;
 	}
 
@@ -988,6 +1016,7 @@ static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 
 	for (i=0; subdriver_list[i] != NULL; i++) {
 		if (subdriver_list[i]->claim(d)) {
+			set_request_min_gap_default(subdriver_list[i], d);
 			return 1;
 		}
 	}
@@ -1358,6 +1387,8 @@ void upsdrv_makevartable(void)
 #if !((defined SHUT_MODE) && SHUT_MODE)
 	addvar(VAR_VALUE, "subdriver", "Explicit USB HID subdriver selection");
 	addvar(VAR_FLAG, "winhid", "Use the experimental native Windows HID backend instead of libusb (WIN32 only)");
+	addvar(VAR_VALUE, "winhid_layout",
+		"Windows HID capability ordering: auto, legacy or native (default=auto)");
 
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	nut_usb_addvars();
@@ -1747,6 +1778,16 @@ void upsdrv_initups(void)
 			comm_driver->name, comm_driver->version);
 	} else {
 		comm_driver = &usb_subdriver;
+	}
+	if (comm_driver == &winhid_subdriver) {
+		val = getval("winhid_layout");
+		if (!winhid_set_layout(val ? val : "auto")) {
+			fatalx(EXIT_FAILURE,
+				"invalid winhid_layout '%s' (expected auto, legacy or native)",
+				NUT_STRARG(val));
+		}
+		dstate_setinfo("driver.parameter.winhid_layout", "%s", winhid_get_layout());
+		upslogx(LOG_INFO, "winhid capability ordering policy: %s", winhid_get_layout());
 	}
 # else	/* !WIN32 */
 	if (testvar("winhid")) {
@@ -2178,6 +2219,9 @@ static int callback(
 	}
 
 	upslogx(LOG_INFO, "Using subdriver: %s", subdriver->name);
+#if !((defined SHUT_MODE) && SHUT_MODE)
+	set_request_min_gap_default(subdriver, hd);
+#endif	/* !SHUT_MODE => USB */
 
 	if (subdriver->fix_report_desc(arghd, pDesc)) {
 		upsdebugx(2, "Report Descriptor Fixed");

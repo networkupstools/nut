@@ -109,6 +109,7 @@
 "APC"	"ups"	"3"	"Smart-UPS X 750 (SMX750I, USB)"	"USB"	"apc_modbus"
 "APC"	"ups"	"3"	"Smart-UPS X 1500 (SMX1500I, USB)"	"USB"	"apc_modbus"
 "APC"	"ups"	"3"	"CS500"	"USB"	"usbhid-ups (limited data available)"	# https://github.com/networkupstools/nut/issues/1776#issuecomment-1377784584
+"APC"	"ups"	"2"	"Easy UPS On-Line SRV2KI-E"	"USB (Exar XR21V1410 USB-UART, USB ID 04e2:1410)"	"nutdrv_qx protocol=voltronic"	# https://github.com/networkupstools/nut/pull/3859 ; Voltronic OEM unit, QPI reports PI01, 2400 8N1
 "APC"	"ups"	"1"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
@@ -997,6 +998,8 @@
 
 "Minibox"	"ups"	"5"	"openUPS Intelligent UPS"	"USB port"	"usbhid-ups"
 
+"Minuteman"	"ups"	"3"	"Entrust ETR1500LCD"	"USB"	"usbhid-ups"
+
 "Must"	"ups"	"4"	"EP2000Pro"	""	"must_ep2000pro"
 
 "Mustek"	"ups"	"2"	"Powermust"	"400VA Plus"	"blazer_ser"
@@ -1366,6 +1369,7 @@
 "Ragtech"	"ups"	"1"	"Easy 2000 M2"	""	"ragtech (experimental)"
 "Ragtech"	"ups"	"1"	"Easy 2200 TI"	""	"ragtech (experimental)"
 "Ragtech"	"ups"	"1"	"Easy 2200 M2"	""	"ragtech (experimental)"
+"Ragtech"	"ups"	"1"	"New Easy Pro 3200VA (20NEP4061, CbU/Ti)"	"USB, reports as Easy 2200 TI: set va=3200"	"ragtech (experimental)"	# https://github.com/networkupstools/nut/pull/3716
 
 "Raritan"	"pdu"	"3"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
@@ -1681,6 +1685,8 @@
 "Trust"	"ups"	"2"	"UPS 1300VA Management PW-4130M"	""	"blazer_ser"
 
 "TS Shara"	"ups"	"4"	"(various)"	""	"nutdrv_qx"
+
+"UGREEN"	"ups"	"1"	"US2000"	"(USB ID 2b89:ffff)"	"usbhid-ups"
 
 "UltraMax"	"ups"	"2"	"1000SC"	"USB"	"nutdrv_qx"	# https://github.com/networkupstools/nut/issues/1634
 
