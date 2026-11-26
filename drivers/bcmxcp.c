@@ -143,6 +143,7 @@ static uint32_t get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
 static bool_t get_response_byte(const unsigned char *response, const ssize_t response_len, const size_t offset, uint16_t *value);
 static bool_t get_response_word(const unsigned char *response, const ssize_t response_len, const size_t offset, uint16_t *value);
+static void publish_runtime_low(uint16_t minutes);
 static void init_command_map(void);
 static void init_meter_map(void);
 static void init_alarm_map(void);
@@ -377,6 +378,12 @@ static bool_t get_response_word(const unsigned char *response, const ssize_t res
 
 	*value = get_word(response + offset);
 	return TRUE;
+}
+
+static void publish_runtime_low(uint16_t minutes)
+{
+	if (minutes != 0)
+		dstate_setinfo("battery.runtime.low", "%u", minutes * 60U);
 }
 
 /* lightweight function to calculate the 8-bit
@@ -1188,7 +1195,8 @@ void init_ext_vars(void)
 			case PW_CONF_LOW_BATT:
 				dstate_setinfo("battery.runtime.low", "%d", 0);
 				dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
-				dstate_setaux("battery.runtime.low", 2);
+				/* Seconds: 0, or 60 through 1800 in whole-minute steps. */
+				dstate_setaux("battery.runtime.low", 4);
 				break;
 
 			case PW_CONF_BEEPER:
@@ -1387,7 +1395,7 @@ void init_limit(void)
 
 	/* Low batt minutes warning*/
 	if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING, &value) && value != 0) {
-		dstate_setinfo("battery.runtime.low", "%u", value);
+		publish_runtime_low(value);
 	}
 
 	/* Return to mains delay */
@@ -1905,7 +1913,7 @@ void upsdrv_updateinfo(void)
 
 		/* Low batt minutes warning*/
 		if (get_response_byte(answer, res, BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING, &value) && value != 0) {
-			dstate_setinfo("battery.runtime.low", "%u", value);
+			publish_runtime_low(value);
 		}
 
 		/* Return to mains delay */
@@ -2332,23 +2340,29 @@ int setvar (const char *varname, const char *val)
 	}
 
 	if (!strcasecmp(varname, "battery.runtime.low")) {
+		long seconds;
+
+		if (!str_to_long(val, &seconds, 10)) {
+			return STAT_SET_CONVERSION_FAILED;
+		}
+
+		if (seconds < 0 || seconds > 30 * 60 || seconds % 60 != 0) {
+			return STAT_SET_INVALID;
+		}
+
+		tmp = (int)(seconds / 60);
 
 		send_write_command(AUTHOR, 4);
 		sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
-		tmp=atoi(val);
-		if (tmp < 0 || tmp > 30) {
-			return STAT_SET_INVALID;
-		}
-
 		cbuf[0]=PW_SET_CONF_COMMAND;
 		cbuf[1]=PW_CONF_LOW_BATT;
-		cbuf[2]=tmp&0xff;
+		cbuf[2]=(unsigned char)tmp;
 		cbuf[3]=0x0;
 
 		res = command_write_sequence(cbuf, 4, answer);
 		snprintf(success_msg, sizeof(success_msg)-1,
-			" Low battery warning time set to %d min", tmp);
+			" Low battery warning time set to %ld sec (%d min)", seconds, tmp);
 
 		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
