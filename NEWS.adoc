@@ -360,11 +360,12 @@ https://github.com/networkupstools/nut/milestone/13
       ignored for models the driver already knew), `pf`, `ah` and the new
       `efficiency_line`, `efficiency_line_conv` and `efficiency_inverter`
       settings; malformed or out-of-range values are rejected at startup.
+      [PR #3836]
     * The model data is a `switch` with one `case` per model code again, as
       in the first versions of the driver, instead of a table indexed by the
       code and filled through a macro. Each value is assigned to a named
       field, which makes the data of a model easier to maintain and easier
-      to read for whoever maintains the driver.
+      to read for whoever maintains the driver. [PR #3836]
     * Every model value is now resolved in one place and in one order: the
       `ups.conf` setting, then the `case` of the reported model, then the
       "unknown device", which is the answer for a code without a `case` and
@@ -375,7 +376,7 @@ https://github.com/networkupstools/nut/milestone/13
       was raised from inside the polling loop, so the driver started and
       then died with only "Data stale" visible through `upsdrvctl`. A rating
       that stays unknown just leaves out the variables that depend on it.
-      The `vbat` setting is now range-checked at startup.
+      The `vbat` setting is now range-checked at startup. [PR #3836]
     * Reworked the `battery.runtime` estimate. The previous one divided the
       capacity by the current of the load over a single 12V battery: it
       ignored the other batteries, the inverter losses and the fact that a
@@ -387,14 +388,14 @@ https://github.com/networkupstools/nut/milestone/13
       inverter efficiency, among all the batteries and applies Peukert's law
       to each one; it is within one third in 88% of the same cases. While
       the UPS reports no load the variable is now removed, instead of
-      staying at the last value calculated.
+      staying at the last value calculated. [PR #3836]
     * `battery.runtime` now counts down during a discharge and comes back
       on mains. It used to be how long full batteries last at the present
       load and nothing else, so it only followed the load: on a real unit it
       went up in the middle of a discharge when the load fell by 1%. The
       driver now keeps the share of a full battery that is left, which
       falls with the time on battery and recovers over the new `chargetime`
-      setting (12 hours by default).
+      setting (12 hours by default). [PR #3836]
     * Added the `runtimecal`, `chargetime` and `idleload` settings, with the
       meaning and format they have in the `blazer` and `nutdrv_qx` drivers:
       two runtimes at two loads, from which the driver draws the curve it
@@ -404,7 +405,7 @@ https://github.com/networkupstools/nut/milestone/13
       with figures measured on the unit itself. A unit whose battery set
       was changed in `ups.conf` (`ah`, `numbatteries` or `vbat`) keeps the
       estimate from the battery capacity unless it gets a `runtimecal` of
-      its own. `battery.charge` still comes from the battery voltage.
+      its own. `battery.charge` still comes from the battery voltage. [PR #3836]
     * `vbat` now means only the nominal voltage of one battery (12V in every
       NHS model), and the driver works out from the voltage reading itself
       how many batteries it covers. Before, the charge treated `vbat` as one
@@ -417,6 +418,7 @@ https://github.com/networkupstools/nut/milestone/13
       decimals now (for example 12.8), for units whose batteries were
       replaced by another kind; it used to be truncated to an integer, and
       `battery.voltage.nominal` is published with two decimals accordingly.
+      [PR #3836]
     * `battery.voltage` and `battery.voltage.nominal` now report the voltage
       of the whole bank, measured and nominal, which is what these names
       mean in NUT and what the front panel of the UPS shows. Most units
@@ -427,14 +429,14 @@ https://github.com/networkupstools/nut/milestone/13
       their number (see `numbatteries` and `battery_series`).
       `battery.charge`, `battery.current` and `battery.runtime` are not
       affected. Graphs and alerts based on `battery.voltage` will show a
-      step after the update.
+      step after the update. [PR #3836]
     * `battery.capacity.nominal` is now the capacity in Ah, the same value
       as `battery.capacity`. It used to be that capacity multiplied by the
-      power factor, a figure with no meaning.
+      power factor, a figure with no meaning. [PR #3836]
     * The `debug_pkt_raw`, `debug_pkt_data` and `debug_pkt_hwinfo` flags
       now work when written as flags, with just their name. They were
-      read as values, so the packet diagnostics only turned on when a
-      value was assigned to them (for example `debug_pkt_data = 1`).
+      read as values, so the packet diagnostics only turned on when a value
+      was assigned to them (for example `debug_pkt_data = 1`). [PR #3836]
     * `battery.charge` is now a scale from 0% at 10.8V for each 12V battery
       to 100% at 13.2V, following `vbat` in proportion. The previous value
       was the reading as a percentage of the nominal voltage, which only
@@ -446,10 +448,12 @@ https://github.com/networkupstools/nut/milestone/13
       of the discharge time, against 20% before. It remains an estimate
       from the voltage alone, as the UPS does not report a charge. The new
       `charge_scale` setting selects another scale, from 10.5V to 12.6V.
+      [PR #3836]
     * `ups.status` now carries `DISCHRG` for as long as the UPS runs on
       battery. The driver only set `OB`, and the NUT core added and removed
       `DISCHRG` by itself as `battery.charge` moved, so on a real unit the
       status alternated between `OB` and `OB DISCHRG` every few seconds.
+      [PR #3836]
     * Reworked how the driver starts talking to the UPS, after the sequence
       that the Python monitor this driver was ported from has always used.
       It now tells the UPS to stop sending packets (two stop requests) and
@@ -464,19 +468,19 @@ https://github.com/networkupstools/nut/milestone/13
       milliseconds (default 1000), named after the setting of the
       `tripplitesu` driver, and the new `stop_packet` setting turns the
       stop requests off (`stop_packet = 0`) for a unit that does not take
-      them well.
+      them well. [PR #3836]
     * Added the `init_packet` setting, to choose which request for the
       hardware information packet is sent to the UPS: the three of them
       (0, the default), only the compatibility one (1), only the short one
       (2) or only the long one (3), which is the one answered with the
-      serial number.
+      serial number. [PR #3836]
     * The driver now notices a UPS that stops sending packets while the
       port stays open, for example with a loose cable on a real serial
       port. After `silence_timeout` seconds without a packet (new setting,
       default 10, 0 to turn it off) the data are given as stale and the
       hardware information packet is requested again until the UPS
       answers. Before, the last values read stayed published as current
-      with no time limit.
+      with no time limit. [PR #3836]
     * Numbers that were fixed in the code are now settings, each with the
       old number as its default: `init_long_tries`, `init_retry_delay`,
       `init_retry_step` and `init_retry_max` for the repetition of the
@@ -486,33 +490,33 @@ https://github.com/networkupstools/nut/milestone/13
       warning margin of the input voltage thresholds (2),
       `battery_rating_hours` and `peukert_exponent` for the runtime
       estimated from the battery capacity (20 and 1.25) and
-      `charger_unit_ma` for the scale of the charger current (30).
+      `charger_unit_ma` for the scale of the charger current (30). [PR #3836]
     * The two ends of the `battery.charge` scale are now published as
       `battery.voltage.high` and `battery.voltage.low`, as voltages of the
       whole bank, and `override.battery.voltage.high` and
       `override.battery.voltage.low` in `ups.conf` replace them with your
       own, the way the `blazer` and `nutdrv_qx` drivers take theirs. The
       low transfer voltage assumed before the hardware information packet
-      arrives can be given with `default.input.transfer.low`.
+      arrives can be given with `default.input.transfer.low`. [PR #3836]
     * The driver manual now describes a problem of the units with a USB
       port (USB ID `0925:1241`) on Linux, and its remedy: the kernel puts
       the device to sleep a few seconds after the serial port is closed
       (USB autosuspend) and the unit does not wake up, so the port cannot
       be opened again when the driver is started or reconnects. A udev
       rule that keeps the device awake avoids it. Found and solved by
-      @luizluca.
+      @luizluca. [PR #3836]
     * Fixed the flags of the hardware information packet (220V input, 220V
       output, buzzer and others), which were read from the wrong end of
       their byte. A unit fed from 220V mains was taken as a 120V one and
       got the 120V transfer points, input voltage thresholds and nominal
       input voltage. The new `invert_bits_hwinfo` and `invert_bits_data`
       settings choose the order of the flags of each packet, should a unit
-      turn out to be different.
+      turn out to be different. [PR #3836]
     * `battery.voltage`, `battery.voltage.nominal` and `battery.packs` are
       no longer published for the first second or two after startup, while
       the number of batteries is not known yet. They used to show the
       reading of one battery, a nominal voltage of 12V and 0 packs until
-      the hardware information packet arrived.
+      the hardware information packet arrived. [PR #3836]
     * Fixed `battery.current` and `battery.current.total`. They are now
       calculated only while the UPS runs on battery, from the load in W
       divided by the inverter efficiency, and are 0 on mains, where the
@@ -524,7 +528,7 @@ https://github.com/networkupstools/nut/milestone/13
       records, from the manufacturer's product sheets, whether the factory
       batteries are in series (assumed when unknown), and the new
       `battery_series` setting (1 in series, 0 in parallel) replaces it for
-      units wired differently.
+      units wired differently. [PR #3836]
     * Data from one UPS is no longer carried over to another. The driver
       already asked for the hardware information again after reopening the
       port, so that a replaced UPS would be recognized, but the nominal
@@ -535,7 +539,7 @@ https://github.com/networkupstools/nut/milestone/13
       all of that is discarded, the variables that depended on it are
       removed and the driver starts over for the new unit, logging a notice.
       Units that answer exactly alike cannot be told apart and still need a
-      driver restart.
+      driver restart. [PR #3836]
     * The two-byte readings of the data packet (input voltage, its minimum
       and maximum, output voltage, temperature and battery voltage) can now
       be decoded in two ways, chosen for each reading by the new `read16_vin`,
@@ -544,10 +548,10 @@ https://github.com/networkupstools/nut/milestone/13
       as an integer part and a fraction, as the manufacturer's protocol
       document describes; 1 takes the two bytes as one 16-bit number, as
       the manufacturer's own monitoring software does. The two only differ
-      above 255 (25.5V for the battery).
+      above 255 (25.5V for the battery). [PR #3836]
     * The `OVER` status is now set when the load goes above the new
       `overload_perc` setting, 105 by default, which is the limit used by
-      the manufacturer's monitoring software; 0 turns the check off.
+      the manufacturer's monitoring software; 0 turns the check off. [PR #3836]
     * Packet diagnostics (the `debug_pkt_data` flag):
       `experimental.nhs.data.battery_tension` and
       `experimental.nhs.data.nominaltension`, the measured and the nominal
@@ -555,7 +559,7 @@ https://github.com/networkupstools/nut/milestone/13
       `battery_series` settings and the number of batteries the reading
       covers. `experimental.nhs.data.perc_output` (the old charge formula)
       and `experimental.nhs.data.timeremain` (never calculated, always 0)
-      were removed.
+      were removed. [PR #3836]
     * Fixed the power readings. `ups.power` and `output.power` now carry the
       apparent power in VA, and `output.realpower` the real power in W:
       `ups.power` used to repeat the real power, and the two `output.*`
@@ -563,21 +567,22 @@ https://github.com/networkupstools/nut/milestone/13
       `output.power.minimum` now track the apparent power, and the minimum
       (also `output.power.minimum.percent`) starts from the first reading
       instead of staying at 0 forever. Graphs and alerts based on these
-      variables will show a step after the upgrade.
+      variables will show a step after the upgrade. [PR #3836]
     * Fixed `input.voltage.high.warning` and `input.voltage.high.critical`,
       which added their margin to the high transfer point instead of
       subtracting it. Both thresholds ended up above the point where the UPS
       already goes to battery, with the warning above the critical (for a
       transfer point of 156V: 162.24V and 159.12V, now 149.76V and 152.88V).
       The doubling of the warning margin is now decided separately for the
-      low and the high pair of `vin_*_perc` settings.
+      low and the high pair of `vin_*_perc` settings. [PR #3836]
     * The `serial_flow_control` setting now defaults to `none` instead of
       `hardware`. The manufacturer's protocol document specifies no
       handshaking, and with hardware flow control a port that never raises
       its "clear to send" line (some USB CDC-ACM bridges, 3-wire serial
       cables) blocked the request that starts the communication, leaving the
       UPS silent and the data stale. Installations that relied on the
-      previous default can set `serial_flow_control = hardware`. [issue #3510]
+      previous default can set `serial_flow_control = hardware`. [issue #3510,
+      PR #3836]
     * The `bypassasalarm` setting now defaults to 0. The "bypass active" status
       bit had been read as a fault indication, which the manufacturer's
       protocol document and monitoring software manual do not say. The event
@@ -585,19 +590,20 @@ https://github.com/networkupstools/nut/milestone/13
       on mains and clear in every event logged on inverter: it marks that the
       load is fed from mains, so the previous default reported a healthy UPS
       as `ALARM OL`. Some models keep the bit clear on mains, so the setting
-      remains for units where it marks a real bypass condition. [issue #3510]
+      remains for units where it marks a real bypass condition. [issue #3510,
+      PR #3836]
     * The `[220V IN]` and `[220V OUT]` alarms are no longer raised. The two
       status bits behind them only tell that the input or the output is at
       220V, which the manufacturer's protocol document lists among the
       operating states and its monitoring software stores as nominal
       voltages. As alarms, they left every unit fed from 220V mains with a
       permanent `ALARM` status. The same information is in
-      `input.voltage.nominal` and `output.voltage.nominal`.
+      `input.voltage.nominal` and `output.voltage.nominal`. [PR #3836]
     * `ups.efficiency` now reports the manufacturer's full-load rating for the
       current operating mode and is not published when no rating is known.
       The previous formula multiplied the input voltage by the output voltage
       and reported values such as 155%; the protocol has no input power or
-      current from which efficiency could be measured. [issue #3510]
+      current from which efficiency could be measured. [issue #3510, PR #3836]
     * The `ah` setting is no longer mandatory: the model data may supply the
       capacity, and when neither does, the driver omits `battery.capacity`
       and `battery.runtime` instead of exiting. Its format
@@ -605,10 +611,10 @@ https://github.com/networkupstools/nut/milestone/13
       Previously it was first read inside the polling loop, so a missing
       value killed the driver after the first valid data packet and, when
       started through `upsdrvctl`, the only visible symptom was "Data stale".
-      [issue #3510]
+      [issue #3510, PR #3836]
     * Fixed the `numbatteries` override, which was registered under that name
       but looked up as `numbat` and therefore never took effect; the value
-      must now be a positive integer when present.
+      must now be a positive integer when present. [PR #3836]
     * Modernized serial communication and added validated settings for baud
       rate, data bits, parity, stop bits, flow control, per-byte read timeout,
       and transmission pacing. Also improved serial resource handling and
