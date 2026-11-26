@@ -540,6 +540,63 @@ UPS section of `ups.conf`, with no value after it. Earlier versions only
 turned the diagnostics on when a value was assigned (for example
 `debug_pkt_data = 1`), which is not how a flag is written.
 
+KNOWN ISSUES AND BUGS
+---------------------
+
+USB units that fail when the port is opened again (Linux)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The NHS units with a USB port show up as a serial port (`/dev/ttyACM0`
+or similar) of a USB device with the ID `0925:1241`. On Linux, the
+kernel may put such a device to sleep while no program has its port
+open (USB autosuspend); where this was found, it did so 2 to 3 seconds
+after the port was closed. At least some units do not wake up from that:
+at the next open the kernel waits about 5 seconds for an answer, gives
+up with an input/output error, drops the device and finds it again as a
+new one. An open right after that works, and a few seconds later the
+device is asleep again.
+
+While the driver runs it keeps the port open, so the device is not put
+to sleep and nothing of this is seen. It shows when the port has been
+closed for more than a few seconds: when the driver is started, or when
+it reopens the port after a communication failure. The driver then
+cannot open the port, and the new attempts of linkman:upsdrvctl[8] or of
+the service manager, which come many seconds apart, find the device
+asleep every time. The kernel log (`dmesg`) shows lines like these at
+each attempt:
+
+	usb 1-8.4: reset full-speed USB device number 9 using xhci_hcd
+	usb 1-8.4: USB disconnect, device number 9
+	usb 1-8.4: new full-speed USB device number 11 using xhci_hcd
+
+To see whether your system does it, read the power setting of the
+device, where `1-8.4` is the place of the UPS on the USB bus as the
+kernel log names it:
+
+	cat /sys/bus/usb/devices/1-8.4/power/control
+
+`auto` means that the kernel may put the device to sleep, and `on` that
+it may not.
+
+The remedy is to tell the kernel to leave this device awake, with a udev
+rule. Create the file `/etc/udev/rules.d/zz-99-nhs-ups.rules` with this
+single line:
+
+	ACTION=="add|bind|change", SUBSYSTEM=="usb", ATTR{idVendor}=="0925", ATTR{idProduct}=="1241", TEST=="power/control", ATTR{power/control}="on", ATTR{power/autosuspend_delay_ms}="-1"
+
+and apply it, as root, without unplugging the UPS:
+
+	udevadm control --reload-rules
+	udevadm trigger --attr-match=idVendor=0925 --attr-match=idProduct=1241
+
+After that `power/control` reads `on`, and the driver opens the port at
+the first attempt even after it has been closed for a long time.
+
+This was found, traced to its cause and solved by @luizluca in pull
+request #3836, with a PDV Senoidal 1500VA on a computer with an
+`xhci_hcd` USB controller and Linux 7.3. It was not seen on every
+computer these units were tested with, so check before adding the rule.
+
 AUTHORS
 -------
 

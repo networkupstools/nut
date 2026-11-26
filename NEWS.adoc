@@ -494,6 +494,13 @@ https://github.com/networkupstools/nut/milestone/13
       own, the way the `blazer` and `nutdrv_qx` drivers take theirs. The
       low transfer voltage assumed before the hardware information packet
       arrives can be given with `default.input.transfer.low`.
+    * The driver manual now describes a problem of the units with a USB
+      port (USB ID `0925:1241`) on Linux, and its remedy: the kernel puts
+      the device to sleep a few seconds after the serial port is closed
+      (USB autosuspend) and the unit does not wake up, so the port cannot
+      be opened again when the driver is started or reconnects. A udev
+      rule that keeps the device awake avoids it. Found and solved by
+      @luizluca.
     * Fixed the flags of the hardware information packet (220V input, 220V
       output, buzzer and others), which were read from the wrong end of
       their byte. A unit fed from 220V mains was taken as a 120V one and

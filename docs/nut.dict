@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3932 utf-8
+personal_ws-1.1 en 3937 utf-8
 AAC
 AAS
 ABI
@@ -978,6 +978,7 @@ PC's
 PCI
 PDC
 PDUs
+PDV
 PDX
 PEX
 PFCLCD
@@ -1768,6 +1769,7 @@ async
 atcl
 atexit
 ats
+attr
 aug
 augeas
 augparse
@@ -1795,6 +1797,7 @@ autoreplace
 autorestart
 autoscan
 autostart
+autosuspend
 autotools
 autowidth
 auxdata
@@ -2741,6 +2744,7 @@ lt
 ltdl
 lu
 lua
+luizluca
 lv
 lvo
 lws
@@ -3935,6 +3939,7 @@ zsh
 zu
 zw
 zwfa
+zz
 zzz
 Åstrand
 Ørpetveit
