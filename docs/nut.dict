@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3937 utf-8
+personal_ws-1.1 en 3965 utf-8
 AAC
 AAS
 ABI
@@ -118,6 +118,7 @@ BUILTIN
 BUZ
 BVKnnnnM
 BVKxxxM
+BW
 BXnnnnMI
 BYP
 BZ
@@ -218,6 +219,7 @@ CXX
 CXXCPP
 CXXFLAGS
 Casar
+CbU
 CentOS
 Centralion
 ChangeLog
@@ -371,6 +373,7 @@ ESV
 ESXi
 ETIME
 ETIMEDOUT
+ETR
 EUROCASE
 EVeRr
 EXtreme
@@ -902,6 +905,7 @@ Niels
 Niemueller
 Niklas
 Niro
+Nitro
 NixOS
 Nobreak
 Nobreaks
@@ -1199,6 +1203,7 @@ Ragtech
 RatedVA
 ReadDevID
 RealSmart
+Rebadged
 RedHat
 Redhat
 Regados
@@ -1593,6 +1598,7 @@ WALKMODE
 WARNFATAL
 WARNOPT
 WCH
+WDK
 WELI
 WH
 WHAD
@@ -1913,6 +1919,7 @@ cafile
 calc
 calib
 calloc
+cancelDischarge
 capath
 cb
 cbe
@@ -2261,6 +2268,7 @@ execve
 expandsize
 expr
 extapi
+extbatt
 extern
 externalConsole
 extradata
@@ -2682,6 +2690,8 @@ libtool
 libupsclient
 libusb
 libusb's
+libusbK
+libusbk
 libusbugen
 libusbx
 libvirt
@@ -2716,6 +2726,7 @@ lm
 lmodbus
 ln
 lnetsnmp
+lntdll
 loadPercentage
 localcalculation
 localhost
@@ -2730,6 +2741,7 @@ login
 logins
 logout
 logrotate
+lole
 lookup
 loopback
 lowbatt
@@ -2738,6 +2750,7 @@ lr
 lregex
 ls
 lsd
+lsetupapi
 lst
 lsusb
 lt
@@ -2747,6 +2760,7 @@ lua
 luizluca
 lv
 lvo
+lwdi
 lws
 lxc
 lxcbr
@@ -2999,6 +3013,7 @@ nvi
 nvo
 nwfilter
 objdump
+obload
 odette
 offdelay
 offsite
@@ -3239,6 +3254,7 @@ reconnection
 recurses
 recursing
 recv
+redistributable
 redistributors
 reentrancy
 refactored
@@ -3417,6 +3433,7 @@ slaveaddr
 slaveid
 slavesync
 slibtool
+sln
 sm
 smartslot
 smartups
@@ -3672,6 +3689,7 @@ udevadm
 udq
 ufw
 ugen
+ugreen
 ui
 uid
 uint
@@ -3679,6 +3697,7 @@ ukUNV
 ul
 ulimit
 ulink
+umask
 umount
 un
 uname
@@ -3846,6 +3865,7 @@ waitbeforereconnect
 wakeup
 wc
 wdi
+wdkdir
 webserver
 wf
 wg
@@ -3859,6 +3879,7 @@ wininit
 winnutclient
 winpthreads
 winsymlinks
+winusb
 withGiven
 withdoc
 wix

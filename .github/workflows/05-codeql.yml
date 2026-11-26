@@ -81,27 +81,71 @@ jobs:
       fail-fast: false
       matrix:
         # https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs
-        language: [ 'cpp' ]
-          # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
-          # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
-        os: [ 'ubuntu-latest' ]
-          # TOTHINK: windows-latest, macos-latest?
-        build-mode: [ 'manual' ]
-          # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
-          # Abusing "manual" here to try building with ccache (and
-          # have codeql not intercept that build but parse C/C++
-          # files on its own), and "manual" to custom-build without;
-          # the "autobuild" mode is handled by codeql itself but
-          # would probably ignore our CC/CXX setting
-          # NOTE: We do not add ccache to PATH when actually compiling NUT code
-          # (we only speed up "configure" stages), so compilation always happens
-          # and is parsed by current CodeQL detectors of the day as they evolve!
-        compiler: [ 'CC=gcc CXX=g++', 'CC=clang CXX=clang++' ]
-        NUT_SSL_VARIANTS: [ 'no', 'nss', 'openssl' ]
-        NUT_USB_VARIANTS: [ 'no', 'libusb-1.0', 'libusb-0.1' ]
+        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
+        # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
+        #
+        # C/C++ cells: three SSL/USB combinations, each built with both
+        # compilers (gcc and clang complain about different things), rather
+        # than the full cross product. The SSL code (clients/, server/) and
+        # the USB code (drivers/, nut-scanner) never share a file, so pairing
+        # every SSL variant with every USB variant adds nothing; each variant,
+        # including "no" (a code path of its own), is still built.
+        #
+        # build-mode "manual": abusing it to build with ccache (and have
+        # codeql not intercept that build but parse C/C++ files on its own);
+        # the "autobuild" mode is handled by codeql itself but would probably
+        # ignore our CC/CXX setting. See
+        # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/codeql-code-scanning-for-compiled-languages
+        # NOTE: We do not add ccache to PATH when actually compiling NUT code
+        # (we only speed up "configure" stages), so compilation always happens
+        # and is parsed by current CodeQL detectors of the day as they evolve!
+        # Each C/C++ cell uploads under its own category ("cell" below):
+        # code scanning tracks alert state per category, so cells sharing
+        # one category overwrite each other's results instead of adding up.
+        # TOTHINK: windows-latest, macos-latest?
         include:
-          # Add complete new cell(s) to the matrix, separately
-          # from the combinatorics dynamically made above
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=clang CXX=clang++'
+            NUT_SSL_VARIANTS: 'openssl'
+            NUT_USB_VARIANTS: 'libusb-1.0'
+            cell: 'clang-openssl-libusb1'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=clang CXX=clang++'
+            NUT_SSL_VARIANTS: 'nss'
+            NUT_USB_VARIANTS: 'libusb-0.1'
+            cell: 'clang-nss-libusb0'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=clang CXX=clang++'
+            NUT_SSL_VARIANTS: 'no'
+            NUT_USB_VARIANTS: 'no'
+            cell: 'clang-nossl-nousb'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=gcc CXX=g++'
+            NUT_SSL_VARIANTS: 'openssl'
+            NUT_USB_VARIANTS: 'libusb-1.0'
+            cell: 'gcc-openssl-libusb1'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=gcc CXX=g++'
+            NUT_SSL_VARIANTS: 'nss'
+            NUT_USB_VARIANTS: 'libusb-0.1'
+            cell: 'gcc-nss-libusb0'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=gcc CXX=g++'
+            NUT_SSL_VARIANTS: 'no'
+            NUT_USB_VARIANTS: 'no'
+            cell: 'gcc-nossl-nousb'
           - language: 'python'
             os: 'ubuntu-latest'
             compiler: 'PYTHON=python3'
@@ -157,6 +201,22 @@ jobs:
     #- name: Debug gitlog2version processing
     #  run: bash -x ./tools/gitlog2version.sh || true
 
+    # CodeQL only parses *.py files, but NUT's Python sources are configure
+    # templates (*.py.in, or no .py suffix at all). Their @SUBST@ tokens only
+    # appear in the shebang or inside string literals, so a plain copy parses
+    # as is and keeps the template's line numbers. The SARIF filter below maps
+    # alerts on these copies back to the templates. Tests are left out.
+    - if: matrix.language == 'python'
+      name: Copy Python templates to *.py for CodeQL
+      run: |
+        while read -r SRC DST ; do
+            (set -x ; cp "${SRC}" "${DST}" ) || exit
+        done < .github/codeql/python-templates.txt
+        find . -name '*.py.in' | while read SRC ; do
+            DST="`dirname \"${SRC}\"`/`basename \"${SRC}\" .in`" && [ -n "${DST}" ] && [ x"${DST}" != x"${SRC}" ] || exit
+            ( set -x; cp "${SRC}" "${DST}" ) || exit
+        done
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
@@ -168,7 +228,7 @@ jobs:
         # Prefix the (whole) list here with "+" to use these queries and those in the config file.
         # Details on CodeQL's query packs refer to : https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
         queries: +security-extended,security-and-quality
-        config-file: ./.github/codeql/codeql-config.yml
+        config-file: ./.github/codeql/codeql-config-${{ matrix.language }}.yml
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
@@ -227,7 +287,26 @@ jobs:
     - name: CCache stats after build
       run: ccache -sv || ccache -s || echo "FAILED to read ccache info, oh well"
 
+    # Upload separately, after the filter step: for C/C++ built in "manual"
+    # mode, the config's paths-ignore does not stop CodeQL from analyzing the
+    # test programs that "make check-parallel-builds" compiles.
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
       with:
-        category: "/language:${{matrix.language}}"
+        category: "/language:${{ matrix.language }}${{ matrix.cell && format('/{0}', matrix.cell) || '' }}"
+        upload: never
+        output: codeql-sarif
+
+    - name: Drop alerts in tests, map Python copies back to templates
+      run: |
+        MAP="`jq -R -s -c 'split("\n") | map(select(length > 0) | split(" ") | {(.[1]): .[0]}) | add' .github/codeql/python-templates.txt`" || exit
+        for F in codeql-sarif/*.sarif ; do
+            jq --argjson map "${MAP}" -f .github/codeql/sarif-filter.jq "${F}" > "${F}.tmp" \
+            && mv -f "${F}.tmp" "${F}" || exit
+        done
+
+    - name: Upload CodeQL results
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: codeql-sarif
+        category: "/language:${{ matrix.language }}${{ matrix.cell && format('/{0}', matrix.cell) || '' }}"

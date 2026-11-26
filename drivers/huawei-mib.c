@@ -21,7 +21,7 @@
 
 #include "huawei-mib.h"
 
-#define HUAWEI_MIB_VERSION  "0.40"
+#define HUAWEI_MIB_VERSION  "0.41"
 
 #define HUAWEI_SYSOID       ".1.3.6.1.4.1.8072.3.2.10"
 #define HUAWEI_UPSMIB       ".1.3.6.1.4.1.2011"
@@ -79,6 +79,12 @@ static info_lkp_t huawei_voltrating_info[] = {
 static info_lkp_t huawei_freqrating_info[] = {
 	info_lkp_default(1, "50"),
 	info_lkp_default(2, "60"),
+	info_lkp_sentinel
+};
+
+/* The UPS2000 reports INT32_MAX for power on an unavailable output phase. */
+static info_lkp_t huawei_output_power_info[] = {
+	info_lkp_default(INT32_MAX, "N/A"),
 	info_lkp_sentinel
 };
 
@@ -204,13 +210,24 @@ static snmp_info_t huawei_mib[] = {
 
 	snmp_info_default("output.frequency", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.7.1", NULL, SU_FLAG_OK, NULL),
 
-	snmp_info_default("output.L1.realpower", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.8.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L1.realpower", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.9.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L1.realpower", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.10.1", NULL, SU_FLAG_OK, NULL),
+	/* The following 6 lines are in fact tricky. Several HUAWEI-UPS-MIB
+	 * resources found online suggest that the readings are integers
+	 * representing kW or kVA respectively. Practical data dumps indicate
+	 * they are in fact tenths of kW/kVA, e.g. `22` meaning `2.2 (kW)`
+	 * and maths with Volts, Amps and factor readings confirm that.
+	 * Until MIB 0.40 the multiplier below was `0.1` (and deployments
+	 * had to multiply the result by 1000 separately), fixed now to `100`
+	 * to return base units per NUT standards, e.g. `2200 (W)` for the
+	 * example above.
+	 * For more details see https://github.com/networkupstools/nut/pull/3863#issuecomment-7169436618
+	 */
+	snmp_info_default("output.L1.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.8.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L2.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.9.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L3.realpower", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.10.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
 
-	snmp_info_default("output.L1.power", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.11.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L2.power", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.12.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L3.power", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.13.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L1.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.11.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L2.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.12.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
+	snmp_info_default("output.L3.power", 0, 100, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.13.1", NULL, SU_FLAG_OK | SU_FLAG_NAINVALID, huawei_output_power_info),
 
 	snmp_info_default("output.L1.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.14.1", NULL, SU_FLAG_OK, NULL),
 	snmp_info_default("output.L2.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.15.1", NULL, SU_FLAG_OK, NULL),
@@ -222,7 +239,7 @@ static snmp_info_t huawei_mib[] = {
 
 	snmp_info_default("output.L1.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.19.1", NULL, SU_FLAG_OK, NULL),
 	snmp_info_default("output.L2.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.20.1", NULL, SU_FLAG_OK, NULL),
-	snmp_info_default("output.L2.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.21.1", NULL, SU_FLAG_OK, NULL),
+	snmp_info_default("output.L3.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.21.1", NULL, SU_FLAG_OK, NULL),
 
 
 	/* Battery page */

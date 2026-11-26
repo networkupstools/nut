@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.55"
+#define MGE_MIB_VERSION	"0.56"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -241,6 +241,12 @@ static snmp_info_t mge_mib[] = {
 	snmp_info_default("output.L1.current", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.5.1", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L2.current", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.5.2", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L3.current", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.5.3", "", SU_OUTPUT_3, NULL),
+	/* Real power from the IETF UPS MIB, as published e.g. by Network-MS cards */
+	snmp_info_default("output.realpower", 0, 1.0, ".1.3.6.1.2.1.33.1.4.4.1.4.1", "", SU_OUTPUT_1 | SU_FLAG_NEGINVALID, NULL), /* upsOutputPower */
+	snmp_info_default("output.L1.realpower", 0, 1.0, ".1.3.6.1.2.1.33.1.4.4.1.4.1", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.L2.realpower", 0, 1.0, ".1.3.6.1.2.1.33.1.4.4.1.4.2", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.L3.realpower", 0, 1.0, ".1.3.6.1.2.1.33.1.4.4.1.4.3", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.realpower.nominal", 0, 1.0, ".1.3.6.1.2.1.33.1.9.6.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigOutputPower */
 
 	/* Battery page */
 	snmp_info_default("battery.charge", 0, 1, ".1.3.6.1.4.1.705.1.5.2.0", "", SU_FLAG_OK, NULL),

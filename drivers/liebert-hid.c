@@ -28,7 +28,7 @@
 #include "liebert-hid.h"
 #include "usb-common.h"
 
-#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.42"
+#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.43"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Phoenixtec Power Co., Ltd */
@@ -94,6 +94,9 @@ static hid_info_t liebert_hid2nut[] = {
   /* UPS page */
   { "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
   { "ups.power.nominal", 0, 0, "UPS.Flow.[4].ConfigApparentPower", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
+  { "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.0f", 0, NULL },
+  { "ups.realpower.nominal", 0, 0, "UPS.Flow.[4].ConfigActivePower", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 
   { "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", 0, test_read_info },
 
