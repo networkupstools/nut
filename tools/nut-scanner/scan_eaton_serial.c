@@ -549,6 +549,12 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 			current_port_name = serial_ports_list[current_port_nb];
 
 #ifdef HAVE_PTHREAD
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+			if (semaphore == NULL) {
+				nutscan_scan_eaton_serial_device_thready(current_port_name);
+				nut_scanner_semaphore_release(semaphore, NULL, 0);
+			} else
+# endif
 			{
 				int ret = nut_scanner_thread_create(&thread_array, &thread_count,
 					nutscan_scan_eaton_serial_device_thready, (void *)current_port_name);
@@ -561,9 +567,9 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 					}
 				}
 			}
-#else   /* if not HAVE_PTHREAD */
+#else /* !HAVE_PTHREAD */
 			nutscan_scan_eaton_serial_device_thready(current_port_name);
-#endif  /* if HAVE_PTHREAD */
+#endif /* HAVE_PTHREAD */
 
 			/* Workers borrow the port names until all scans have finished. */
 			current_port_nb++;

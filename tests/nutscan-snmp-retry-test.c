@@ -35,7 +35,7 @@ static int test_wait(sem_t *sem);
 
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t test_mutex = PTHREAD_MUTEX_INITIALIZER;
-# ifdef HAVE_PTHREAD_TRYJOIN
+# if defined HAVE_PTHREAD_TRYJOIN || defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
 pthread_mutex_t threadcount_mutex = PTHREAD_MUTEX_INITIALIZER;
 # endif
 # define LOCK() pthread_mutex_lock(&test_mutex)
@@ -220,8 +220,9 @@ static void scenario(int error_mode, unsigned int limit, int allocation_failure)
 #endif
 #if defined HAVE_PTHREAD && (defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
 # if defined HAVE_SEMAPHORE_UNNAMED
+	nutscan_semaphore_init();
 	global = nutscan_semaphore();
-	assert(sem_init(global, 0, 2) == 0);
+	assert(global != NULL);
 # else
 	snprintf(name, sizeof(name), "/nut-snmp-retry-%ld", (long)getpid());
 	global = sem_open(name, O_CREAT | O_EXCL, 0600, 2);
@@ -239,12 +240,7 @@ static void scenario(int error_mode, unsigned int limit, int allocation_failure)
 	assert(sem_trywait(global) == 0);
 	assert(sem_trywait(global) == 0);
 	assert(sem_trywait(global) == -1 && errno == EAGAIN);
-# if defined HAVE_SEMAPHORE_UNNAMED
-	assert(sem_destroy(global) == 0);
-# else
-	assert(sem_close(global) == 0);
-	nutscan_semaphore_set(NULL);
-# endif
+	nutscan_semaphore_free();
 #endif
 #if defined HAVE_PTHREAD && (defined HAVE_PTHREAD_TRYJOIN || defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED)
 	assert(curr_threads == 0);

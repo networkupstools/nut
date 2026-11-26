@@ -955,6 +955,12 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 			}
 
 #ifdef HAVE_PTHREAD
+# if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+			if (semaphore == NULL) {
+				list_nut_devices_thready(nut_arg);
+				nut_scanner_semaphore_release(semaphore, semaphore_scantype, max_threads_scantype);
+			} else
+# endif
 			{
 				int ret = nut_scanner_thread_create(&thread_array, &thread_count,
 					list_nut_devices_thready, (void *)nut_arg);
@@ -969,9 +975,9 @@ nutscan_device_t * nutscan_scan_ip_range_nut_authconf(nutscan_ip_range_list_t * 
 					}
 				}
 			}
-#else  /* if not HAVE_PTHREAD */
+#else /* !HAVE_PTHREAD */
 			list_nut_devices_thready(nut_arg);
-#endif /* if HAVE_PTHREAD */
+#endif /* HAVE_PTHREAD */
 
 			/* The worker owns nut_arg and its copied hostname. */
 			free(ip_str);

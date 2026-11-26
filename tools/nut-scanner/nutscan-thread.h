@@ -17,6 +17,8 @@ int nut_scanner_thread_create(nutscan_thread_t **array, size_t *count,
 	void *(*worker)(void *), void *arg);
 
 # if defined HAVE_SEMAPHORE_UNNAMED || defined HAVE_SEMAPHORE_NAMED
+void nut_scanner_thread_mutex_init(void);
+void nut_scanner_thread_mutex_free(void);
 void nut_scanner_semaphore_release(sem_t *global, sem_t *protocol, size_t limit);
 int nut_scanner_semaphore_acquire(sem_t *global, sem_t *protocol,
 	size_t limit, int wait);
