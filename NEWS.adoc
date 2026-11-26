@@ -701,6 +701,16 @@ https://github.com/networkupstools/nut/milestone/13
       128 bytes per poll (about 14 MB per day at `pollinterval=1`). It now
       uses a static buffer like the other conversion functions. [issue #3787,
       PR #3788]
+    * `liebert-hid` subdriver (Phoenixtec, USB ID `06da:ffff`) now maps
+      `ups.realpower` to `UPS.PowerConverter.Output.ActivePower`, `ups.power`
+      to `UPS.PowerConverter.Output.ApparentPower` and `ups.realpower.nominal`
+      to `UPS.Flow.[4].ConfigActivePower`, beside the already mapped
+      `UPS.Flow.[4].ConfigApparentPower` for `ups.power.nominal` (paths that
+      `salicru-hid` and `ever-hid` already map). Units publishing them, such
+      as the PowerWalker VFI 3000, previously reported only `ups.load` - a
+      percentage of the VA rating, which at low load can be several times the
+      real power. Verified on that unit: `ups.realpower: 41`, `ups.power: 186`,
+      `ups.realpower.nominal: 2700`. [PR #3860]
     * Added the `ugreen-hid` subdriver for the Ugreen US2000 (72 W DC UPS, USB
       ID `2b89:ffff`). The device was previously unsupported by any subdriver
       and no `hid2nut` mapping could reach it: its live telemetry arrives
