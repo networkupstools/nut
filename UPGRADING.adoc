@@ -165,6 +165,13 @@ NOTE: In a future NUT release, the default `configure` script handling for the
   The quirk (and its default by USB ID) now also applies with an explicit
   `subdriver = cypress` setting, which used to turn it off. [PR #3720]
 
+- If you use `snmp-ups` with the `huawei` mapping, remove any extra factor
+  of 1000 applied to per-phase output power readings to obtain watts or
+  volt-amperes. The driver now reports those units directly. On three-phase
+  systems, check any dashboards or alerts that used `output.L1.realpower`
+  or `output.L2.powerfactor` for phase C. Use `output.L3.realpower` and
+  `output.L3.powerfactor` for that phase. [PR #3863]
+
 - Deployments using `usbhid-ups` with a Minuteman UPS which reports USB ID
   `05dd:a0a0` and has `productid` set in `ups.conf` used to get the
   `delta_ups-hid` subdriver. The `tripplite-hid` subdriver, which corrects
