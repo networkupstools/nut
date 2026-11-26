@@ -523,6 +523,11 @@ https://github.com/networkupstools/nut/milestone/13
       be opened again when the driver is started or reconnects. A udev
       rule that keeps the device awake avoids it. Found and solved by
       @luizluca. [PR #3836]
+    * Added the `serial_dtr` and `serial_rts` settings, which give the DTR
+      and RTS lines of the serial port the state 1 or 0 every time the
+      driver opens it. Without them the driver does not touch the lines,
+      as before. They do, one line at a time, what `cablepower` does in
+      the `blazer_ser` and `nutdrv_qx` drivers. [PR #3836]
     * Fixed the flags of the hardware information packet (220V input, 220V
       output, buzzer and others), which were read from the wrong end of
       their byte. A unit fed from 220V mains was taken as a 120V one and

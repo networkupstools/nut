@@ -62,6 +62,25 @@ Set the timeout for reading each byte, in milliseconds. Values from 0 to
 Set the delay between transmitted bytes, in microseconds. Values from 0 to
 999999 are accepted; 0 disables transmission pacing (default: 0).
 
+*serial_dtr*='num'::
+Set the state of the DTR line of the serial port: 1 raises it and 0 lowers
+it. Without this setting the driver does not touch the line, so it stays
+as the operating system sets it when the port is opened (on Linux, raised);
+that is the default. The state is applied every time the driver opens the
+port, also when it reconnects. Most installations do not need it. Try it
+if the UPS does not answer through a serial cable or an adapter that takes
+its power from this line, or on a system that leaves the line down.
+
+*serial_rts*='num'::
+The same for the RTS line: 1 raises it, 0 lowers it, and without this
+setting the driver does not touch it (default). It is not accepted
+together with *serial_flow_control* set to `hardware` or `both`, because
+then the operating system drives this line. These two settings do, one
+line at a time, what *cablepower* does in linkman:blazer_ser[8] and
+linkman:nutdrv_qx[8]: `normal` there is `serial_dtr = 1` with
+`serial_rts = 0` here, `reverse` is 0 with 1, `both` is 1 with 1 and
+`none` is 0 with 0.
+
 The driver has built-in data for each model code that the UPS may report.
 For part of the models it holds the nominal power in W, the full-load
 efficiency and the capacity of the factory batteries, as published in the

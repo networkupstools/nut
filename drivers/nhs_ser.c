@@ -272,6 +272,54 @@
 #define MAX_SERIAL_SEND_PACE_US         999999
 
 /*
+ * State that the driver gives to the DTR and RTS lines of the port after it
+ * opens and configures it ("serial_dtr" and "serial_rts" in ups.conf, one
+ * setting for each line): 1 raises the line, 0 lowers it. Without the setting
+ * the driver does not touch that line. That is the default, and it is what
+ * the driver has always done.
+ *
+ * On Linux, a line that the driver does not touch is not a line that is down:
+ * the kernel raises both when a program opens the port, as long as the speed
+ * of the port is not zero (tty_port_block_til_ready(), in the kernel source
+ * file drivers/tty/tty_port.c). On the USB models the port is a CDC-ACM one,
+ * and the state of the lines goes to the UPS through acm_port_dtr_rts(), in
+ * drivers/usb/class/cdc-acm.c. So the units tested on the USB port work with
+ * the lines as the system leaves them.
+ *
+ * The settings are here for the installation where that is not enough: a
+ * serial cable or an adapter that takes its power from one of the lines, a
+ * system that does not raise them, or a unit that only answers with a line in
+ * a given state. They came from pull request #3836, where a user of a LASER
+ * SENOIDAL 2600VA GII on a Raspberry Pi reported that the driver stopped
+ * right after opening /dev/ttyACM0 and proposed that it raise the two lines.
+ * That cause was not confirmed. Since I was working on the serial part of
+ * the driver anyway, I added the settings, so that anyone can test it
+ * without changing the code.
+ *
+ * NUT already has a setting for this in the blazer_ser and nutdrv_qx drivers,
+ * "cablepower" (docs/man/blazer-common.txt and docs/man/nutdrv_qx.txt), with
+ * the words normal, reverse, both and none for the four combinations. I did
+ * not take it, for two reasons. Its default, "normal", raises DTR and lowers
+ * RTS, which would change what this driver does on every installation that
+ * works today. And it has no way to say "leave this line alone", which is
+ * the default here. With one setting of 0 or 1 for each line, a line that is
+ * not named stays as the system left it. For who comes from those drivers:
+ * cablepower = normal is serial_dtr = 1 with serial_rts = 0, reverse is 0
+ * with 1, both is 1 with 1 and none is 0 with 0.
+ *
+ * serial_rts is refused together with serial_flow_control = hardware or both:
+ * with RTS/CTS flow control it is the system that drives RTS.
+ *
+ * SERIAL_LINE_UNTOUCHED is not a value for ups.conf. It is how the driver
+ * keeps "the setting is not there", which is not the same as 0.
+ */
+#define SERIAL_LINE_UNTOUCHED           (-1)
+#define SERIAL_LINE_LOW                 0
+#define SERIAL_LINE_HIGH                1
+#define DEFAULT_SERIAL_DTR              SERIAL_LINE_UNTOUCHED
+#define DEFAULT_SERIAL_RTS              SERIAL_LINE_UNTOUCHED
+
+/*
  * Pause, in milliseconds, that follows each request of the start sequence and
  * each stop request ("command_delay" in ups.conf). The name and the unit are
  * the ones the tripplitesu driver already uses for the delay it applies
@@ -904,6 +952,12 @@ static unsigned int  serial_stop_bits = DEFAULT_SERIAL_STOP_BITS;
 static char          serial_flow_control[16] = DEFAULT_SERIAL_FLOW_CONTROL;
 static unsigned int  serial_read_timeout_ms = DEFAULT_SERIAL_READ_TIMEOUT_MS;
 static unsigned int  serial_send_pace_us = DEFAULT_SERIAL_SEND_PACE_US;
+
+/* State for the DTR and RTS lines, from "serial_dtr" and "serial_rts" in
+ * ups.conf: SERIAL_LINE_HIGH, SERIAL_LINE_LOW or, without the setting,
+ * SERIAL_LINE_UNTOUCHED; see DEFAULT_SERIAL_DTR. */
+static int           serial_dtr = DEFAULT_SERIAL_DTR;
+static int           serial_rts = DEFAULT_SERIAL_RTS;
 static float         minpower = 0;
 static float         maxpower = 0;
 static unsigned int  minpowerperc = 0;
@@ -1207,7 +1261,7 @@ static void print_pkt_data(pkt_data data) {
 }
 
 /*
- * Load the seven supported serial options from ups.conf. Defaults are reset
+ * Load the nine supported serial options from ups.conf. Defaults are reset
  * first so each setting has one source of truth, and every supplied value is
  * fully validated before the serial port is touched.
  */
@@ -1226,6 +1280,8 @@ static void parse_serial_options(void)
 	snprintf(serial_flow_control, sizeof(serial_flow_control), "%s", DEFAULT_SERIAL_FLOW_CONTROL);
 	serial_read_timeout_ms = DEFAULT_SERIAL_READ_TIMEOUT_MS;
 	serial_send_pace_us = DEFAULT_SERIAL_SEND_PACE_US;
+	serial_dtr = DEFAULT_SERIAL_DTR;
+	serial_rts = DEFAULT_SERIAL_RTS;
 	command_delay_ms = DEFAULT_COMMAND_DELAY_MS;
 	silence_timeout = DEFAULT_SILENCE_TIMEOUT;
 	stop_packet = DEFAULTSTOPPACKET;
@@ -1311,6 +1367,35 @@ static void parse_serial_options(void)
 		if (errno != 0 || endptr == value || *endptr != '\0' || number < 0 || number > MAX_SERIAL_SEND_PACE_US)
 			fatalx(EXIT_FAILURE, "Invalid serial_send_pace_us value '%s': expected 0 to %d", value, MAX_SERIAL_SEND_PACE_US);
 		serial_send_pace_us = (unsigned int)number;
+	}  /* end if */
+
+	value = getval("serial_dtr");
+	if (value) {
+		/* Only 0 and 1: to leave the line alone, the setting is left out. */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || (number != SERIAL_LINE_LOW && number != SERIAL_LINE_HIGH))
+			fatalx(EXIT_FAILURE, "Invalid serial_dtr value '%s': expected 0 or 1", value);
+		serial_dtr = (int)number;
+	}  /* end if */
+
+	value = getval("serial_rts");
+	if (value) {
+		/*
+		 * Only 0 and 1, as for serial_dtr. serial_flow_control was read
+		 * above: with RTS/CTS flow control the system drives RTS, so the two
+		 * settings together are refused instead of leaving one of them
+		 * without effect.
+		 */
+		errno = 0;
+		endptr = NULL;
+		number = strtol(value, &endptr, 10);
+		if (errno != 0 || endptr == value || *endptr != '\0' || (number != SERIAL_LINE_LOW && number != SERIAL_LINE_HIGH))
+			fatalx(EXIT_FAILURE, "Invalid serial_rts value '%s': expected 0 or 1", value);
+		if (strcasecmp(serial_flow_control, "hardware") == 0 || strcasecmp(serial_flow_control, "both") == 0)
+			fatalx(EXIT_FAILURE, "serial_rts cannot be used with serial_flow_control = %s: with RTS/CTS flow control the system drives the RTS line", serial_flow_control);
+		serial_rts = (int)number;
 	}  /* end if */
 
 	value = getval("command_delay");
@@ -1533,6 +1618,32 @@ static TYPE_FD_SER openfd(const char *portarg, int requested_baudrate)
 		upsdebug_with_errno(1, "%s: Error applying serial settings to %s", __func__, portarg);
 		ser_close(fd, portarg);
 		return ERROR_FD_SER;
+	}  /* end if */
+
+	/*
+	 * Give DTR and RTS the state asked for in ups.conf. A line without a
+	 * setting is left as the system put it when the port was opened; see
+	 * DEFAULT_SERIAL_DTR. It is done here and not once at startup, so that
+	 * it is done again every time the port is reopened, and before the
+	 * flush below, so that what the UPS sends while the lines change is
+	 * discarded with the rest.
+	 */
+	if (serial_dtr != SERIAL_LINE_UNTOUCHED) {
+		if (ser_set_dtr(fd, serial_dtr) != 0) {
+			upsdebug_with_errno(1, "%s: Error setting the DTR line of %s to %d", __func__, portarg, serial_dtr);
+			ser_close(fd, portarg);
+			return ERROR_FD_SER;
+		}  /* end if */
+		upsdebugx(1, "%s: DTR line set to %d", __func__, serial_dtr);
+	}  /* end if */
+
+	if (serial_rts != SERIAL_LINE_UNTOUCHED) {
+		if (ser_set_rts(fd, serial_rts) != 0) {
+			upsdebug_with_errno(1, "%s: Error setting the RTS line of %s to %d", __func__, portarg, serial_rts);
+			ser_close(fd, portarg);
+			return ERROR_FD_SER;
+		}  /* end if */
+		upsdebugx(1, "%s: RTS line set to %d", __func__, serial_rts);
 	}  /* end if */
 
 	/* Discard bytes queued under any previous port configuration. */
@@ -5902,7 +6013,7 @@ void upsdrv_makevartable(void) {
 	 * //addvar(VAR_VALUE, "port", "Port to communication");
 	 */
 
-	/* Expose only the seven conventional serial settings supported above. */
+	/* Expose the nine serial settings supported above. */
 	addvar(VAR_VALUE, "baud", "Serial baud rate from the rates compiled into this driver (default: 2400)");
 
 	addvar(VAR_VALUE, "serial_data_bits", "Serial data bits: 5, 6, 7 or 8 (default: 8)");
@@ -5916,6 +6027,10 @@ void upsdrv_makevartable(void) {
 	addvar(VAR_VALUE, "serial_read_timeout_ms", "Timeout per serial byte: 0 to 60000 ms (default: 100)");
 
 	addvar(VAR_VALUE, "serial_send_pace_us", "Delay between transmitted bytes: 0 to 999999 us (default: 0)");
+
+	addvar(VAR_VALUE, "serial_dtr", "State given to the DTR line of the serial port: 0 (low) or 1 (high) (default: not set, the line is left as the system sets it)");
+
+	addvar(VAR_VALUE, "serial_rts", "State given to the RTS line of the serial port: 0 (low) or 1 (high); not accepted with serial_flow_control = hardware or both (default: not set, the line is left as the system sets it)");
 
 	/*
 	 * Model ratings. Each of these replaces the value that getupsinfo() has
