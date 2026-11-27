@@ -735,6 +735,15 @@ https://github.com/networkupstools/nut/milestone/13
       [PR #3863]
     * Corrected the IETF fallback warning so it is emitted for automatic
       IETF selection rather than vendor-specific mappings. [issue #3585, PR #3767]
+    * `ietf` subdriver (also used as `tripplite`): the single-phase input,
+      output and bypass line readings are now also read from table rows
+      indexed from 0, which some RFC 1628 agents use instead of 1. A
+      SRVPM6KRI UPS with an "RTCS version 03.02.00" card does so, and
+      reported no line voltage, current or load. [PR #3872]
+    * `ietf` subdriver: ratings and voltage transfer points of 0, which some
+      agents return for the `upsConfig` objects they do not implement, are
+      no longer published as `input.voltage.nominal: 0` and the like.
+      [PR #3872]
     * Fixed a NULL pointer dereference when setting exact outlet mappings
       without a corresponding numbered outlet template, and restored handling
       of exact server-side outlet variables and commands. [issue #3360,

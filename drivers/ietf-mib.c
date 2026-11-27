@@ -26,7 +26,7 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.55"
+#define IETF_MIB_VERSION	"1.57"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
@@ -148,18 +148,28 @@ static snmp_info_t ietf_mib[] = {
 	snmp_info_default("debug.[2].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.2", "", SU_INPUT_3, NULL),
 	snmp_info_default("debug.[3].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.3", "", SU_INPUT_3, NULL),
 #endif
+	/* Some agents (RTCS 03.02.00 cards, for one) number the line tables
+	 * from 0 instead of 1. The .0 entries come first so that an agent
+	 * answering both still publishes the RFC 1628 instance, read last;
+	 * the one that does not answer is disabled at startup. That card
+	 * returns 0 for the input current and power and the output power,
+	 * which it does not measure, so those .0 entries ignore 0. */
+	snmp_info_default("input.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.0", "", SU_INPUT_1, NULL), /* upsInputFrequency.0 */
 	snmp_info_default("input.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.1", "", SU_INPUT_1, NULL), /* upsInputFrequency */
 	snmp_info_default("input.L1.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.1", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L2.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.2", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L3.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.3", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.0", "", SU_INPUT_1, NULL), /* upsInputVoltage.0 */
 	snmp_info_default("input.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.1", "", SU_INPUT_1, NULL), /* upsInputVoltage */
 	snmp_info_default("input.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.1", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.2", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.3", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.0", "", SU_INPUT_1 | SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsInputCurrent.0 */
 	snmp_info_default("input.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.1", "", SU_INPUT_1 |SU_FLAG_NEGINVALID, NULL), /* upsInputCurrent */
 	snmp_info_default("input.L1.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.1", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L2.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.2", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L3.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.3", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.0", "", SU_INPUT_1 | SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsInputTruePower.0 */
 	snmp_info_default("input.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.1", "", SU_INPUT_1 | SU_FLAG_NEGINVALID, NULL), /* upsInputTruePower */
 	snmp_info_default("input.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.1", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.2", "", SU_INPUT_3, NULL),
@@ -175,18 +185,22 @@ static snmp_info_t ietf_mib[] = {
 	snmp_info_default("debug.[2].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.2", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("debug.[3].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.3", "", SU_OUTPUT_3, NULL),
 #endif
+	snmp_info_default("output.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.0", "", SU_OUTPUT_1, NULL), /* upsOutputVoltage.0 */
 	snmp_info_default("output.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.1", "", SU_OUTPUT_1, NULL), /* upsOutputVoltage */
 	snmp_info_default("output.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.1", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.2", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.3", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.0", "", SU_OUTPUT_1 | SU_FLAG_NEGINVALID, NULL), /* upsOutputCurrent.0 */
 	snmp_info_default("output.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.1", "", SU_OUTPUT_1 | SU_FLAG_NEGINVALID, NULL), /* upsOutputCurrent */
 	snmp_info_default("output.L1.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.1", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L2.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.2", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L3.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.3", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("output.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.0", "", SU_OUTPUT_1 | SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsOutputPower.0 */
 	snmp_info_default("output.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.1", "", SU_OUTPUT_1 | SU_FLAG_NEGINVALID, NULL), /* upsOutputPower */
 	snmp_info_default("output.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.1", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.2", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.3", "", SU_OUTPUT_3, NULL),
+	snmp_info_default("ups.load", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.0", "", SU_OUTPUT_1, NULL), /* upsOutputPercentLoad.0 */
 	snmp_info_default("ups.load", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.1", "", SU_OUTPUT_1, NULL), /* upsOutputPercentLoad */
 	snmp_info_default("output.L1.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.1", "", SU_OUTPUT_3, NULL),
 	snmp_info_default("output.L2.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.2", "", SU_OUTPUT_3, NULL),
@@ -201,14 +215,17 @@ static snmp_info_t ietf_mib[] = {
 	snmp_info_default("debug.[2].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.2", "", SU_BYPASS_3, NULL),
 	snmp_info_default("debug.[3].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.3", "", SU_BYPASS_3, NULL),
 #endif
+	snmp_info_default("input.bypass.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.0", "", SU_BYPASS_1, NULL), /* upsBypassVoltage.0 */
 	snmp_info_default("input.bypass.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.1", "", SU_BYPASS_1, NULL), /* upsBypassVoltage */
 	snmp_info_default("input.bypass.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.1", "", SU_BYPASS_3, NULL),
 	snmp_info_default("input.bypass.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.2", "", SU_BYPASS_3, NULL),
 	snmp_info_default("input.bypass.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.3", "", SU_BYPASS_3, NULL),
+	snmp_info_default("input.bypass.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.0", "", SU_BYPASS_1, NULL), /* upsBypassCurrent.0 */
 	snmp_info_default("input.bypass.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_1, NULL), /* upsBypassCurrent */
 	snmp_info_default("input.bypass.L1.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_3, NULL),
 	snmp_info_default("input.bypass.L2.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.2", "", SU_BYPASS_3, NULL),
 	snmp_info_default("input.bypass.L3.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.3", "", SU_BYPASS_3, NULL),
+	snmp_info_default("input.bypass.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.0", "", SU_BYPASS_1, NULL), /* upsBypassPower.0 */
 	snmp_info_default("input.bypass.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_1, NULL), /* upsBypassPower */
 	snmp_info_default("input.bypass.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_3, NULL),
 	snmp_info_default("input.bypass.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.2", "", SU_BYPASS_3, NULL),
@@ -273,19 +290,23 @@ static snmp_info_t ietf_mib[] = {
 	snmp_info_default("ups.start.auto", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "8.5.0", "", 0, ietf_yes_no_info), /* upsAutoRestart */
 
 	/* Configuration Group */
-	snmp_info_default("input.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.1.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigInputVoltage */
-	snmp_info_default("input.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.2.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigInputFreq */
-	snmp_info_default("output.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.3.0", "", 0, NULL), /* upsConfigOutputVoltage */
-	snmp_info_default("output.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.4.0", "", 0, NULL), /* upsConfigOutputFreq */
-	snmp_info_default("output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigOutputVA */
-	snmp_info_default("output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", SU_FLAG_NEGINVALID, NULL), /* upsConfigOutputPower */
+	/* A rating or a voltage transfer point of 0 is an object the agent
+	 * does not implement (RTCS 03.02.00 cards return 0 for all but
+	 * upsConfigOutputVA). A 0-minute upsConfigLowBattTime can be a real
+	 * setting, so that one keeps its zero. */
+	snmp_info_default("input.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.1.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigInputVoltage */
+	snmp_info_default("input.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.2.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigInputFreq */
+	snmp_info_default("output.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.3.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputVoltage */
+	snmp_info_default("output.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.4.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputFreq */
+	snmp_info_default("output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputVA */
+	snmp_info_default("output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", SU_FLAG_NEGINVALID | SU_FLAG_ZEROINVALID, NULL), /* upsConfigOutputPower */
 	snmp_info_default("battery.runtime.low", 0, 60.0, IETF_OID_UPS_MIB "9.7.0", "", 0, NULL), /* upsConfigLowBattTime */
 	snmp_info_default("ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "9.8.0", "", 0, ietf_beeper_status_info), /* upsConfigAudibleStatus */
 	snmp_info_default("beeper.disable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "1", SU_TYPE_CMD, NULL),
 	snmp_info_default("beeper.enable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "2", SU_TYPE_CMD, NULL),
 	snmp_info_default("beeper.mute", 0, 1, IETF_OID_UPS_MIB "9.8.0", "3", SU_TYPE_CMD, NULL),
-	snmp_info_default("input.transfer.low", 0, 1.0, IETF_OID_UPS_MIB "9.9.0", "", 0, NULL), /* upsConfigLowVoltageTransferPoint */
-	snmp_info_default("input.transfer.high", 0, 1.0, IETF_OID_UPS_MIB "9.10.0", "", 0, NULL), /* upsConfigHighVoltageTransferPoint */
+	snmp_info_default("input.transfer.low", 0, 1.0, IETF_OID_UPS_MIB "9.9.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigLowVoltageTransferPoint */
+	snmp_info_default("input.transfer.high", 0, 1.0, IETF_OID_UPS_MIB "9.10.0", "", SU_FLAG_ZEROINVALID, NULL), /* upsConfigHighVoltageTransferPoint */
 
 	/* end of structure. */
 	snmp_info_sentinel
