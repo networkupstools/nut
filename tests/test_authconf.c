@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	FILE	*f;
 	upscli_authconf_t	*ac, *ac5, *ac7, *ac8, *ac9, *ac12;
 	size_t	num_sections, expected_sections = 0;
-	char	buf[512], *s, test_conf_path[NUT_PATH_MAX],
+	char	buf[512], *s, test_conf_path[NUT_PATH_MAX + 1],
 		cwd[NUT_PATH_MAX - 32]; /* truncate so test_conf / include_conf suffixes fit into NUT_PATH_MAX */
 	int	l, testnum = 0;
 

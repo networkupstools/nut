@@ -93,6 +93,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "parseconf.h"
 #include "attribute.h"
@@ -661,4 +663,136 @@ int pconf_char(PCONF_CTX_t *ctx, char ch)
 		return -1;
 
 	return 0;
+}
+
+static int pconf_file_filter(const char *base_name, const char *d_name)
+{
+	size_t len, blen;
+
+	if (!d_name || d_name[0] == '.')
+		return 0;
+
+	len = strlen(d_name);
+	if (len > 5 && !strcmp(d_name + len - 5, ".conf"))
+		return 1;
+
+	blen = base_name ? strlen(base_name) : 0;
+	if ((blen >= 10 && !strcmp(base_name, "upsd.users")) ||
+	    (blen > 6 && !strcmp(base_name + blen - 6, ".users"))) {
+		if (len > 6 && !strcmp(d_name + len - 6, ".users"))
+			return 1;
+	}
+
+	return 0;
+}
+
+static int pconf_file_cmp(const void *a, const void *b)
+{
+	const char * const *sa = (const char * const *)a;
+	const char * const *sb = (const char * const *)b;
+	return strcmp(*sa, *sb);
+}
+
+char **pconf_get_files(const char *main_file, size_t *count)
+{
+	char **files = NULL;
+	size_t num = 0, cap = 0;
+	const char *base = NULL;
+	char dirpath[NUT_PATH_MAX + 4];
+	struct stat st;
+
+	if (count)
+		*count = 0;
+
+	if (!main_file || !*main_file)
+		return NULL;
+
+	/* Find base filename */
+	base = strrchr(main_file, '/');
+#ifdef WIN32
+	if (!base)
+		base = strrchr(main_file, '\\');
+#endif
+	if (base)
+		base++;
+	else
+		base = main_file;
+
+	/* Check if main_file exists and is not a directory */
+	if (stat(main_file, &st) == 0 && !S_ISDIR(st.st_mode) && access(main_file, R_OK) == 0) {
+		cap = 16;
+		files = (char **)xcalloc(cap, sizeof(char *));
+		files[num++] = xstrdup(main_file);
+	}
+
+	/* Look for <main_file>.d drop-in directory with .conf files (and .users for upsd.users.d), except nutauth.conf */
+	if (strcmp(base, "nutauth.conf") != 0) {
+		DIR *dir;
+		snprintf(dirpath, sizeof(dirpath), "%s.d", main_file);
+
+		if (stat(dirpath, &st) == 0 && S_ISDIR(st.st_mode) && (dir = opendir(dirpath)) != NULL) {
+			struct dirent *de;
+			char **dfiles = NULL;
+			size_t dnum = 0, dcap = 0, i;
+
+			while ((de = readdir(dir)) != NULL) {
+				char filepath[NUT_PATH_MAX * 2 + 8];
+
+				if (!pconf_file_filter(base, de->d_name))
+					continue;
+
+				snprintf(filepath, sizeof(filepath), "%s/%s", dirpath, de->d_name);
+				if (stat(filepath, &st) == 0 && !S_ISDIR(st.st_mode) && access(filepath, R_OK) == 0) {
+					if (dnum + 1 >= dcap) {
+						dcap = dcap ? dcap * 2 : 16;
+						dfiles = (char **)xrealloc(dfiles, dcap * sizeof(char *));
+					}
+					dfiles[dnum++] = xstrdup(de->d_name);
+				}
+			}
+			closedir(dir);
+
+			if (dnum > 0) {
+				qsort(dfiles, dnum, sizeof(char *), pconf_file_cmp);
+
+				for (i = 0; i < dnum; i++) {
+					char filepath[NUT_PATH_MAX * 2 + 8];
+					snprintf(filepath, sizeof(filepath), "%s/%s", dirpath, dfiles[i]);
+					free(dfiles[i]);
+
+					if (num + 2 >= cap) {
+						cap = cap ? cap * 2 : 16;
+						files = (char **)xrealloc(files, cap * sizeof(char *));
+					}
+					files[num++] = xstrdup(filepath);
+				}
+				free(dfiles);
+			}
+		}
+	}
+
+	if (num == 0) {
+		if (files)
+			free(files);
+		return NULL;
+	}
+
+	files[num] = NULL;
+	if (count)
+		*count = num;
+
+	return files;
+}
+
+void pconf_free_files(char **files)
+{
+	size_t i;
+
+	if (!files)
+		return;
+
+	for (i = 0; files[i] != NULL; i++) {
+		free(files[i]);
+	}
+	free(files);
 }

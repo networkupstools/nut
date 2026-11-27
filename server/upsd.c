@@ -170,7 +170,7 @@ static FTS_T	*fds = NULL;
 static handler_t	*handler = NULL;
 
 	/* pid file */
-static char	pidfn[NUT_PATH_MAX];
+static char	pidfn[NUT_PATH_MAX + 1];
 
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
