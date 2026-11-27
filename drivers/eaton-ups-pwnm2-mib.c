@@ -31,7 +31,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "0.106"
+#define PW_MIB_VERSION "0.107"
 
 /* Powerware UPS (Ingrasys X-SLOT and BD-SLOT)
  * Eaton Gigabit Network Card (Genepi) */
@@ -88,6 +88,8 @@
 #define IETF_OID_IDENT		"1.3.6.1.2.1.33.1.1.5.0"	/* UPS-MIB::upsIdentName.0 */
 #define IETF_OID_CONF_OUT_VA	"1.3.6.1.2.1.33.1.9.5.0"	/* UPS-MIB::upsConfigOutputVA.0 */
 #define IETF_OID_CONF_RUNTIME_LOW	"1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
+#define IETF_OID_CONF_LOW_TRANSFER	"1.3.6.1.2.1.33.1.9.9.0"	/* UPS-MIB::upsConfigLowVoltageTransferPoint.0 */
+#define IETF_OID_CONF_HIGH_TRANSFER	"1.3.6.1.2.1.33.1.9.10.0"	/* UPS-MIB::upsConfigHighVoltageTransferPoint.0 */
 #define IETF_OID_LOAD_LEVEL	"1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
 #define IETF_OID_AUTO_RESTART	"1.3.6.1.2.1.33.1.8.5.0"	/* UPS-MIB::upsAutoRestart */
 
@@ -507,6 +509,11 @@ static snmp_info_t pw_mib[] = {
 
 	/* XUPS-MIB::xupsConfigInputVoltage.0 */
 	snmp_info_default("input.voltage.nominal", 0, 1.0, "1.3.6.1.4.1.534.1.10.2.0", "", 0, NULL),
+	/* XUPS-MIB has no transfer points; Gigabit Network Card 3 publishes the
+	 * UPS-MIB ones (100 and 276 V on a 9SX 6KI). A 0 V point is one the
+	 * agent does not implement. */
+	snmp_info_default("input.transfer.low", 0, 1.0, IETF_OID_CONF_LOW_TRANSFER, "", SU_FLAG_ZEROINVALID, NULL),
+	snmp_info_default("input.transfer.high", 0, 1.0, IETF_OID_CONF_HIGH_TRANSFER, "", SU_FLAG_ZEROINVALID, NULL),
 	snmp_info_default("input.current", 0, 0.1, PW_OID_IN_CURRENT ".0", "",
 		SU_INPUT_1, NULL),
 	snmp_info_default("input.L1-N.voltage", 0, 1.0, PW_OID_IN_VOLTAGE ".1", "",
@@ -538,6 +545,10 @@ static snmp_info_t pw_mib[] = {
 	/* Duplicate of the above entry, but pointing at the first index */
 	/* xupsBypassVoltage.1.0; Value (Integer): 244 */
 	snmp_info_default("input.bypass.voltage", 0, 1.0, "1.3.6.1.4.1.534.1.5.3.1.2.1.0", "",
+		SU_INPUT_1, NULL),
+	/* xupsBypassVoltage.1, as the MIB indexes it: the only instance that
+	 * the 9SX cards with agent firmware 1.7.5 and 2.1.2 answer */
+	snmp_info_default("input.bypass.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".1", "",
 		SU_INPUT_1, NULL),
 	snmp_info_default("input.bypass.L1-N.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".1", "",
 		SU_INPUT_3, NULL),
