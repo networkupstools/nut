@@ -886,7 +886,7 @@ SPELLCHECK_SRC_DEFAULT = \
 	../scripts/augeas/README.adoc ../lib/README.adoc \
 	../tools/nut-scanner/README.adoc \
 	../AUTHORS ../COPYING ../LICENSE-GPL2 ../LICENSE-GPL3 ../LICENSE-DCO \
-	../SECURITY.md \
+	../SECURITY.md ../AGENTS.md \
 	$(ALL_TXT_SRC)
 
 # TOTHINK: Fit SECURITY.md policy into the main asciidoc trail?
