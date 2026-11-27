@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3952 utf-8
+personal_ws-1.1 en 3966 utf-8
 AAC
 AAS
 ABI
@@ -982,6 +982,7 @@ PC's
 PCI
 PDC
 PDUs
+PDV
 PDX
 PEX
 PFCLCD
@@ -1053,6 +1054,8 @@ Perriault
 Petr
 Petri
 Petter
+Peukert
+Peukert's
 Pezzini
 Phasak
 PhoenixContact
@@ -1772,6 +1775,7 @@ async
 atcl
 atexit
 ats
+attr
 aug
 augeas
 augparse
@@ -1799,6 +1803,7 @@ autoreplace
 autorestart
 autoscan
 autostart
+autosuspend
 autotools
 autowidth
 auxdata
@@ -2015,6 +2020,7 @@ conn
 connectable
 const
 contrib
+conv
 cooldown
 coolofftime
 copyrightable
@@ -2751,6 +2757,7 @@ lt
 ltdl
 lu
 lua
+luizluca
 lv
 lvo
 lwdi
@@ -2948,6 +2955,7 @@ noimp
 noinst
 nolock
 nombattvolt
+nominaltension
 nonascii
 noncommercially
 nonliteral
@@ -2984,6 +2992,7 @@ nullptr
 num
 numOfBytesFromUPS
 numa
+numbat
 numbatteries
 numlogins
 numq
@@ -3091,6 +3100,7 @@ perc
 percents
 perl
 permalinks
+peukert
 pfSense
 pfexec
 pfy
@@ -3269,6 +3279,7 @@ reportId
 reposurgeon
 repotec
 req
+requesthwpkt
 rescales
 resetter
 resizing
@@ -3610,6 +3621,7 @@ th
 thead
 timeframe
 timehead
+timeremain
 timername
 timespec
 timestamp
@@ -3843,6 +3855,7 @@ vla
 vo
 volsize
 voltronic
+vout
 vscode
 vsnprintf
 vsnprintfcat
@@ -3948,6 +3961,7 @@ zsh
 zu
 zw
 zwfa
+zz
 zzz
 Åstrand
 Ørpetveit
