@@ -22,6 +22,18 @@ try:
 except ModuleNotFoundError as ignored:
     pass
 
+try:
+    # Only available since Python 3.3
+    ex = TimeoutError
+    del ex
+except NameError:
+    # Add a fake we can syntactically claim to catch
+    class TimeoutError(Exception):
+        def __init__(self, **kwargs):
+            super().__init__(self, **kwargs)
+
+    pass
+
 class DisconnectSocket:
     """ Record cleanup attempts, including operations which fail. """
     def __init__(self, send_error=False, close_error=False):
