@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3952 utf-8
+personal_ws-1.1 en 3958 utf-8
 AAC
 AAS
 ABI
@@ -186,6 +186,7 @@ CHOST
 CHRG
 CL
 CLANGVER
+CLEANFILES
 CLI
 CLOCAL
 CMDDESC
@@ -1445,6 +1446,7 @@ TIOCMBIC
 TIOCMBIS
 TLS
 TLSv
+TMPDIR
 TODO
 TORO
 TRACKINGDELAY
@@ -2570,6 +2572,7 @@ isystem
 iter
 ivp
 ivtscd
+ize
 jNUT
 jNut
 jNutWebAPI
@@ -2835,6 +2838,7 @@ mj
 mk
 mkdb
 mkdir
+mkdtemp
 mkstr
 mktexlsr
 mmZ
@@ -3636,6 +3640,7 @@ treemode
 tripplite
 tripplitesu
 troff
+trs
 tryconnect
 ts
 tsa
@@ -3760,6 +3765,7 @@ upssched
 upssched's
 upsset
 upsstats
+upstreaming
 upstype
 upsuser
 upswired
