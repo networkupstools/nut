@@ -467,6 +467,34 @@ compatibility ones, 250 ms apart and without stopping the UPS first. In the
 development versions that already had this setting, 1 meant the short
 request and 2 the long one.
 
+*requesthwpkt*='0|1|2'::
+When the driver asks the UPS for the hardware information packet again
+while it runs. That packet is where the driver takes the input voltage
+range of the UPS (120V or 220V), the transfer points, the number of
+batteries and the identity of the unit from. With 0, the default, it is
+requested again only while the driver has no valid one and after the UPS
+went silent (see *silence_timeout*), as earlier versions did. With 1 it is
+also requested after a mains failure: the driver notes the loss of mains
+and, when mains returns, asks for the packet again. With 2 it is also
+requested after every reading.
++
+Use 1 for a unit that selects its input voltage by itself and may come back
+from a mains failure on another mains voltage, for example one unplugged
+from a 120V outlet and plugged into a 220V one while it runs on battery.
+`input.voltage.nominal`, `input.transfer.low`, `input.transfer.high` and
+the input voltage thresholds then follow the new range without restarting
+the driver. With 0 they keep the range found at startup until the driver
+is restarted.
++
+Which request is sent is the one chosen by *init_packet*, exactly as when
+the driver has no hardware packet. With *init_packet* = 0 that is the long
+request for the first *init_long_tries* times and then one of the three at
+random, and the answer to the compatibility and to the short request has no
+serial number: with *requesthwpkt* = 2 prefer *init_packet* = 3. These
+requests are sent while the UPS is transmitting, with no stop requests
+before them and without the wait of *init_retry_delay*; the answer is taken
+in by the next reading.
+
 *stop_packet*='0|1'::
 Whether the driver sends the stop requests described under *init_packet*.
 With 1, the default, they are sent before the start sequence and when the

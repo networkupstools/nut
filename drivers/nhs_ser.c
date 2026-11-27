@@ -40,7 +40,7 @@
 #include <math.h>
 
 #define DRIVER_NAME     "NHS Nobreak Drivers"
-#define DRIVER_VERSION  "0.08"
+#define DRIVER_VERSION  "0.09"
 #define MANUFACTURER    "NHS Sistemas Eletronicos LTDA"
 
 #define DEFAULTBAUD     2400
@@ -61,6 +61,7 @@
 #define DEFAULTOVERLOAD 105     /* load, in %, above which the UPS is overloaded */
 #define DEFAULTCHARGESCALE 0    /* battery.charge scale: 0 from 10.8V to 13.2V, 1 from 10.5V to 12.6V */
 #define DEFAULTINITPACKET  0    /* hardware packet requested: 0 compatibility, short and long in a row, 1 compatibility, 2 short, 3 long */
+#define DEFAULTREQHWPKT    0    /* hardware packet requested again while running: 0 only without one or after a silence, 1 also when mains returns from a failure, 2 also after every reading */
 #define DEFAULTSTOPPACKET  1    /* stop requests before the start sequence and on exit: 1 sent, 0 never sent */
 #define DEFAULTINVERTBITS  1    /* flags packed in a byte: 1 flag n is bit n (inverted), 0 flag n is bit 7 - n */
 #define DEFAULTWARNFACTOR  2.0  /* warning margin of an input threshold, in times the critical one, when both percentages are equal */
@@ -916,6 +917,52 @@ static unsigned int   reopen_tries = DEFAULT_REOPEN_TRIES;
  * number as dashes whatever the packet.
  */
 static unsigned int   init_packet = DEFAULTINITPACKET;
+
+/*
+ * When the hardware packet is requested again while the driver runs, from
+ * "requesthwpkt" in ups.conf:
+ *
+ *   0  only as before: while the driver has no valid hardware packet, and
+ *      after the UPS went silent for longer than "silence_timeout";
+ *   1  also after a mains failure. The loss of mains is noted in
+ *      mains_was_lost; when mains returns the note is read and, if it is
+ *      set, the hardware packet is requested again;
+ *   2  also at the end of every reading.
+ *
+ * WHY
+ *
+ * The driver takes the input range of the UPS (120V or 220V) from the
+ * hardware packet, and with it the nominal input voltage, the transfer
+ * points and the input voltage thresholds. It asked for that packet at
+ * startup and kept it. Some models select the input voltage by themselves
+ * (the PDV SENOIDAL 1500VA, model code 33: "Bivolt Automatico" in its
+ * manual), so such a unit can be unplugged from a 120V outlet and plugged
+ * into a 220V one while it runs on battery. In a test of that on a real
+ * unit (pull request 3836, 2026-11-27) the input went from 115V to 0V and
+ * came back at 221V. The status and the efficiency followed, because they
+ * come from the data packet, while input.voltage.nominal stayed at 120 and
+ * the thresholds at 91.80, 93.60, 149.76 and 152.88 beside an input of
+ * 221V. Restarting the driver cured it; 1 does the same without a restart.
+ *
+ * HOW
+ *
+ * Which request is sent is settled by "init_packet", exactly as when the
+ * driver has no hardware packet: with 0 the long request for the first
+ * "init_long_tries" times and then one of the three at random, with 1, 2
+ * or 3 always the same one. Nothing changes there. What differs is the
+ * wait: the request made because of this setting is not followed by the
+ * wait of "init_retry_delay", since the driver already has a hardware
+ * packet to work with, and the answer is taken in by the next reading.
+ * With 1 the request stays due, in hwpkt_wanted, until a valid hardware
+ * packet arrives.
+ *
+ * Any valid hardware packet that arrives is taken in as before, see
+ * upsdrv_updateinfo(): if it comes from another unit, what was learned
+ * from the previous one is dropped first.
+ */
+static unsigned int   request_hwpkt = DEFAULTREQHWPKT;
+static bool           mains_was_lost = false;  /* requesthwpkt = 1: a mains failure was seen and not yet followed by a request */
+static bool           hwpkt_wanted = false;    /* requesthwpkt = 1: mains is back, a request is due until a valid hardware packet arrives */
 
 /*
  * Whether the stop requests are sent, from "stop_packet" in ups.conf: 1 (the
@@ -3621,6 +3668,7 @@ void upsdrv_initinfo(void) {
 	parse_model_options();
 
 	init_packet = get_flag_option("init_packet", DEFAULTINITPACKET);
+	request_hwpkt = get_flag_option("requesthwpkt", DEFAULTREQHWPKT);
 
 	/* TODO: Any instant commands? */
 
@@ -3862,6 +3910,10 @@ static void parse_model_options(void)
 	value = getval("init_packet");
 	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0 && strcmp(value, "2") != 0 && strcmp(value, "3") != 0)
 		fatalx(EXIT_FAILURE, "Invalid init_packet value '%s': expected 0 (compatibility, short and long requests), 1 (compatibility request only), 2 (short request only) or 3 (long request only)", value);
+
+	value = getval("requesthwpkt");
+	if (value && strcmp(value, "0") != 0 && strcmp(value, "1") != 0 && strcmp(value, "2") != 0)
+		fatalx(EXIT_FAILURE, "Invalid requesthwpkt value '%s': expected 0 (hardware packet requested again only without one or after a silence), 1 (also when mains returns from a failure) or 2 (also after every reading)", value);
 
 	/*
 	 * Runtime calibration: four numbers, the runtime in seconds and the load
@@ -5658,6 +5710,7 @@ void upsdrv_updateinfo(void) {
 										forget_previous_ups();
 									}  /* end if */
 									lastpkthwinfo = received_hwinfo;
+									hwpkt_wanted = false;
 									interpret_pkt_hwinfo();
 									dstate_dataok();
 								}  /* end if */
@@ -5669,6 +5722,19 @@ void upsdrv_updateinfo(void) {
 								if (lastpktdata.checksum_ok) {
 									interpret_pkt_data();
 									dstate_dataok();
+									/* requesthwpkt = 1: note a mains
+									 * failure and, once mains is back,
+									 * turn the note into a request for
+									 * the hardware packet; see
+									 * request_hwpkt. */
+									if (request_hwpkt == 1) {
+										if (lastpktdata.s_battery_mode)
+											mains_was_lost = true;
+										else if (mains_was_lost) {
+											mains_was_lost = false;
+											hwpkt_wanted = true;
+										}  /* end else if */
+									}  /* end if */
 								}  /* end if */
 								break;
 
@@ -5781,8 +5847,8 @@ void upsdrv_updateinfo(void) {
 	 * like number of batteries, to calculate some data
 	 * FIXME: move (semi)static info discovery to upsdrv_initinfo() or so
 	 */
-	if (!lastpkthwinfo.checksum_ok || silent) {
-		upsdebugx(4, "pkt_hwinfo loss or silent UPS -- Requesting");
+	if (!lastpkthwinfo.checksum_ok || silent || hwpkt_wanted || request_hwpkt == 2) {
+		upsdebugx(4, "pkt_hwinfo loss, silent UPS or requesthwpkt -- Requesting");
 		/* If size == 0, packet maybe not initizated,
 		 * then send an initialization packet to obtain data.
 		 * With init_packet = 0, send the extended initialization string
@@ -5839,10 +5905,13 @@ void upsdrv_updateinfo(void) {
 				upsdebugx(1, "%s: Data problem", __func__);
 			close_serial_port();
 		}  /* end if */
-		else {
+		else if (!lastpkthwinfo.checksum_ok || silent) {
 			/* The wait for the answer: it grows by "init_retry_step" at
 			 * each repetition and is brought back to "init_retry_max" once
-			 * it has gone past it. These were the fixed 100 ms and 6 s. */
+			 * it has gone past it. These were the fixed 100 ms and 6 s.
+			 * A request made because of "requesthwpkt", with a valid
+			 * hardware packet in hand and the UPS sending, is not
+			 * followed by this wait: the next reading takes the answer. */
 			if (checktime > init_retry_max_ms * 1000)
 				checktime = init_retry_max_ms * 1000;
 			else {
@@ -5850,8 +5919,8 @@ void upsdrv_updateinfo(void) {
 				checktime = checktime + init_retry_step_ms * 1000;
 			}  /* end else */
 			usleep(checktime);
-		}  /* end else */
-	}  /* end if lastpkthwinfo good/bad checksum, or silent UPS */
+		}  /* end else if */
+	}  /* end if lastpkthwinfo good/bad checksum, silent UPS or requesthwpkt */
 
 	upsdebugx(3, "%s: finished", __func__);
 }
@@ -6013,59 +6082,87 @@ void upsdrv_makevartable(void) {
 	 * //addvar(VAR_VALUE, "port", "Port to communication");
 	 */
 
-	/* Expose the nine serial settings supported above. */
+	/*
+	 * Expose the nine serial settings supported above. They describe the
+	 * serial port and are read once, in parse_serial_options(), before the
+	 * port is opened:
+	 *
+	 *   baud                    line speed, one of the rates built into
+	 *                           the driver
+	 *   serial_data_bits        bits of each character
+	 *   serial_parity           parity bit of each character
+	 *   serial_stop_bits        stop bits after each character
+	 *   serial_flow_control     what paces the traffic: nothing, the
+	 *                           RTS/CTS lines, XON/XOFF characters or both
+	 *   serial_read_timeout_ms  how long a read waits for each byte
+	 *   serial_send_pace_us     pause after each byte the driver sends
+	 *   serial_dtr, serial_rts  state given to each of these lines every
+	 *                           time the port is opened; without the
+	 *                           setting the line is left alone
+	 */
 	addvar(VAR_VALUE, "baud", "Serial baud rate from the rates compiled into this driver (default: 2400)");
-
 	addvar(VAR_VALUE, "serial_data_bits", "Serial data bits: 5, 6, 7 or 8 (default: 8)");
-
 	addvar(VAR_VALUE, "serial_parity", "Serial parity: none, even or odd (default: none)");
-
 	addvar(VAR_VALUE, "serial_stop_bits", "Serial stop bits: 1 or 2 (default: 1)");
-
 	addvar(VAR_VALUE, "serial_flow_control", "Serial flow control: none, hardware, software or both (default: none, as the NHS protocol document specifies)");
-
 	addvar(VAR_VALUE, "serial_read_timeout_ms", "Timeout per serial byte: 0 to 60000 ms (default: 100)");
-
 	addvar(VAR_VALUE, "serial_send_pace_us", "Delay between transmitted bytes: 0 to 999999 us (default: 0)");
-
 	addvar(VAR_VALUE, "serial_dtr", "State given to the DTR line of the serial port: 0 (low) or 1 (high) (default: not set, the line is left as the system sets it)");
-
 	addvar(VAR_VALUE, "serial_rts", "State given to the RTS line of the serial port: 0 (low) or 1 (high); not accepted with serial_flow_control = hardware or both (default: not set, the line is left as the system sets it)");
-
 	/*
 	 * Model ratings. Each of these replaces the value that getupsinfo() has
 	 * for the UPS being monitored; see the upsinfo structure.
+	 *
+	 *   ah                    capacity of each battery, in Ah; feeds
+	 *                         battery.capacity and the runtime estimate
+	 *   va                    nominal apparent power, in VA
+	 *   pf                    power factor, nominal W over nominal VA;
+	 *                         turns the load into W
+	 *   efficiency_line       efficiency on mains with input and output at
+	 *                         the same voltage, published as ups.efficiency
+	 *   efficiency_line_conv  the same while converting between 120V and
+	 *                         220V
+	 *   efficiency_inverter   efficiency on battery; also used by the
+	 *                         battery current and by the runtime
 	 */
 	addvar(VAR_VALUE, "ah", "Capacity of each battery in Ampere-hour (replaces the built-in model value)");
-
 	addvar(VAR_VALUE, "va", "Nominal power in VA (replaces the built-in model value)");
-
 	snprintf(help, sizeof(help), "Power factor, nominal W divided by nominal VA (replaces the built-in model value; default without one is %0.2f)", DEFAULTPF);
 	addvar(VAR_VALUE, "pf", help);
-
 	addvar(VAR_VALUE, "efficiency_line", "Full-load efficiency on mains with the same input and output voltage, in percent (replaces the built-in model value)");
-
 	addvar(VAR_VALUE, "efficiency_line_conv", "Full-load efficiency on mains when converting between 120V and 220V, in percent (replaces the built-in model value)");
-
 	addvar(VAR_VALUE, "efficiency_inverter", "Full-load efficiency on battery, in percent (replaces the built-in model value)");
-
+	/*
+	 * Margins of the input voltage thresholds, one for each threshold, in
+	 * percent of the transfer point reported by the UPS. The low ones are
+	 * added to the low transfer point and the high ones subtracted from the
+	 * high transfer point, to get input.voltage.low.warning,
+	 * input.voltage.low.critical, input.voltage.high.warning and
+	 * input.voltage.high.critical.
+	 */
 	snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning low level. Default is %0.2f", DEFAULTPERC);
 	addvar(VAR_VALUE, "vin_low_warn_perc", help);
-
 	snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical low level. Default is %0.2f", DEFAULTPERC);
 	addvar(VAR_VALUE, "vin_low_crit_perc", help);
-
 	snprintf(help, sizeof(help), "Voltage In Percentage to calculate warning high level. Default is %0.2f", DEFAULTPERC);
 	addvar(VAR_VALUE, "vin_high_warn_perc", help);
-
 	snprintf(help, sizeof(help), "Voltage In Percentage to calculate critical high level. Default is %0.2f", DEFAULTPERC);
 	addvar(VAR_VALUE, "vin_high_crit_perc", help);
-
+	/*
+	 * The battery bank. numbatteries replaces the number of batteries that
+	 * the UPS reports, for a unit whose bank was changed; battery_series
+	 * tells how they are wired, 1 in series or 0 in parallel, which settles
+	 * battery.voltage, battery.voltage.nominal and battery.current.total.
+	 */
 	snprintf(help, sizeof(help), "Num Batteries (override value from nobreak)");
 	addvar(VAR_VALUE, "numbatteries", help);
-
 	addvar(VAR_VALUE, "battery_series", "How the batteries are wired: 1 in series, 0 in parallel (replaces the built-in model value)");
-
+	/*
+	 * How each two-byte field of the data packet is read, one setting for
+	 * each field: 0 as an integer part and a fraction ("first.second"), 1
+	 * as one 16-bit number. charge_scale picks the voltage scale behind
+	 * battery.charge.
+	 */
 	addvar(VAR_VALUE, "read16_vin", "Input voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
 	addvar(VAR_VALUE, "read16_vin_min", "Minimum input voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
 	addvar(VAR_VALUE, "read16_vin_max", "Maximum input voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
@@ -6073,7 +6170,26 @@ void upsdrv_makevartable(void) {
 	addvar(VAR_VALUE, "read16_temp", "Temperature bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number");
 	addvar(VAR_VALUE, "read16_vbat", "Battery voltage bytes: 0 read as \"first.second\" (default), 1 read as a 16-bit number in tenths of a volt");
 	addvar(VAR_VALUE, "charge_scale", "Scale of battery.charge for a 12V battery: 0 from 10.8V to 13.2V (default), 1 from 10.5V to 12.6V");
+	/*
+	 * The conversation with the UPS:
+	 *
+	 *   init_packet       which request for the hardware packet is sent
+	 *   requesthwpkt      when that packet is requested again while the
+	 *                     driver runs
+	 *   stop_packet       whether the stop requests are sent before the
+	 *                     start sequence and on exit
+	 *   command_delay     pause after each request of those sequences
+	 *   silence_timeout   time without a packet before the data are given
+	 *                     as stale
+	 *   init_long_tries   long requests before one of the three is picked
+	 *                     at random, with init_packet = 0
+	 *   init_retry_delay, init_retry_step, init_retry_max
+	 *                     wait after a repeated request: where it starts,
+	 *                     how much it grows and where it stops growing
+	 *   reopen_tries      attempts to reopen the port in one poll
+	 */
 	addvar(VAR_VALUE, "init_packet", "Hardware packet requested from the UPS: 0 compatibility, short and long in a row (default), 1 compatibility only, 2 short only, 3 long only");
+	addvar(VAR_VALUE, "requesthwpkt", "Hardware packet requested again while the driver runs: 0 only without one or after a silence (default), 1 also when mains returns from a failure, 2 also after every reading");
 	addvar(VAR_VALUE, "stop_packet", "Stop requests sent to the UPS before the start sequence and on exit: 1 sent (default), 0 never sent");
 	addvar(VAR_VALUE, "command_delay", "Pause after each request of the start and stop sequences: 0 to 2000 ms (default: 1000)");
 	addvar(VAR_VALUE, "silence_timeout", "Time without a packet from the UPS before the data are given as stale and the hardware packet is requested again: 1 to 3600 s, 0 never (default: 10)");
@@ -6082,32 +6198,58 @@ void upsdrv_makevartable(void) {
 	addvar(VAR_VALUE, "init_retry_step", "Growth of that wait after each repetition: 0 to 10000 ms (default: 100)");
 	addvar(VAR_VALUE, "init_retry_max", "Longest that wait may grow to: 0 to 10000 ms, not below init_retry_delay (default: 6000)");
 	addvar(VAR_VALUE, "reopen_tries", "Attempts to reopen the port in one poll before the data are given as stale: 1 to 100 (default: 3)");
+	/*
+	 * Numbers that used to be fixed in the code:
+	 *
+	 *   vin_warn_factor       how many times the critical margin the
+	 *                         warning margin of an input threshold is, when
+	 *                         both percentages are equal
+	 *   battery_rating_hours  discharge time for which the capacity of the
+	 *                         batteries is rated
+	 *   peukert_exponent      how fast that capacity shrinks as the
+	 *                         discharge current grows
+	 *   charger_unit_ma       charger current that each unit of the charger
+	 *                         reading stands for
+	 */
 	addvar(VAR_VALUE, "vin_warn_factor", "Warning margin of an input voltage threshold, in times the critical one, when both percentages are equal: 1 to 10 (default: 2)");
 	addvar(VAR_VALUE, "battery_rating_hours", "Discharge time the battery capacity is rated for, used by the runtime estimated from the capacity: 1 to 100 h (default: 20)");
 	addvar(VAR_VALUE, "peukert_exponent", "Peukert exponent of the batteries, used by the runtime estimated from the capacity: 1 to 2 (default: 1.25)");
 	addvar(VAR_VALUE, "charger_unit_ma", "Charger current of each unit of the charger reading: 1 to 1000 mA (default: 30)");
+	/*
+	 * Order of the flags packed in the status bytes, one setting for each
+	 * kind of packet: 1 takes flag n from bit n, 0 from bit 7 - n.
+	 */
 	addvar(VAR_VALUE, "invert_bits_data", "Flags of the status byte of the data packet: 1 flag n is bit n (default), 0 flag n is bit 7 - n");
 	addvar(VAR_VALUE, "invert_bits_hwinfo", "Flags of the configuration and status bytes of the hardware packet: 1 flag n is bit n (default), 0 flag n is bit 7 - n");
+	/*
+	 * Runtime calibration, as in the blazer and nutdrv_qx drivers:
+	 * runtimecal gives two runtimes at two loads, chargetime the time to
+	 * recharge an empty battery and idleload the smallest load taken into
+	 * account.
+	 */
 	addvar(VAR_VALUE, "runtimecal", "Runtime calibration: runtime in s and load in % at a higher load, then at a lower one, as in 240,100,720,50 (replaces the built-in model values)");
 	addvar(VAR_VALUE, "chargetime", "Time to recharge an empty battery, in s, used with the runtime calibration (default 43200)");
 	addvar(VAR_VALUE, "idleload", "Smallest effective load, in %, used by the runtime calibration (default 10)");
-
+	/*
+	 * overload_perc is the load above which OVER is set in ups.status; vbat
+	 * is the nominal voltage of ONE battery.
+	 */
 	snprintf(help, sizeof(help), "Load, in percent, above which the UPS is reported as overloaded (OVER); 0 turns the check off. Default is %d", DEFAULTOVERLOAD);
 	addvar(VAR_VALUE, "overload_perc", help);
-
 	snprintf(help, sizeof(help), "Nominal voltage of ONE battery, not of the bank; decimals are accepted. Default is %0.2f, which fits every NHS model", DEFAULTBATV);
 	addvar(VAR_VALUE, "vbat", help);
-
+	/* Packet diagnostics in the debug output: the bytes of each packet, the
+	 * decoded data packet and the decoded hardware packet. */
 	addvar(VAR_FLAG, "debug_pkt_raw", "Enable debug logging of packet bytes");
-
 	addvar(VAR_FLAG, "debug_pkt_data", "Enable debug logging of data packet decoding");
-
 	addvar(VAR_FLAG, "debug_pkt_hwinfo", "Enable debug logging of hwinfo packet decoding");
-
+	/*
+	 * overridemodel replaces the model name that is published,
+	 * protocolversion the protocol generation stored for the model, and
+	 * bypassasalarm tells whether the bypass bit raises an alarm.
+	 */
 	addvar(VAR_VALUE, "overridemodel", "Override the UPS model name reported by the driver");
-
 	addvar(VAR_VALUE, "protocolversion", "Override the NHS protocol version stored for the model (default: 3)");
-
 	addvar(VAR_VALUE, "bypassasalarm", "Report the UPS bypass bit as an alarm: 0 or 1 (default: 0, most models set the bit in normal operation)");
 }
 

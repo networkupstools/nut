@@ -523,6 +523,15 @@ https://github.com/networkupstools/nut/milestone/13
       be opened again when the driver is started or reconnects. A udev
       rule that keeps the device awake avoids it. Found and solved by
       @luizluca. [PR #3836]
+    * Added the `requesthwpkt` setting, to choose when the hardware
+      information packet is requested again while the driver runs: only
+      without a valid one or after a silence, as before (0, the default),
+      also when mains returns from a failure (1), or also after every
+      reading (2). With 1, a unit that selects its input voltage by itself
+      and comes back on another mains voltage gets `input.voltage.nominal`,
+      the transfer points and the input voltage thresholds of the new
+      range without restarting the driver; before, they kept the range
+      found at startup. Reported by @luizluca. [PR #3836]
     * Added the `serial_dtr` and `serial_rts` settings, which give the DTR
       and RTS lines of the serial port the state 1 or 0 every time the
       driver opens it. Without them the driver does not touch the lines,
