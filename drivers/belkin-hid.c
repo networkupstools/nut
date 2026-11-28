@@ -32,7 +32,7 @@
 #include "usb-common.h"
 #include "nut_float.h"	/* For fabs() */
 
-#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.25"
+#define BELKIN_HID_VERSION	"Belkin/Liebert HID 0.26"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -713,6 +713,45 @@ static int belkin_claim(HIDDevice_t *hd)
 	}
 }
 
+
+/* Liebert PSA (10af:0001): RunTimeToEmpty is a 16-bit field, but the
+ * report descriptor does not set its own Logical Maximum, so it inherits
+ * LogMax=100 from the preceding capacity fields and the value gets
+ * truncated to the low byte (e.g. 0x0320=800 s is reported as 32). */
+static int belkin_fix_report_desc(HIDDevice_t *pDev, HIDDesc_t *pDesc_arg)
+{
+	size_t	i;
+	int	fixed = 0;
+
+	if (pDev->VendorID != LIEBERT_VENDORID || pDev->ProductID != 0x0001)
+		return 0;
+
+	if (disable_fix_report_desc) {
+		upsdebugx(3, "%s: Liebert PSA RunTimeToEmpty fix skipped "
+			"(got disable_fix_report_desc in config)", __func__);
+		return 0;
+	}
+
+	for (i = 0; i < pDesc_arg->nitems; i++) {
+		HIDData_t	*pData = &pDesc_arg->item[i];
+
+		if (pData->Path.Size < 1)
+			continue;
+		/* Battery page 0x85, usage 0x68 = RunTimeToEmpty */
+		if (pData->Path.Node[pData->Path.Size - 1] != 0x00850068)
+			continue;
+		if (pData->Size == 16 && pData->LogMax < 256) {
+			upsdebugx(2, "%s: Liebert: fixing RunTimeToEmpty (ReportID 0x%02x) "
+				"LogMax %ld -> 65535", __func__,
+				(unsigned int)pData->ReportID, (long)pData->LogMax);
+			pData->LogMax = 65535;
+			fixed++;
+		}
+	}
+
+	return fixed;
+}
+
 subdriver_t belkin_subdriver = {
 	BELKIN_HID_VERSION,
 	belkin_claim,
@@ -721,6 +760,6 @@ subdriver_t belkin_subdriver = {
 	belkin_format_model,
 	belkin_format_mfr,
 	belkin_format_serial,
-	fix_report_desc,
+	belkin_fix_report_desc,
 	NULL,
 };

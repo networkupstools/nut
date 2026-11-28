@@ -711,6 +711,8 @@ https://github.com/networkupstools/nut/milestone/13
       percentage of the VA rating, which at low load can be several times the
       real power. Verified on that unit: `ups.realpower: 41`, `ups.power: 186`,
       `ups.realpower.nominal: 2700`. [PR #3860]
+    * `belkin-hid` subdriver should now repair broken USB report descriptor data
+      for `RunTimeToEmpty` (Liebert PSA `10af:0001`). [issue #3777, PR #3877]
     * Added the `ugreen-hid` subdriver for the Ugreen US2000 (72 W DC UPS, USB
       ID `2b89:ffff`). The device was previously unsupported by any subdriver
       and no `hid2nut` mapping could reach it: its live telemetry arrives

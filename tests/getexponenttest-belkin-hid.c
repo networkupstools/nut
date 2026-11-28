@@ -50,6 +50,12 @@ usb_communication_subdriver_t   usb_subdriver = {0};
 #pragma GCC diagnostic pop
 #endif
 
+/* Owned by usbhid-ups.c in a real build; the subdriver honors it.
+ * Marked extern so the compiler does not bother if it is static or shared by object files.
+ */
+extern int disable_fix_report_desc;
+int disable_fix_report_desc = 0;
+
 #include "belkin-hid.c"
 /* from drivers/belkin-hid.c we test:
 extern double liebert_config_voltage_mult, liebert_line_voltage_mult;
