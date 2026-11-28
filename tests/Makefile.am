@@ -424,6 +424,10 @@ cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CP
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
 cppunittest_LDADD   = $(top_builddir)/clients/libnutclientstub.la
 cppunittest_LDADD  += $(top_builddir)/clients/libnutclient.la
+if ENABLE_SHARED_PRIVATE_LIBS
+# Code path involves str_split_listen() from str.c -> common lib
+cppunittest_LDADD  += $(NUT_LIBCOMMON)
+endif ENABLE_SHARED_PRIVATE_LIBS
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Currently nutconf and related codebase causes woes for static analysis
