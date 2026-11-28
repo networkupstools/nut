@@ -340,6 +340,8 @@ https://github.com/networkupstools/nut/milestone/13
       corresponding `nutdrv_qx` transports, which this code predates.
 
  - `dummy-ups` driver updates:
+    * Playback of `nut-recorder` sequences now handles recorded alarm
+      descriptions as they appear, change, and clear. [PR #3867]
     * Repeater mode now marks data stale after a failed refresh, including
       an interrupted variable list, and restores freshness after a complete
       response. Runtime reconnection attempts continue as before. [PR #3648]

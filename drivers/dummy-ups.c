@@ -48,7 +48,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.28"
+#define DRIVER_VERSION	"0.29"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -785,6 +785,22 @@ static void upsconf_err(const char *errmsg)
 	upslogx(LOG_ERR, "Fatal error in parseconf(ups.conf): %s", errmsg);
 }
 
+/* Join the words of an alarm message from the definition file. */
+static void parse_alarm_message(char *value, size_t size)
+{
+	size_t i, used = 0;
+
+	value[0] = '\0';
+	for (i = 1; i < ctx->numargs; i++) {
+		int count = snprintf(value + used, size - used, "%s%s",
+			i == 1 ? "" : " ", ctx->arglist[i]);
+
+		if (count < 0 || (size_t)count >= size - used)
+			break;
+		used += (size_t)count;
+	}
+}
+
 /* for dummy mode
  * parse the definition file and process its content
  */
@@ -793,6 +809,8 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 	char	fn[NUT_PATH_MAX + 1];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	size_t	value_args = 0, counter;
+	static int recorded_alarm = 0; /* carry an assignment across TIMER lines */
+	int alarm_assigned = 0;
 	time_t	now;
 	NUT_UNUSED_VARIABLE(arg_upsfd);
 
@@ -832,6 +850,7 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		status_init(); /* in case no ups.status does it */
 		upsdebugx(5, "%s: call alarm_init()", __func__);
 		alarm_init(); /* reset alarms at start of parsing */
+		recorded_alarm = 0;
 	}
 
 	/* Reset the next call time, so that we can loop back on the file
@@ -873,23 +892,18 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		/* ALARM instruction */
 		if (!strncmp(ctx->arglist[0], "ALARM", 5))
 		{
-			if (ctx->numargs > 1) {
-				for (counter = 1, value_args = ctx->numargs ;
-					counter < value_args ; counter++)
-				{
-					if (counter == 1) /* don't append the first space separator */
-						snprintf(var_value, sizeof(var_value), "%s", ctx->arglist[counter]);
-					else
-						snprintfcat(var_value, sizeof(var_value), " %s", ctx->arglist[counter]);
-				}
-				if (*var_value != '\0') {
-					alarm_set(var_value);
-					upsdebugx(3, "parse_data_file: ALARM instruction with value \"%s\"", var_value);
-
-					continue;
-				}
+			parse_alarm_message(var_value, sizeof(var_value));
+			if (*var_value) {
+				const st_tree_t *previous = dstate_tree_find("ups.alarm");
+				if (recorded_alarm && previous)
+					alarm_set(previous->raw);
+				recorded_alarm = 0;
+				alarm_set(var_value);
+				upsdebugx(3, "parse_data_file: ALARM instruction with value \"%s\"", var_value);
+				continue;
 			}
 
+			recorded_alarm = 0;
 			alarm_init();
 			upsdebugx(3, "parse_data_file: ALARM instruction with no value (reset alarms)");
 
@@ -914,6 +928,9 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		/* special handler for status */
 		if (!strncmp( ctx->arglist[0], "ups.status", 10))
 		{
+			int had_recorded_alarm = recorded_alarm && !alarm_assigned &&
+				str_contains_token(dstate_getinfo("ups.status"), "ALARM");
+
 			status_init();
 			for (counter = 1, value_args = ctx->numargs ;
 				counter < value_args ; counter++)
@@ -921,6 +938,22 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 				status_set(ctx->arglist[counter]);
 			}
 			status_commit();
+
+			/* Older recordings omit deleted variables. Dropping ALARM
+			 * clears a description carried from a previous snapshot. */
+			if (had_recorded_alarm && !str_contains_token(dstate_getinfo("ups.status"), "ALARM"))
+				recorded_alarm = 0;
+		}
+		else if (!strcmp(ctx->arglist[0], "ups.alarm"))
+		{
+			char message[ST_MAX_VALUE_LEN];
+
+			parse_alarm_message(message, sizeof(message));
+			alarm_init();
+			alarm_assigned = 1;
+			recorded_alarm = (*message != '\0');
+			if (recorded_alarm)
+				dstate_setinfo("ups.alarm", "%s", message);
 		}
 		else
 		{
@@ -946,7 +979,9 @@ static int parse_data_file(TYPE_FD arg_upsfd)
 		}
 	}
 
-	alarm_commit(); /* needs to happen first */
+	/* A snapshot publishes its description and status independently. */
+	if (!recorded_alarm)
+		alarm_commit(); /* needs to happen first */
 	status_commit(); /* re-commit status for ALARM */
 
 	/* Cleanup parseconf if there is no pending action */

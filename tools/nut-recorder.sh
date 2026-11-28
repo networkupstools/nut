@@ -47,6 +47,7 @@ fi
 
 # initialize TIMER value
 curTimer=0
+recovering=false
 
 # Test communication with the device
 testResult="`upsc \"$devName\" 2>&1 > /dev/null`"
@@ -58,9 +59,18 @@ fi
 # initialize output file
 echo "# dummy-ups sequence recorded with $0\n"> $outFile
 
-# initialize data
-upsc $devName >> $outFile
-cp -f $outFile ${TEMP_DIR}/prevDump.tmp
+# Preserve the full alarm description as one quoted sequence-file value.
+quote_alarm() {
+	sed '/^ups\.alarm: / {
+		s/[\\"]/\\&/g
+		s/^ups\.alarm: /ups.alarm: "/
+		s/$/"/
+	}'
+}
+
+# Keep the last successful upsc snapshot in its original format for diff.
+upsc "$devName" > "${TEMP_DIR}/prevDump.tmp" || exit 1
+quote_alarm < "${TEMP_DIR}/prevDump.tmp" >> $outFile
 
 echo "Initial data:\n"
 cat $outFile
@@ -77,20 +87,52 @@ do
 	testResult="`upsc \"$devName\" 2>&1 > \"${TEMP_DIR}/curDump.tmp\"`"
 	if [ $? -gt 0 ]; then
 		echo "$devName: $testResult"
-	#	FIXME: what to do (pause, exit)?
+		recovering=true
+		continue
+	fi
+	# On reconnect, upsd can report WAIT before the driver dump is
+	# complete. A device can also report WAIT with real readings.
+	if $recovering && grep -Fqx 'ups.status: WAIT' "${TEMP_DIR}/curDump.tmp"; then
+		if ! grep -Eqv '^(ups\.status: WAIT|driver\.state: .*)$' "${TEMP_DIR}/curDump.tmp"; then
+			continue
+		fi
+		# Keep affirmative changes. upsc has no dump-complete marker,
+		# so defer a missing description until a subsequent non-WAIT
+		# snapshot or an explicit alarm value resolves it.
+		if ! grep -q '^ups\.alarm:' "${TEMP_DIR}/curDump.tmp"; then
+			grep '^ups\.alarm:' "${TEMP_DIR}/prevDump.tmp" >> "${TEMP_DIR}/curDump.tmp"
+		else
+			recovering=false
+		fi
+	else
+		recovering=false
 	fi
 
-	# do the diff
-	dataDiff="`diff --unchanged-line-format='' --old-line-format='' --new-line-format='%L' ${TEMP_DIR}/prevDump.tmp ${TEMP_DIR}/curDump.tmp`"
+	# Emit changed values. Repeat an unchanged description on a status change
+	# so playback can distinguish this from a clear in an older recording.
+	# Record a disappearing description explicitly.
+	dataDiff=$(diff --unchanged-line-format=' %L' --old-line-format='-%L' --new-line-format='+%L' "${TEMP_DIR}/prevDump.tmp" "${TEMP_DIR}/curDump.tmp" |
+		awk '
+			/^ ups\.alarm:/ { retained = substr($0, 2) }
+			/^-ups\.alarm:/ { removed = 1 }
+			/^[+]ups\.alarm:/ { added = 1 }
+			/^[+]ups\.status:/ { status_changed = 1 }
+			/^[+]/ { print substr($0, 2) }
+			END {
+				if (status_changed && retained)
+					print retained
+				else if (removed && !added && !retained)
+					print "ups.alarm:"
+			}' | quote_alarm)
 
 	# dump actual, if any
 	if [ ! -z "${dataDiff}" ]; then
 		# dump differences
 		echo "TIMER $curTimer" >> $outFile
-		echo "$dataDiff" >> $outFile
+		printf '%s\n' "$dataDiff" >> $outFile
 		# and echo out
 		echo "TIMER $curTimer"
-		echo "$dataDiff"
+		printf '%s\n' "$dataDiff"
 		curTimer=0
 	fi
 

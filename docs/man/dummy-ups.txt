@@ -248,6 +248,16 @@ states. See below for an example of setting and resetting alarms:
 	TIMER 5
 	ALARM [UPS too cold to charge]
 
+Recordings made with linkman:nut-recorder[8] use `ups.alarm:` assignments.
+The recorder quotes the description so spaces and characters such as
+`#` remain part of the text. Each assignment replaces the previous
+description. An empty assignment clears it. Older recordings omit the empty assignment. When their
+`ups.status` loses the `ALARM` token, the driver clears the recorded
+description. A status change by itself leaves messages raised with the
+`ALARM` instruction active. During playback, a connected linkman:upsd[8]
+may report changed text containing a double quote or backslash incorrectly
+until it reads the complete driver state again.
+
 Repeater Mode
 ~~~~~~~~~~~~~
 
