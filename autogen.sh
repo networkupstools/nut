@@ -106,6 +106,7 @@ fi
 # (same for the other way around)? Anyway, dumbed down for the most trivial
 # `find` implementations out there...
 if [ ! -f scripts/udev/nut-usbups.rules.in -o \
+     -f scripts/udev/nut-usbups.rules.in.AUTOGEN_WITHOUT -o \
      ! -f scripts/hotplug/libhid.usermap -o \
      ! -f scripts/upower/95-upower-hid.hwdb -o \
      ! -f scripts/devd/nut-usb.conf.in -o \

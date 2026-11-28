@@ -48,9 +48,19 @@ Follow more specific guidance in those files if this summary differs from it.
   common ecosystem -- do not introduce dangling paragraphs where they can
   rather be bullet points in an existing list. Be sure to only add entries to
   the upcoming release (topmost chapter in `NEWS.adoc` and `UPGRADING.adoc`).
+- Where `aspell` is available, verify documentation changes with
+  `make spellcheck-quick`. Note that dictionary defaults are `en_US`,
+  so notably many verbs should end with `-ize` (`initialize`, etc.)
+- When a release note references the PR being opened, include the expected
+  PR number in the initial commit. Just before opening the PR, check the
+  latest issue or PR number in the upstream repository (including closed
+  items) and add one. Verify the assigned number afterward and correct the
+  reference if it differs. This usually saves a commit and another CI run.
 
 ## Validate the affected behaviour
 
+- For a bug fix, where practical, show that the same check exposes the
+  reported behavior before the change and passes afterward.
 - Select checks from the affected compatibility requirements, including older
   supported tools and feature-disabled paths. Apply these requirements to tests
   and build scripts too.
@@ -63,6 +73,21 @@ Follow more specific guidance in those files if this summary differs from it.
   acceptance from CI jobs which did not exercise it.
 - Diagnose the first relevant CI failure before changing code, distinguishing
   the proposed change from baseline or CI-environment failures.
+- When introducing test programs or scripts, prefer adding them to the `tests/`
+  directory and not into arbitrary locations in the code base. Update needed
+  dependency or symlink recipes in `tests/Makefile.am` accordingly. List any
+  created files or symlinks in `CLEANFILES`.
+- If using `mkdtemp` or similar methods to create test data and configurations,
+  be sure to base them under the build directory -- e.g. by exporting `TMPDIR`,
+  `TEMP` or `TMP` environment variable(s) from the Makefile goal.
+- When adding new items into the automake standard flow as `TESTS += program`
+  in a `Makefile.am`, update the nearby `.gitignore` file with a triplet based
+  on the program name:
+```
+/program
+/program.log
+/program.trs
+```
 
 ## Preserve human responsibility
 

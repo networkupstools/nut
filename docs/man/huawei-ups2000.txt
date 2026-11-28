@@ -83,8 +83,8 @@ USB-to-serial chip. On Linux, it's only usable on Linux 5.12 and later, via
 the *xr_serial* kernel module. On Windows, it's also suggested to install
 an additional device driver. On some newer UPS hardware variants, a WCH
 CH341 chip is used instead, these should have better compatibility (via the
-*ch341* Linux kernel module, or Windows Update). See subsection *Linux USB*
-and *Windows USB* for details.
+*ch341* Linux kernel module, or Windows Update). See <<_linux_usb>>
+and <<_windows_usb>> for details.
 
 Only one port can be used at a time. When USB is used, RS-232 should be
 unplugged from the UPS, and vice versa. Further, optional adapter cards,
@@ -385,7 +385,7 @@ problem, the negative impact is worse on some UPS models: it was not possible
 to *write to any registers at all*, meaning that changing any *variable* or
 sending any *instant command* is impossible.
 
-See *Historical bugs* at the bottom of this manual for links.
+See <<_historical_bugs>> at the bottom of this manual for links.
 
 Battery status has a non-fatal read failure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -443,15 +443,25 @@ front panel, then unplug the UPS from line power. Wait for the LCD front
 screen to go black. Finally reconnect line power and restart your UPS.
 
 That being said, a serial port lockup is unlikely to happen. To our best
-knowledge, this driver never sends malformed commands to the UPS (it was
-only a problem during early development). Furthermore, due to a CRC checksum,
-they're unlikely to be accidentally generated.
+knowledge, this driver never sends these malformed commands to the UPS.
+Furthermore, due to a CRC checksum, they're unlikely to be accidentally
+generated. Thus, we expect that only driver developers are affected,
+not NUT users.
 
 Still, we recommend to power cycle your UPS after making a cabling change,
 especially after changing from RS-485/USB to RS-232, just to ensure the
-UPS selects the correct communication interface. Also, if you have
-discovered a reproducible serial port lockup problem, it can be a
-previously unknown bug, so please make sure to file a bug report.
+UPS selects the correct communication interface.
+
+Furthermore, If you have discovered a reproducible serial port lockup problem
+triggered during the use of this NUT driver, it can be a previously unknown
+bug, so please make sure to file a bug report.
+
+NOTE: For developers, an example of these malformed commands is provided.
+See <<_serial_port_lockup_reference>> at the end of this document for a test.
+The lockup occurs when the *Read Device Identification* command (Modbus
+function code *0x2B*) is combined with some *Read Device ID codes*. It was
+first discovered in 2021 during early development before the driver was
+included in NUT, and sequentially rediscovered independently in 2026.
 
 USB chip (MaxLinear/Exar RX21V1410) is unsupported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -469,7 +479,7 @@ be done within NUT. Please use the RS-232 port instead.
 Alternatively, if your unit has a WCH CH341 chip (likely only found in
 units made after 2022), it should have better compatibility.
 
-See the previous section *Cabling* for more information.
+See <<_cabling>> for more information.
 
 AUTHOR
 ------
@@ -528,6 +538,12 @@ If a download link expires, use a snapshot from the Internet Archive:
   https://web.archive.org/web/20260112182437if_/https://www.wch-ic.com/download/file?id=65
 * CH341SER.ZIP:
   https://web.archive.org/web/20260217145229if_/https://www.wch-ic.com/download/file?id=5
+
+Serial port lockup reference:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Issue 3735: huawei-ups2000: UPS serial comm lockup triggered by 0x2B ReadDevID=0x01 + ObjectID=0x87 (reproducible "Serial port becomes unresponsive" case)
+https://github.com/networkupstools/nut/issues/3735
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

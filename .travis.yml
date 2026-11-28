@@ -1110,15 +1110,15 @@ _matrix_linux:
   - *_matrix_required_linux
   - *_matrix_allowfail_linux
 
-_matrix_freebsd:
-  include: &_matrix_freebsd
-  - *_matrix_freebsd_gnustd_nowarn
-  - *_matrix_freebsd_gnustd_warn
-
 _matrix_freebsd_gnustd_warn:
   include: &_matrix_freebsd_gnustd_warn
   - *_matrix_freebsd_gnustd_warn_viable
   - *_matrix_freebsd_gnustd_warn_fatal
+
+_matrix_freebsd:
+  include: &_matrix_freebsd
+  - *_matrix_freebsd_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_warn
 
 _matrix_required_freebsd:
   include: &_matrix_required_freebsd

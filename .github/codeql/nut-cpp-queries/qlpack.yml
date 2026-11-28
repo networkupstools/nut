@@ -1,0 +1,8 @@
+# NUT's own CodeQL queries for C/C++ (see codeql-config-cpp.yml).
+# No version pin: the queries build against the codeql/cpp-all library
+# that ships with the CodeQL action, so they follow its releases.
+name: nut/cpp-queries
+version: 0.0.1
+extractor: cpp
+dependencies:
+  codeql/cpp-all: "*"

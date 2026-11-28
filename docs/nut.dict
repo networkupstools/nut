@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3917 utf-8
+personal_ws-1.1 en 3958 utf-8
 AAC
 AAS
 ABI
@@ -118,6 +118,7 @@ BUILTIN
 BUZ
 BVKnnnnM
 BVKxxxM
+BW
 BXnnnnMI
 BYP
 BZ
@@ -185,6 +186,7 @@ CHOST
 CHRG
 CL
 CLANGVER
+CLEANFILES
 CLI
 CLOCAL
 CMDDESC
@@ -218,6 +220,7 @@ CXX
 CXXCPP
 CXXFLAGS
 Casar
+CbU
 CentOS
 Centralion
 ChangeLog
@@ -371,6 +374,7 @@ ESV
 ESXi
 ETIME
 ETIMEDOUT
+ETR
 EUROCASE
 EVeRr
 EXtreme
@@ -719,6 +723,7 @@ LiFePO
 LibGD
 LibLTDL
 LibUSB
+LibreSSL
 LineA
 LineB
 Lintian
@@ -901,6 +906,7 @@ Niels
 Niemueller
 Niklas
 Niro
+Nitro
 NixOS
 Nobreak
 Nobreaks
@@ -936,6 +942,7 @@ OUTPUTV
 OUTVOLT
 OV
 OVERDURATION
+ObjectID
 Oden
 OffTime
 Ohloh
@@ -1192,7 +1199,9 @@ Rackmount
 Radek
 Ragtech
 RatedVA
+ReadDevID
 RealSmart
+Rebadged
 RedHat
 Redhat
 Regados
@@ -1437,6 +1446,7 @@ TIOCMBIC
 TIOCMBIS
 TLS
 TLSv
+TMPDIR
 TODO
 TORO
 TRACKINGDELAY
@@ -1587,6 +1597,7 @@ WALKMODE
 WARNFATAL
 WARNOPT
 WCH
+WDK
 WELI
 WH
 WHAD
@@ -1804,6 +1815,7 @@ b'string
 bAlternateSetting
 bUps
 backend
+backend's
 backends
 backgrounding
 backport
@@ -1873,6 +1885,7 @@ brazil
 brcm
 brotli
 bsd
+bsdtar
 bt
 bti
 btn
@@ -1903,6 +1916,7 @@ cafile
 calc
 calib
 calloc
+cancelDischarge
 capath
 cb
 cbe
@@ -1988,6 +2002,7 @@ compareprocnames
 compat
 compilation's
 compilerPath
+concat
 conf
 confargs
 confdir
@@ -2249,6 +2264,7 @@ execve
 expandsize
 expr
 extapi
+extbatt
 extern
 externalConsole
 extradata
@@ -2349,6 +2365,7 @@ gethostbyname
 getnameinfo
 getopt
 getproctag
+getrandom
 getrlimit
 getter
 getters
@@ -2370,6 +2387,7 @@ gmail
 gmake
 gmtime
 gnuplot
+gnutar
 gnutls
 goodspeed
 google
@@ -2385,6 +2403,7 @@ graphmin
 graphviz
 groupadd
 groupname
+gtar
 gtec
 gtk
 guesstimate
@@ -2553,6 +2572,7 @@ isystem
 iter
 ivp
 ivtscd
+ize
 jNUT
 jNut
 jNutWebAPI
@@ -2667,6 +2687,8 @@ libtool
 libupsclient
 libusb
 libusb's
+libusbK
+libusbk
 libusbugen
 libusbx
 libvirt
@@ -2701,6 +2723,7 @@ lm
 lmodbus
 ln
 lnetsnmp
+lntdll
 loadPercentage
 localcalculation
 localhost
@@ -2715,6 +2738,7 @@ login
 logins
 logout
 logrotate
+lole
 lookup
 loopback
 lowbatt
@@ -2723,6 +2747,7 @@ lr
 lregex
 ls
 lsd
+lsetupapi
 lst
 lsusb
 lt
@@ -2731,6 +2756,7 @@ lu
 lua
 lv
 lvo
+lwdi
 lws
 lxc
 lxcbr
@@ -2778,6 +2804,7 @@ mdutil
 meanwell
 mecer
 megatec
+memcpy
 memset
 metadata
 metasys
@@ -2811,6 +2838,7 @@ mj
 mk
 mkdb
 mkdir
+mkdtemp
 mkstr
 mktexlsr
 mmZ
@@ -2980,6 +3008,7 @@ nvi
 nvo
 nwfilter
 objdump
+obload
 odette
 offdelay
 offsite
@@ -3219,6 +3248,7 @@ reconnection
 recurses
 recursing
 recv
+redistributable
 redistributors
 reentrancy
 refactored
@@ -3330,6 +3360,7 @@ secretpass
 securityLevel
 securityName
 sed
+selectable
 selftest
 semanage
 semver
@@ -3396,6 +3427,7 @@ slaveaddr
 slaveid
 slavesync
 slibtool
+sln
 sm
 smartslot
 smartups
@@ -3608,6 +3640,7 @@ treemode
 tripplite
 tripplitesu
 troff
+trs
 tryconnect
 ts
 tsa
@@ -3650,6 +3683,7 @@ udevadm
 udq
 ufw
 ugen
+ugreen
 ui
 uid
 uint
@@ -3657,6 +3691,7 @@ ukUNV
 ul
 ulimit
 ulink
+umask
 umount
 un
 uname
@@ -3730,10 +3765,12 @@ upssched
 upssched's
 upsset
 upsstats
+upstreaming
 upstype
 upsuser
 upswired
 uptime
+urandom
 urb
 uri
 url
@@ -3822,6 +3859,7 @@ waitbeforereconnect
 wakeup
 wc
 wdi
+wdkdir
 webserver
 wf
 wg
@@ -3835,6 +3873,7 @@ wininit
 winnutclient
 winpthreads
 winsymlinks
+winusb
 withGiven
 withdoc
 wix

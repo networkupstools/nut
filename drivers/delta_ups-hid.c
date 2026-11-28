@@ -30,7 +30,7 @@
 #include "main.h"	/* for getval() */
 #include "usb-common.h"
 
-#define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.7"
+#define DELTA_UPS_HID_VERSION	"Delta UPS HID 0.71"
 
 /* Delta UPS */
 #define DELTA_VENDORID	0x05dd
@@ -298,6 +298,17 @@ static int delta_ups_claim(HIDDevice_t *hd) {
 			return 1;
 
 		case POSSIBLY_SUPPORTED:
+			/* Minuteman 05dd:a0a0 is listed by the tripplite
+			 * subdriver, which also repairs its Report
+			 * Descriptor; do not take it over when the productid
+			 * option is given. See GitHub issue #1852. */
+			if (hd->ProductID == 0xa0a0) {
+				upsdebugx(1, "%s: 05dd:a0a0 is a Minuteman, "
+					"deferring to the tripplite subdriver",
+					__func__);
+				return 0;
+			}
+
 			/* by default, reject, unless the productid option is given */
 			if (getval("productid")) {
 				return 1;

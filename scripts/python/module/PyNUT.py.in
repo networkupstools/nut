@@ -92,6 +92,18 @@ try:
 except:
     pass
 
+try:
+    # Only available since Python 3.3
+    ex = TimeoutError
+    del ex
+except NameError:
+    # Add a fake we can syntactically claim to catch
+    class TimeoutError(Exception):
+        def __init__(self, **kwargs):
+            super().__init__(self, **kwargs)
+
+    pass
+
 class TrackingID:
     """ Cookie given when performing async action, used to redeem result at a later date. """
     def __init__(self, tracking_id):
@@ -901,7 +913,7 @@ if something goes wrong.
                         # On success, reset timeout retry budget for future sessions
                         self.__starttls_retry_budget = self.__starttls_retry_budget_default
                         break
-                    except TimeoutError as te:
+                    except (socket.timeout, TimeoutError) as te:
                         if self.__debug:
                             print( "[DEBUG] STARTTLS handshake timed out: %s" % (str(te)) )
                         # If we still have budget to fully retry, tear down and reconnect

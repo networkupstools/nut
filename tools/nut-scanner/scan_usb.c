@@ -42,38 +42,59 @@ static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 static char *dl_saved_libname = NULL;
 
-static int (*nut_usb_close)(libusb_device_handle *dev);
-static int (*nut_usb_control_transfer)(
+/* libusb-1.0 methods use the LIBUSB_CALL calling convention: WINAPI (i.e.
+ * __stdcall) on Windows, where calling them via pointers to default (cdecl)
+ * functions breaks the stack in 32-bit builds; libusb-0.1 uses the default */
+#if WITH_LIBUSB_1_0 && (defined LIBUSB_CALL)
+# define NUT_USB_CALL	LIBUSB_CALL
+#else
+# define NUT_USB_CALL
+#endif
+
+static int (NUT_USB_CALL *nut_usb_close)(libusb_device_handle *dev);
+static int (NUT_USB_CALL *nut_usb_control_transfer)(
 	libusb_device_handle *dev,
 	uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
 	unsigned char *data, uint16_t wLength, unsigned int timeout);
-static int (*nut_usb_get_string_with_langid)(
+static int (NUT_USB_CALL *nut_usb_get_string_with_langid)(
 	libusb_device_handle *dev, int index, int langid,
 	char *buf, size_t buflen);
 /* Fallback implem if the above is not a library symbol */
-static int nut_usb_get_string_with_langid_control_transfer(
+static int NUT_USB_CALL nut_usb_get_string_with_langid_control_transfer(
 	libusb_device_handle *dev, int index, int langid,
 	char *buf, size_t buflen);
 
 /* Compatibility layer between libusb 0.1 and 1.0 */
 #if WITH_LIBUSB_1_0
+# if !(defined HAVE_LIBUSB_GET_VERSION) || !HAVE_LIBUSB_GET_VERSION
+ /* libusb.h of 1.0.9 and older lacks this; mirror its (stable ABI)
+  * layout so that a newer libusb found at run time can still be asked */
+ struct libusb_version {
+	const uint16_t major;
+	const uint16_t minor;
+	const uint16_t micro;
+	const uint16_t nano;
+	const char *rc;
+	const char *describe;
+ };
+# endif	/* !HAVE_LIBUSB_GET_VERSION */
 # define USB_INIT_SYMBOL "libusb_init"
 # define USB_OPEN_SYMBOL "libusb_open"
 # define USB_CLOSE_SYMBOL "libusb_close"
 # define USB_STRERROR_SYMBOL "libusb_strerror"
- static int (*nut_usb_open)(libusb_device *dev, libusb_device_handle **handle);
- static int (*nut_usb_init)(libusb_context **ctx);
- static void (*nut_usb_exit)(libusb_context *ctx);
- static char * (*nut_usb_strerror)(enum libusb_error errcode);
- static ssize_t (*nut_usb_get_device_list)(libusb_context *ctx,	libusb_device ***list);
- static void (*nut_usb_free_device_list)(libusb_device **list, int unref_devices);
- static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
- static uint8_t (*nut_usb_get_device_address)(libusb_device *dev);
- static uint8_t (*nut_usb_get_port_number)(libusb_device *dev);
- static int (*nut_usb_get_device_descriptor)(
+ static int (NUT_USB_CALL *nut_usb_open)(libusb_device *dev, libusb_device_handle **handle);
+ static int (NUT_USB_CALL *nut_usb_init)(libusb_context **ctx);
+ static void (NUT_USB_CALL *nut_usb_exit)(libusb_context *ctx);
+ static char * (NUT_USB_CALL *nut_usb_strerror)(enum libusb_error errcode);
+ static ssize_t (NUT_USB_CALL *nut_usb_get_device_list)(libusb_context *ctx,	libusb_device ***list);
+ static void (NUT_USB_CALL *nut_usb_free_device_list)(libusb_device **list, int unref_devices);
+ static uint8_t (NUT_USB_CALL *nut_usb_get_bus_number)(libusb_device *dev);
+ static uint8_t (NUT_USB_CALL *nut_usb_get_device_address)(libusb_device *dev);
+ static uint8_t (NUT_USB_CALL *nut_usb_get_port_number)(libusb_device *dev);
+ static int (NUT_USB_CALL *nut_usb_get_device_descriptor)(
 	libusb_device *dev,
 	struct libusb_device_descriptor *desc);
- static const struct libusb_version * (*nut_usb_get_version)(void);
+ static const struct libusb_version * (NUT_USB_CALL *nut_usb_get_version)(void);
 # define USB_DT_STRING	LIBUSB_DT_STRING
 # define USB_ENDPOINT_IN	LIBUSB_ENDPOINT_IN
 # define USB_REQ_GET_DESCRIPTOR	LIBUSB_REQUEST_GET_DESCRIPTOR
@@ -160,7 +181,21 @@ int nutscan_load_usb_library(const char *libname_path)
 	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle,
 		symbol = USB_STRERROR_SYMBOL);
 	if ((dl_error = lt_dlerror()) != NULL) {
+#if WITH_LIBUSB_1_0
+		/* libusb_strerror() appeared in libusb 1.0.16; releases from
+		 * 1.0.9 on have libusb_error_name() with a compatible signature,
+		 * which names the error code instead of describing it. */
+		upsdebugx(1, "%s: While loading USB library (%s), "
+			"failed to find %s() : %s. Trying libusb_error_name() instead.",
+			__func__, libname_path, USB_STRERROR_SYMBOL, dl_error);
+		*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle,
+			symbol = "libusb_error_name");
+		if ((dl_error = lt_dlerror()) != NULL) {
+			goto err;
+		}
+#else
 		goto err;
+#endif	/* WITH_LIBUSB_1_0 */
 	}
 
 #if WITH_LIBUSB_1_0
@@ -170,10 +205,15 @@ int nutscan_load_usb_library(const char *libname_path)
 		goto err;
 	}
 
+	/* Absent in libusb 1.0.9 and older, tolerate that */
 	*(void **) (&nut_usb_get_version) = lt_dlsym(dl_handle,
 		symbol = "libusb_get_version");
 	if ((dl_error = lt_dlerror()) != NULL) {
-		goto err;
+		upsdebugx(1, "%s: While loading USB library (%s), "
+			"failed to find libusb_get_version() : %s. "
+			"The libusb version is unknown, probably 1.0.9 or older.",
+			__func__, libname_path, dl_error);
+		nut_usb_get_version = NULL;
 	}
 
 	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle,
@@ -333,7 +373,7 @@ static char* is_usb_device_supported(
  * then we are adapting it via nut_usb_control_transfer() per
  * https://github.com/libusb/libusb-compat-0.1/blob/eaed7b8f11badaf07a91e07538f6e8842f59eaab/libusb/libusb-dload.h#L165-L171
  */
-static int nut_usb_get_string_with_langid_control_transfer(
+static int NUT_USB_CALL nut_usb_get_string_with_langid_control_transfer(
 	libusb_device_handle *dev, int index, int langid,
 	char *buf, size_t buflen)
 {
@@ -516,7 +556,8 @@ nutscan_device_t * nutscan_scan_usb(nutscan_usb_t * scanopts)
 		 * libusb_exit() should not be called unless libusb_init()
 		 * succeeded for same context.
 		 */
-		const struct libusb_version	*ver = (*nut_usb_get_version)();
+		/* No libusb_get_version() means a libusb older than 1.0.24 */
+		const struct libusb_version	*ver = nut_usb_get_version ? (*nut_usb_get_version)() : NULL;
 
 		if (ver && (ver->major > 1 || (ver->major == 1 && ver->minor >= 24)))
 			(*nut_usb_exit)(NULL);
