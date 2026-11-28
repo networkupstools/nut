@@ -1187,22 +1187,25 @@ void *upscli_get_or_create_ssl_context(int certverify, const char *certpath,
 			break;
 		}
 
-		ret = SSL_CTX_load_verify_locations(cfg->ssl_ctx, NULL, certpath);
+		/* Try a specific PEM file first: loading a directory (CApath)
+		 * succeeds for any string, as its lookups only happen later
+		 * during verification, so a file would never be tried after it */
+		ret = SSL_CTX_load_verify_locations(cfg->ssl_ctx, certpath, NULL);
 		if (ret != 1) {
 			ssl_debug();
-			upsdebugx(1, "%s: Failed to load CA certificate(s) from directory %s", __func__, certpath);
+			upsdebugx(1, "%s: Failed to load CA certificate(s) from file %s", __func__, certpath);
 
-			/* Can it be a specific PEM file? */
-			if ((ret = SSL_CTX_load_verify_locations(cfg->ssl_ctx, certpath, NULL)) != 1) {
+			/* Can it be a directory with (hashed) CA certificate files? */
+			if ((ret = SSL_CTX_load_verify_locations(cfg->ssl_ctx, NULL, certpath)) != 1) {
 				ssl_debug();
-				upslogx(LOG_ERR, "Failed to load CA certificate(s) from directory or file %s", certpath);
+				upslogx(LOG_ERR, "Failed to load CA certificate(s) from file or directory %s", certpath);
 				upscli_ssl_context_config_free(cfg);
 				return NULL;
 			} else {
-				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from file %s", __func__, certpath);
+				upsdebugx(1, "%s: ...but succeeded to load CA certificate(s) from directory %s", __func__, certpath);
 			}
 		} else {
-			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from directory %s", __func__, certpath);
+			upsdebugx(1, "%s: Succeeded to load CA certificate(s) from file %s", __func__, certpath);
 		}
 
 		/* Adapted from https://linux.die.net/man/3/ssl_set_verify man page example */

@@ -1026,9 +1026,6 @@ int upscli_read_authconf_file(const char *filename, int fatal_errors, int debug_
 {
 	char	fn[NUT_PATH_MAX + 1];
 
-	/* Ensure we start fresh if called multiple times */
-	upscli_free_authconf_list();
-
 	if (!filename) {
 		/* Select a starting point - whichever default expected file exists;
 		 * it may INCLUDE further files as wanted by user or site sysadmin.
@@ -1104,6 +1101,12 @@ found:
 			}
 		}
 	}
+
+	/* Ensure we start fresh if called multiple times; but only once
+	 * there is a file to read: callers like upsmon may have populated
+	 * the list (e.g. global defaults from legacy CERT* keywords) before
+	 * a best-effort attempt which finds no file */
+	upscli_free_authconf_list();
 
 	return parse_authconf_file(filename, fatal_errors, 1);
 }
@@ -1211,6 +1214,15 @@ upscli_authconf_t *upscli_get_authconf_item(const char *user, const char *host, 
 	int	fixed_sect_user = 0, created_item = 0;
 
 	upsdebugx(2, "%s: starting for [%s]@[%s]:[%s]", __func__, NUT_STRARG(user), NUT_STRARG(host), NUT_STRARG(port));
+
+	if (!host && !port && !user && !global_defaults && add_to_list) {
+		/* Global section requested before one was read from a file,
+		 * e.g. by upsmon for legacy CERT* keywords in upsmon.conf:
+		 * create it, so host-specific items inherit its settings */
+		upsdebugx(3, "%s: create new item for global defaults", __func__);
+		global_defaults = upscli_add_authconf_item(NULL);
+		return global_defaults;
+	}
 
 	/* We want this parsed always, so we can know if there
 	 * is a fixed user, or assign the section name, at least */
