@@ -1031,10 +1031,10 @@ bool_t set_alarm_support_in_alarm_map(
 
 static bool_t alarm_is_active(const BCMXCP_ALARM_MAP_ENTRY_t *alarm, const unsigned char *answer, ssize_t answer_len)
 {
-	return alarm->alarm_block_index >= 0 &&
+	return (alarm->alarm_block_index >= 0 &&
 		alarm->alarm_block_index < answer_len &&
 		alarm->alarm_desc != NULL &&
-		answer[alarm->alarm_block_index] > 0;
+		answer[alarm->alarm_block_index] > 0) ? TRUE : FALSE;
 }
 
 static bool_t update_alarms(const unsigned char *answer, ssize_t answer_len)
