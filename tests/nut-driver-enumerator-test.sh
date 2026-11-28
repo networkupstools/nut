@@ -326,6 +326,24 @@ INST: d50c3281f9b68a94bf9df72a115fbb5c~[valueHasQuotedHashtag]: DRV='dummy-ups' 
 
 }
 
+callNDE_backing_media() (
+    UPSCONF="${SRCDIR}/nut-driver-enumerator-test--backing.conf"
+    export UPSCONF
+    MEDIA="`callNDE upslist_debug`" || exit
+    printf '%s\n' "$MEDIA" | sed -n "s/^.*~\[\([^]]*\)\]: .* MEDIA='\([^']*\)' SECTIONMD5=.*$/[\1]=\2/p"
+)
+
+testcase_backing_media() {
+    run_testcase_generic callNDE_backing_media "Classify backing driver sockets" 0 \
+"[]=
+[clone-1]=drivers=usbhid-ups-realups
+[clone-outlet-1]=drivers=usbhid-ups-realups
+[failover]=drivers=usbhid-ups-realups,usbhid-ups-realups2
+[file]=
+[realups]=usb
+[realups2]=usb"
+}
+
 testcase_getValue() {
     run_testcase "Query a configuration key (SDP)" 0 \
         "file1.dev" \
@@ -809,6 +827,7 @@ testsuite() {
     testcase_valueSyntax
     # This one can take a while, put it last
     testcase_upslist_debug
+    testcase_backing_media
     # Something very different
     testcase_backticks
     testcase_gitlog2version
