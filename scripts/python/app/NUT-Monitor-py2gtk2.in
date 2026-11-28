@@ -677,7 +677,8 @@ class interface :
             fav_data["auth"] = self.__widgets["ups_authentication_check"].get_active()
             if fav_data["auth"] :
                 fav_data["login"]    = self.__widgets["ups_authentication_login"].get_text()
-                fav_data["password"] = base64.b64encode( self.__widgets["ups_authentication_password"].get_text() )
+                # A pasted line ending is not part of the protocol password.
+                fav_data["password"] = self.__widgets["ups_authentication_password"].get_text().rstrip('\r\n')
 
             fav_name = dialog_interface.get_widget("entry4").get_text()
             self.__favorites[ fav_name ] = fav_data
@@ -733,9 +734,8 @@ class interface :
             # reactions with the 'check_gui_fields' function.
             if ( self.__favorites[fav_name].get("auth", False ) ) :
                 self.__widgets["ups_authentication_check"].set_active( True )
-                password = base64.b64decode( self.__favorites[fav_name].get("password","") )
                 self.__widgets["ups_authentication_login"].set_text( self.__favorites[fav_name].get("login","") )
-                self.__widgets["ups_authentication_password"].set_text( password )
+                self.__widgets["ups_authentication_password"].set_text( self.__favorites[fav_name].get("password","") )
 
             self.__widgets["ups_host_entry"].set_text( self.__favorites[fav_name].get("host","") )
             self.__widgets["ups_port_entry"].set_value( float(self.__favorites[fav_name].get("port",3493.0)) )
@@ -892,7 +892,7 @@ class interface :
                             fav_data["login"]    = conf.get( current, "login" )
 
                             try :
-                                fav_data["password"] = base64.decodestring( conf.get( current, "password" ) )
+                                fav_data["password"] = base64.decodestring( conf.get( current, "password" ) ).rstrip('\r\n')
 
                             except :
                                 # If the password is not in base64, let the field empty
@@ -922,6 +922,8 @@ class interface :
         for current in self.__favorites.keys() :
             save_conf.add_section( current )
             for k, v in self.__favorites[ current ].iteritems() :
+                if k == "password" :
+                    v = base64.b64encode( v )
                 save_conf.set( current, k, v )
 
         try :

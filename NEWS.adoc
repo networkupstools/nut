@@ -1001,6 +1001,10 @@ https://github.com/networkupstools/nut/milestone/13
     * Rewrote the WIN32 code path to spawn the timer daemon. [issue #3525]
 
  - `NUT-Monitor` Python GUI client:
+    * Fixed password handling when selecting a saved favorite or starting with
+      `-F`. Saving another favorite now keeps existing passwords base64-encoded.
+      Trailing line endings are removed while spaces and tabs are preserved.
+      [issue #3732, PR #3848]
     * The PyQt5 and PyQt6 `NUT-Monitor` commands now share one Python 3
       implementation. The dispatcher accepts `NUT_MONITOR_QT=5` or
       `NUT_MONITOR_QT=6` to require a particular backend. [PR #3596]
