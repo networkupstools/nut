@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.56"
+#define MGE_MIB_VERSION	"0.57"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -205,10 +205,18 @@ static snmp_info_t mge_mib[] = {
 
 	/* Input page */
 	snmp_info_default("input.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.6.1.0", "", 0, NULL),
+	/* Some agents (an Eaton 9SX 5000i, firmware 02.20.0042, for one) publish
+	 * the voltage and frequency cells of the single input line with a ".0"
+	 * appended to the row index, as if they were scalars, and do not answer
+	 * the instance the MIB defines. The ".0" entries come first so that an
+	 * agent answering both still publishes the MIB instance, read last; the
+	 * one that does not answer is disabled at startup. */
+	snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1.0", "", SU_INPUT_1, NULL),
 	snmp_info_default("input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL),
 	snmp_info_default("input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.2", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L3-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.3", "", SU_INPUT_3, NULL),
+	snmp_info_default("input.frequency", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.3.1.0", "", SU_INPUT_1, NULL),
 	snmp_info_default("input.frequency", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.3.1", "", SU_INPUT_1, NULL),
 	snmp_info_default("input.L1.frequency", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.3.1", "", SU_INPUT_3, NULL),
 	snmp_info_default("input.L2.frequency", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.3.2", "", SU_INPUT_3, NULL),

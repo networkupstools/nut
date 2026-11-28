@@ -751,6 +751,11 @@ https://github.com/networkupstools/nut/milestone/13
       the IETF UPS MIB, as published by Eaton Network-MS cards. Documented
       `realpower.nominal` as a specification in `docs/nut-names.txt`.
       [issue #3718]
+    * `mge` subdriver: `input.voltage` and `input.frequency` are now also
+      read from the instance with a trailing `.0`, which some agents publish
+      for the single input line instead of the instance that the MIB defines.
+      An Eaton 9SX 5000i whose agent reports "Network Management Card V6.00"
+      does so, and reported no input voltage or frequency. [PR #3874]
     * Mapped `standby(8)` from XPPC output status to `OL` rather than `OFF`,
       because line-interactive devices use it for inverter standby while their
       UPS output remains online on utility power. [issue #3512, PR #3600]
