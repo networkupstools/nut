@@ -52,6 +52,7 @@ class NutConfTest : public CppUnit::TestFixture
 		CPPUNIT_TEST( testParseTokenWithoutColon );
 		CPPUNIT_TEST( testGenericConfigParser );
 		CPPUNIT_TEST( testUpsmonConfigParser );
+		CPPUNIT_TEST( testMonitorRoles );
 		CPPUNIT_TEST( testNutConfConfigParser );
 		CPPUNIT_TEST( testUpsdConfigParser );
 	CPPUNIT_TEST_SUITE_END();
@@ -70,6 +71,7 @@ public:
 
 	void testGenericConfigParser();
 	void testUpsmonConfigParser();
+	void testMonitorRoles();
 	void testNutConfConfigParser();
 	void testUpsdConfigParser();
 };
@@ -636,6 +638,32 @@ void NutConfTest::testUpsmonConfigParser()
 	CPPUNIT_ASSERT_MESSAGE("Find a NOTIFYMSG LOWBATT", !conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_LOWBATT].set());
 	CPPUNIT_ASSERT_MESSAGE("Cannot find a NOTIFYMSG ONLINE", conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_ONLINE].set());
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a NOTIFYMSG ONLINE \"UPS %s on line power\"", string("UPS %s on line power"), *conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_ONLINE]);
+}
+
+
+void NutConfTest::testMonitorRoles()
+{
+	static const struct {
+		const char *role;
+		bool primary;
+	} cases[] = {
+		{"master", true}, {"slave", false},
+		{"primary", true}, {"secondary", false},
+		{"MaStEr", true}, {"sLaVe", false},
+		{"PrImArY", true}, {"SECONDARY", false}
+	};
+
+	for (const auto &entry : cases) {
+		UpsmonConfiguration conf;
+		conf.parseFromString(std::string("MONITOR ups@localhost 1 fixture dummy ") + entry.role + "\n");
+		NutMemory stream;
+		std::string saved;
+		CPPUNIT_ASSERT(conf.writeTo(stream));
+		CPPUNIT_ASSERT_EQUAL(NutStream::NUTS_OK, stream.getString(saved));
+		const std::string expected = std::string("MONITOR ups@localhost 1 fixture dummy ")
+			+ (entry.primary ? "primary\n" : "secondary\n");
+		CPPUNIT_ASSERT_EQUAL_MESSAGE(entry.role, expected, saved);
+	}
 }
 
 

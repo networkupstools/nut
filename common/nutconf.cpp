@@ -1420,7 +1420,9 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
 				monitor.password = *it++;
-				monitor.isPrimary = (*it) == "primary";	// master for NUT v2.7.4 and older
+				// upsmon also accepts the role names used through NUT v2.7.4.
+				monitor.isPrimary = !::strcasecmp(it->c_str(), "primary")
+					|| !::strcasecmp(it->c_str(), "master");
 				_config->monitors.push_back(monitor);
 			}
 		}
