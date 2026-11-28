@@ -769,6 +769,10 @@ https://github.com/networkupstools/nut/milestone/13
       called to start multiple (all) drivers at once. There is no reason to
       not do so for single-driver runs -- addressed with this release.
       [issue #3302, PR #3537]
+    * The `upsdrvsvcctl` service wrapper now honors testing mode during
+      shutdown. Previously, `upsdrvsvcctl -t shutdown` issued the service
+      stop, driver shutdown and service start commands for the selected
+      drivers. [PR #3850]
 
  - common code:
     * Driver polling now measures intervals with a monotonic clock when

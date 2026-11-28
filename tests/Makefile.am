@@ -498,8 +498,19 @@ memcheck:
 	@echo "  SKIP	$@ : valgrind was not detected on this system by configure script" >&2
 endif !HAVE_VALGRIND
 
-CHECK_LOCAL_TARGETS = become-user-root-warning-test upsset-string-test
+EXTRA_DIST += upsdrvsvcctl-shutdown-test.py
+
+CHECK_LOCAL_TARGETS = become-user-root-warning-test upsset-string-test upsdrvsvcctl-shutdown-test
 CHECK_LOCAL_TARGETS_PYNUT =
+
+if HAVE_PYTHON3
+upsdrvsvcctl-shutdown-test:
+	+$(AM_V_at)cd $(top_builddir)/scripts/upsdrvsvcctl && $(MAKE) $(AM_MAKEFLAGS) upsdrvsvcctl
+	$(AM_V_at)@PYTHON3@ $(srcdir)/upsdrvsvcctl-shutdown-test.py '$(abs_top_builddir)/scripts/upsdrvsvcctl/upsdrvsvcctl'
+else !HAVE_PYTHON3
+upsdrvsvcctl-shutdown-test:
+	@echo "  SKIP	$@ : Python 3 was not detected"
+endif !HAVE_PYTHON3
 
 if WITH_CGI
 if HAVE_PYTHON3
