@@ -14,6 +14,7 @@ extern "C" {
 struct 	logtarget_t {
 	char	*logfn;
 	FILE	*logfile;
+	int	write_failed;	/* Suppress repeated errors until a sample succeeds. */
 	struct 	logtarget_t	*next;
 };
 

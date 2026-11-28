@@ -75,8 +75,11 @@ the linkman:upsclient[3] library.
 
 *-d* 'count'::
 
-Exit after specified amount of updates.  Default is '0' for infinite loop
-(until interrupted otherwise).
+Exit after the specified number of polling cycles. With a positive count,
+any sample write or flush error makes the final exit status unsuccessful,
+even if later samples succeed. Use *-F* to collect this status when logging
+to a file. On Unix, *-B* lets the parent exit before polling begins. The default
+count is '0' (run until interrupted). See <<write-errors,Write errors>> below.
 
 *-l* 'logfile'::
 
@@ -206,6 +209,18 @@ in several tuples, and it would only be opened or closed once without conflict.
 Consider adding `%UPSHOST%` to your custom formatting string (e.g. by using
 the *-N* command-line option), in order to easily differentiate lines
 corresponding to different systems, when logging them to the same target.
+
+[[write-errors]]
+WRITE ERRORS
+------------
+
+If a sample write or flush returns an error, *upslog* reports the destination
+and continues polling all systems. It suppresses repeated errors for that
+destination until a sample succeeds there. The logger does not retry the
+failed sample. A partial line may remain in the output.
+
+On systems with `SIGPIPE`, closing a pipe reader can terminate *upslog*.
+If the signal is ignored, the logger reports the write error as usual.
 
 LOG ROTATION
 ------------

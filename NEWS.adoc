@@ -960,6 +960,9 @@ https://github.com/networkupstools/nut/milestone/13
       can only identify itself with some one (first seen) client certificate,
       if `CERTIDENT` settings are used. Multiple `CERTHOST` directives for
       specially trusted servers can be used. [#3329]
+    * Report sample write and flush errors per destination. A foreground run
+      with a positive `-d` count returns failure if any sample write or flush
+      reported an error. [PR #3853]
 
  - `upsstats`, `upsset`, `upsimage` CGI client updates:
     * Added support for best-effort use of `nutauth.conf` files from default
