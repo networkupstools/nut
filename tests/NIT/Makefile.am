@@ -12,6 +12,7 @@
 EXTRA_DIST = nit.sh README.adoc
 EXTRA_DIST += repeater.py
 EXTRA_DIST += parseconf-test.py
+EXTRA_DIST += starttls-boundary.py
 
 if WITH_CHECK_NIT
 check: check-NIT
@@ -30,6 +31,11 @@ ABS_TOP_BUILDDIR = @ABS_TOP_BUILDDIR@
 check-NIT-repeater:
 	@test -n "$(PYTHON3)" || { echo "Python 3 is required for $@" >&2; exit 1; }
 	$(PYTHON3) "$(abs_srcdir)/repeater.py" "$(ABS_TOP_BUILDDIR)" --exeext="$(EXEEXT)"
+
+# Exercise the plaintext-to-TLS parser boundary through a real upsd socket.
+check-NIT-starttls:
+	@test -n "$(PYTHON3)" || { echo "Python 3 is required for $@" >&2; exit 1; }
+	$(PYTHON3) "$(abs_srcdir)/starttls-boundary.py" "$(ABS_TOP_BUILDDIR)" --exeext="$(EXEEXT)"
 
 # Early in issue #1711 OpenSSL tests failed more often than we liked, so
 # this toggle was added.  It may still be useful for CI on some platforms.

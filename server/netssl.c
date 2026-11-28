@@ -792,6 +792,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	 * some further SSL setup failed, e.g. due to untrusted certificates
 	 * as seen during handshake).
 	 */
+	client->starttls_pending = 1;
 	if (!sendback(client, "OK STARTTLS\n")) {
 		upsdebug_with_errno(2, "%s: could not confirm the beginning of SSL ritual to prospective SSL client", __func__);
 		return;
@@ -874,6 +875,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 
 			if (ret == 1) {
 				client->ssl_connected = 1;
+				client->starttls_pending = 0;
 				upsdebugx(3, "SSL_accept succeeded (%s)",
 					SSL_get_version(client->ssl));
 
@@ -1071,6 +1073,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 # endif
 			upslogx(LOG_WARNING, "Client %s did not provide any certificate.",
 				client->addr);
+			return;
 		} else {
 			nss_error("net_starttls / SSL_ForceHandshake");
 			/* TODO : Close the connection. */
@@ -1078,6 +1081,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		}
 	}
 	client->ssl_connected = 1;
+	client->starttls_pending = 0;
 # endif /* WITH_OPENSSL | WITH_NSS */
 }
 
