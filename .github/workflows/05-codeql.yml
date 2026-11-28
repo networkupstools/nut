@@ -90,6 +90,8 @@ jobs:
         # the USB code (drivers/, nut-scanner) never share a file, so pairing
         # every SSL variant with every USB variant adds nothing; each variant,
         # including "no" (a code path of its own), is still built.
+        # Each existing C/C++ scenario can also be built with shared private
+        # libraries and/or unmapped data points.
         #
         # build-mode "manual": abusing it to build with ccache (and have
         # codeql not intercept that build but parse C/C++ files on its own);
@@ -110,6 +112,7 @@ jobs:
             compiler: 'CC=clang CXX=clang++'
             NUT_SSL_VARIANTS: 'openssl'
             NUT_USB_VARIANTS: 'libusb-1.0'
+            NUT_SHARED_PRIVATE_LIBS: 'no'
             cell: 'clang-openssl-libusb1'
           - language: 'cpp'
             os: 'ubuntu-latest'
@@ -117,6 +120,7 @@ jobs:
             compiler: 'CC=clang CXX=clang++'
             NUT_SSL_VARIANTS: 'nss'
             NUT_USB_VARIANTS: 'libusb-0.1'
+            NUT_SHARED_PRIVATE_LIBS: 'no'
             cell: 'clang-nss-libusb0'
           - language: 'cpp'
             os: 'ubuntu-latest'
@@ -124,13 +128,24 @@ jobs:
             compiler: 'CC=clang CXX=clang++'
             NUT_SSL_VARIANTS: 'no'
             NUT_USB_VARIANTS: 'no'
+            NUT_SHARED_PRIVATE_LIBS: 'no'
             cell: 'clang-nossl-nousb'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=clang CXX=clang++'
+            NUT_SSL_VARIANTS: 'nss'
+            NUT_USB_VARIANTS: 'libusb-1.0'
+            NUT_SHARED_PRIVATE_LIBS: 'yes'
+            NUT_UNMAPPED_DATA_POINTS: 'yes'
+            cell: 'clang-nss-libusb1-shared-unmapped'
           - language: 'cpp'
             os: 'ubuntu-latest'
             build-mode: 'manual'
             compiler: 'CC=gcc CXX=g++'
             NUT_SSL_VARIANTS: 'openssl'
             NUT_USB_VARIANTS: 'libusb-1.0'
+            NUT_SHARED_PRIVATE_LIBS: 'no'
             cell: 'gcc-openssl-libusb1'
           - language: 'cpp'
             os: 'ubuntu-latest'
@@ -138,6 +153,7 @@ jobs:
             compiler: 'CC=gcc CXX=g++'
             NUT_SSL_VARIANTS: 'nss'
             NUT_USB_VARIANTS: 'libusb-0.1'
+            NUT_SHARED_PRIVATE_LIBS: 'no'
             cell: 'gcc-nss-libusb0'
           - language: 'cpp'
             os: 'ubuntu-latest'
@@ -145,7 +161,17 @@ jobs:
             compiler: 'CC=gcc CXX=g++'
             NUT_SSL_VARIANTS: 'no'
             NUT_USB_VARIANTS: 'no'
+            NUT_SHARED_PRIVATE_LIBS: 'no'
             cell: 'gcc-nossl-nousb'
+          - language: 'cpp'
+            os: 'ubuntu-latest'
+            build-mode: 'manual'
+            compiler: 'CC=gcc CXX=g++'
+            NUT_SSL_VARIANTS: 'nss'
+            NUT_USB_VARIANTS: 'libusb-1.0'
+            NUT_SHARED_PRIVATE_LIBS: 'yes'
+            NUT_UNMAPPED_DATA_POINTS: 'yes'
+            cell: 'gcc-nss-libusb1-shared-unmapped'
           - language: 'python'
             os: 'ubuntu-latest'
             compiler: 'PYTHON=python3'
@@ -173,7 +199,7 @@ jobs:
       id: cache-ccache
       uses: actions/cache@v6
       env:
-        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_USB_VARIANTS }}
+        cache-name: cache-ccache-${{ matrix.compiler }}-${{ matrix.NUT_SSL_VARIANTS }}-${{ matrix.NUT_USB_VARIANTS }}-${{ matrix.NUT_SHARED_PRIVATE_LIBS }}-${{ matrix.NUT_UNMAPPED_DATA_POINTS }}
       with:
         path: |
             ~/.ccache
@@ -268,7 +294,7 @@ jobs:
         esac
         ( ${{matrix.compiler}} ; echo "=== CC: $CC => `command -v $CC` =>" ; $CC --version ; echo "=== CXX: $CXX => `command -v $CXX` =>" ; $CXX --version ) || true
         ./autogen.sh && \
-        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}}
+        ./configure --enable-warnings --enable-Werror --enable-Wcolor --with-all=auto --with-dev --without-docs --disable-docs-changelog ${{matrix.compiler}} --with-ssl=${{matrix.NUT_SSL_VARIANTS}} --with-usb=${{matrix.NUT_USB_VARIANTS}} --enable-shared-private-libs=${{matrix.NUT_SHARED_PRIVATE_LIBS}} ${{ matrix.NUT_UNMAPPED_DATA_POINTS == 'yes' && '--with-unmapped-data-points' || '' }}
 
     # NOTE: We do not add ccache to PATH here, so compilation always happens
     # and is parsed by current CodeQL detectors of the day as they evolve:

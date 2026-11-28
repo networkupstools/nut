@@ -4823,6 +4823,13 @@ AM_CONDITIONAL(ENABLE_SHARED_PRIVATE_LIBS, test "${nut_enable_shared_private_lib
 NUT_REPORT_FEATURE([dynamically link to NUT common libraries instead of copying needed bits into each binary], [${nut_enable_shared_private_libs}], [],
 					[ENABLE_SHARED_PRIVATE_LIBS], [Define to dynamically link to NUT common libraries instead of copying needed bits into each binary])
 
+LIBNUTPRIVATE_COMMON_ALL=""
+LIBNUTPRIVATE_COMMON_CLIENT=""
+if test "${nut_enable_shared_private_libs}" = "yes"; then
+	LIBNUTPRIVATE_COMMON_ALL="-lnutprivate-${NUT_SOURCE_GITREV_SEMVER_UNDERSCORES}-common-all"
+	LIBNUTPRIVATE_COMMON_CLIENT="-lnutprivate-${NUT_SOURCE_GITREV_SEMVER_UNDERSCORES}-common-client"
+fi
+
 dnl ----------------------------------------------------------------------
 dnl checks related to MS Windows support (MingW)
 
@@ -6472,6 +6479,8 @@ AC_SUBST(NUT_SOURCE_GITREV_IS_PRERELEASE)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER_COLONS)
 AC_SUBST(NUT_SOURCE_GITREV_SEMVER_UNDERSCORES)
+AC_SUBST(LIBNUTPRIVATE_COMMON_ALL)
+AC_SUBST(LIBNUTPRIVATE_COMMON_CLIENT)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC_COLONS)
 AC_SUBST(NUT_SOURCE_GITREV_NUMERIC_UNDERSCORES)
