@@ -77,3 +77,7 @@
 /upssched-list-timers-test
 /upssched-list-timers-test.log
 /upssched-list-timers-test.trs
+/upslog-lifetime-test
+/upslog-lifetime-test.log
+/upslog-lifetime-test.trs
+/upslog-lifetime-results/
