@@ -1,4 +1,4 @@
-personal_ws-1.1 en 3931 utf-8
+personal_ws-1.1 en 3958 utf-8
 AAC
 AAS
 ABI
@@ -118,6 +118,7 @@ BUILTIN
 BUZ
 BVKnnnnM
 BVKxxxM
+BW
 BXnnnnMI
 BYP
 BZ
@@ -185,6 +186,7 @@ CHOST
 CHRG
 CL
 CLANGVER
+CLEANFILES
 CLI
 CLOCAL
 CMDDESC
@@ -218,6 +220,7 @@ CXX
 CXXCPP
 CXXFLAGS
 Casar
+CbU
 CentOS
 Centralion
 ChangeLog
@@ -371,6 +374,7 @@ ESV
 ESXi
 ETIME
 ETIMEDOUT
+ETR
 EUROCASE
 EVeRr
 EXtreme
@@ -902,6 +906,7 @@ Niels
 Niemueller
 Niklas
 Niro
+Nitro
 NixOS
 Nobreak
 Nobreaks
@@ -1196,6 +1201,7 @@ Ragtech
 RatedVA
 ReadDevID
 RealSmart
+Rebadged
 RedHat
 Redhat
 Regados
@@ -1440,6 +1446,7 @@ TIOCMBIC
 TIOCMBIS
 TLS
 TLSv
+TMPDIR
 TODO
 TORO
 TRACKINGDELAY
@@ -1590,6 +1597,7 @@ WALKMODE
 WARNFATAL
 WARNOPT
 WCH
+WDK
 WELI
 WH
 WHAD
@@ -1908,6 +1916,7 @@ cafile
 calc
 calib
 calloc
+cancelDischarge
 capath
 cb
 cbe
@@ -2255,6 +2264,7 @@ execve
 expandsize
 expr
 extapi
+extbatt
 extern
 externalConsole
 extradata
@@ -2562,6 +2572,7 @@ isystem
 iter
 ivp
 ivtscd
+ize
 jNUT
 jNut
 jNutWebAPI
@@ -2676,6 +2687,8 @@ libtool
 libupsclient
 libusb
 libusb's
+libusbK
+libusbk
 libusbugen
 libusbx
 libvirt
@@ -2710,6 +2723,7 @@ lm
 lmodbus
 ln
 lnetsnmp
+lntdll
 loadPercentage
 localcalculation
 localhost
@@ -2724,6 +2738,7 @@ login
 logins
 logout
 logrotate
+lole
 lookup
 loopback
 lowbatt
@@ -2732,6 +2747,7 @@ lr
 lregex
 ls
 lsd
+lsetupapi
 lst
 lsusb
 lt
@@ -2740,6 +2756,7 @@ lu
 lua
 lv
 lvo
+lwdi
 lws
 lxc
 lxcbr
@@ -2821,6 +2838,7 @@ mj
 mk
 mkdb
 mkdir
+mkdtemp
 mkstr
 mktexlsr
 mmZ
@@ -2990,6 +3008,7 @@ nvi
 nvo
 nwfilter
 objdump
+obload
 odette
 offdelay
 offsite
@@ -3229,6 +3248,7 @@ reconnection
 recurses
 recursing
 recv
+redistributable
 redistributors
 reentrancy
 refactored
@@ -3407,6 +3427,7 @@ slaveaddr
 slaveid
 slavesync
 slibtool
+sln
 sm
 smartslot
 smartups
@@ -3619,6 +3640,7 @@ treemode
 tripplite
 tripplitesu
 troff
+trs
 tryconnect
 ts
 tsa
@@ -3661,6 +3683,7 @@ udevadm
 udq
 ufw
 ugen
+ugreen
 ui
 uid
 uint
@@ -3668,6 +3691,7 @@ ukUNV
 ul
 ulimit
 ulink
+umask
 umount
 un
 uname
@@ -3741,6 +3765,7 @@ upssched
 upssched's
 upsset
 upsstats
+upstreaming
 upstype
 upsuser
 upswired
@@ -3834,6 +3859,7 @@ waitbeforereconnect
 wakeup
 wc
 wdi
+wdkdir
 webserver
 wf
 wg
@@ -3847,6 +3873,7 @@ wininit
 winnutclient
 winpthreads
 winsymlinks
+winusb
 withGiven
 withdoc
 wix

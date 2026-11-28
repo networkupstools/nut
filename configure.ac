@@ -5905,6 +5905,30 @@ fi
 AM_CONDITIONAL(WITH_HOTPLUG, test -n "${hotplugdir}")
 
 dnl Note: initial udevdir value, empty or not, was determined far above
+dnl Match config.status input lookup when reconfiguring a separate build tree.
+udev_rules_in="scripts/udev/nut-usbups.rules.in"
+udev_rules_template="${udev_rules_in}"
+AS_IF([test ! -f "${udev_rules_template}"],
+	[udev_rules_template="${srcdir}/${udev_rules_in}"])
+
+AC_MSG_CHECKING([whether to generate scripts/udev/nut-usbups.rules])
+have_udev_rules=no
+if test -s "${udev_rules_template}" && test ! -f "${udev_rules_template}.AUTOGEN_WITHOUT"; then
+	if test ! -f "${srcdir}/${udev_rules_in}.AUTOGEN_WITHOUT"; then
+		have_udev_rules=yes
+	else
+		dnl Older builds could copy a marked source template without its marker.
+		dnl A separately regenerated build input can differ from that stale copy.
+		udev_rules_cmp=0
+		cmp -s "${udev_rules_template}" "${srcdir}/${udev_rules_in}" || udev_rules_cmp=$?
+		if test "${udev_rules_cmp}" = 1; then
+			have_udev_rules=yes
+		fi
+	fi
+fi
+AS_IF([test "${have_udev_rules}" = yes], [AC_CONFIG_FILES([scripts/udev/nut-usbups.rules])])
+AC_MSG_RESULT([${have_udev_rules}])
+
 AC_MSG_CHECKING(whether to install udev rules)
 NUT_ARG_WITH([udev-dir], [(DIRPATH|yes|no|auto)], [Whether/where to install udev rules, typically /lib/udev or /etc/udev], [auto])
 
@@ -5914,14 +5938,14 @@ AS_CASE([${nut_with_udev_dir}],
 			AC_MSG_RESULT(no)
 			AC_MSG_ERROR([udev directory requested but not found])
 		 fi
-		 if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
+		 if test "${nut_with_usb}" = yes && test "${have_udev_rules}" = no ; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR([udev directory and USB driver support requested but a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+			AC_MSG_ERROR([udev directory and USB driver support requested but scripts/udev/nut-usbups.rules.in is missing, empty or disabled by autogen.sh])
 		 fi
 		],
 	[auto],
-		[if test "${nut_with_usb}" = yes && test ! -s scripts/udev/nut-usbups.rules.in ; then
-			AC_MSG_WARN([udev directory skipped because a non-trivial scripts/udev/nut-usbups.rules.in was not provided by autogen.sh or dist archive])
+		[if test "${nut_with_usb}" = yes && test "${have_udev_rules}" = no ; then
+			AC_MSG_WARN([udev directory skipped because scripts/udev/nut-usbups.rules.in is missing, empty or disabled by autogen.sh])
 			udevdir=""
 		 fi
 		],
@@ -5935,7 +5959,6 @@ else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
-
 
 dnl FreeBSD devd support
 dnl Note: initial udevdir value, empty or not, was determined far above
@@ -7541,7 +7564,6 @@ dnl ---------------------------------------------------------------------
 AC_MSG_NOTICE([Generating templated script files whose templates might have been generated (or not) by autogen.sh calling our helper scripts])
 m4_foreach_w([SCRIPTFILE], [
  scripts/augeas/nutupsconf.aug
- scripts/udev/nut-usbups.rules
  scripts/devd/nut-usb.conf
 ], [
 	AC_MSG_CHECKING([whether to generate SCRIPTFILE])

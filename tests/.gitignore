@@ -22,6 +22,9 @@
 /driver_methods_utest
 /driver_methods_utest.log
 /driver_methods_utest.trs
+/dstate-poll-test
+/dstate-poll-test.log
+/dstate-poll-test.trs
 /ecoflow-cdc-protocol.c
 /ecoflow_cdc_protocol_utest
 /ecoflow_cdc_protocol_utest.log
@@ -37,6 +40,9 @@
 /test_upsdconf.log
 /test_upsdconf.trs
 /selftest-rw/*
+/nutscan-selection-*test
+/nutscan-selection-*test.log
+/nutscan-selection-*test.trs
 /nutlogtest-nofail.sh
 /nutlogtest
 /nutlogtest.log

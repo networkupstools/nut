@@ -327,6 +327,23 @@ endif ENABLE_SHARED_PRIVATE_LIBS
 driver_methods_utest_LDADD += $(top_builddir)/drivers/libdummy_mockdrv.la
 driver_methods_utest_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tests -DDRIVERS_MAIN_WITHOUT_MAIN=1
 
+# The dstate_poll_test_LDADD below look odd, because dstate-poll-test
+# includes dstate.c directly. So we have to link the existing mock
+# main.lo object and common libraries instead of the complete mock
+# archive, which can import a second dstate binary implementation and
+# cause duplicate symbols when building with shared private libraries
+# as seen at least on macOS.
+# Linux build/check and distcheck-light, native macOS test suites in both
+# library modes, and both affected Windows tests in each mode passed.
+$(top_builddir)/drivers/libdummy_mockdrv_la-main.lo: $(top_builddir)/drivers/libdummy_mockdrv.la
+
+TESTS += dstate-poll-test
+dstate_poll_test_SOURCES = dstate-poll-test.c
+dstate_poll_test_LDADD = $(top_builddir)/drivers/libdummy_mockdrv_la-main.lo \
+	$(NUT_LIBCOMMON) $(top_builddir)/common/libcommonversion.la
+dstate_poll_test_CFLAGS = $(driver_methods_utest_CFLAGS)
+dstate_poll_test_DEPENDENCIES = $(driver_methods_utest_LDADD) $(top_srcdir)/drivers/dstate.c
+
 TESTS += bcmxcp_alarm_utest
 bcmxcp_alarm_utest_SOURCES = bcmxcp_alarm_utest.c
 bcmxcp_alarm_utest_LDADD = $(top_builddir)/common/libcommonversion.la
@@ -369,6 +386,69 @@ endif !WITH_OPENSSL
 endif WITH_SSL
 endif WITH_SNMP
 
+# Exercise the actual scanner library-selection path without loading devices.
+if WITH_NUT_SCANNER
+NUTSCAN_TEST_CFLAGS = $(AM_CFLAGS) $(LIBLTDL_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -I$(top_srcdir)/clients -I$(top_builddir)/clients
+NUTSCAN_SELECTION_TEST_LDADD = $(NUT_LIBCOMMON) $(LIBLTDL_LIBS) $(NETLIBS)
+$(top_builddir)/clients/libupsclient-version.h: $(top_builddir)/clients/libupsclient.la
+	+@cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+nutscan-selection-test.c: $(top_builddir)/clients/libupsclient-version.h
+
+TESTS += nutscan-selection-test
+nutscan_selection_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=0
+nutscan_selection_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-distinct-test
+nutscan_selection_distinct_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_distinct_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=1
+nutscan_selection_distinct_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_distinct_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-equal-test
+nutscan_selection_equal_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_equal_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=2
+nutscan_selection_equal_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_equal_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-no-soname-test
+nutscan_selection_no_soname_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_no_soname_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=3
+nutscan_selection_no_soname_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_no_soname_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-no-file-test
+nutscan_selection_no_file_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_no_file_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=4
+nutscan_selection_no_file_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_no_file_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-alias-test
+nutscan_selection_alias_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_alias_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=5
+nutscan_selection_alias_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_alias_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-usb01-test
+nutscan_selection_usb01_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_usb01_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=6
+nutscan_selection_usb01_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_usb01_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-static-test
+nutscan_selection_static_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_static_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=7
+nutscan_selection_static_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_static_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+
+TESTS += nutscan-selection-disabled-test
+nutscan_selection_disabled_test_SOURCES = nutscan-selection-test.c
+nutscan_selection_disabled_test_CFLAGS = $(NUTSCAN_TEST_CFLAGS) -DNUTSCAN_SELECTION_VARIANT=8
+nutscan_selection_disabled_test_LDADD = $(NUTSCAN_SELECTION_TEST_LDADD)
+nutscan_selection_disabled_test_DEPENDENCIES = $(top_srcdir)/tools/nut-scanner/nutscan-init.c $(top_builddir)/clients/libupsclient-version.h $(NUT_LIBCOMMON)
+endif WITH_NUT_SCANNER
+
 ### Optional tests which can not be built everywhere
 # List of src files for CppUnit tests
 CPPUNITTESTSRC = example.cpp nutclienttest.cpp
@@ -397,6 +477,10 @@ cppunittest_CXXFLAGS = $(AM_CXXFLAGS) $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CP
 cppunittest_LDFLAGS = $(CPPUNIT_LDFLAGS) $(CPPUNIT_LIBS)
 cppunittest_LDADD   = $(top_builddir)/clients/libnutclientstub.la
 cppunittest_LDADD  += $(top_builddir)/clients/libnutclient.la
+if ENABLE_SHARED_PRIVATE_LIBS
+# Code path involves str_split_listen() from str.c -> common lib
+cppunittest_LDADD  += $(NUT_LIBCOMMON)
+endif ENABLE_SHARED_PRIVATE_LIBS
 cppunittest_SOURCES = $(CPPUNITTESTSRC) $(CPPUNITTESTERSRC)
 
 # Currently nutconf and related codebase causes woes for static analysis

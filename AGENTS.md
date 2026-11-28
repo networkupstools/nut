@@ -48,6 +48,9 @@ Follow more specific guidance in those files if this summary differs from it.
   common ecosystem -- do not introduce dangling paragraphs where they can
   rather be bullet points in an existing list. Be sure to only add entries to
   the upcoming release (topmost chapter in `NEWS.adoc` and `UPGRADING.adoc`).
+- Where `aspell` is available, verify documentation changes with
+  `make spellcheck-quick`. Note that dictionary defaults are `en_US`,
+  so notably many verbs should end with `-ize` (`initialize`, etc.)
 - When a release note references the PR being opened, include the expected
   PR number in the initial commit. Just before opening the PR, check the
   latest issue or PR number in the upstream repository (including closed

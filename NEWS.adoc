@@ -80,11 +80,20 @@ https://github.com/networkupstools/nut/milestone/13
         disabled as a result. The names it tried, and why each one failed,
         are logged at debug level 1 instead, since a failed name followed by
         a working one is not a failure. [PR #3739]
+      - Consolidated repeated library selection into a shared helper with
+        explicit candidate lists, preserving lookup order and loading
+        behavior. Added regression tests for library selection, initialization
+        and cleanup. [PR #3760]
       - When the NUT client library was not found under its known file names
         and had to be loaded by the libtool default search instead, the
         result was stored as the availability of the XML/HTTP scan. So the
         `-M` scan could be disabled despite a working `libneon`, or offered
         without one (impacts NUT v2.8.3 through v2.8.5). [PR #3657]
+      - `nut-scanner` crashed in USB scans in 32-bit Windows builds: it
+        called the dynamically loaded libusb-1.0 methods as default C
+        functions, but there they use the calling convention of Windows
+        API methods (`LIBUSB_CALL`), so the stack got misaligned (impacts
+        all NUT 2.8.x until now). [PR #3791]
     * USB drivers: fixed an out-of-bounds read of the candidate HID report
       descriptor lengths, which could cause a segmentation fault (regression
       added in NUT v2.8.5 release). [PR #3550]
@@ -110,10 +119,16 @@ https://github.com/networkupstools/nut/milestone/13
       It captured the standard output, which went to a file, so the message
       was always empty. [PR #3809]
 
+ - USB drivers have a new `usb_request_min_gap_us` option, a minimum time
+   between USB control requests, for devices that refuse requests sent too
+   soon and then stop answering until a USB reset. `usbhid-ups` subdrivers
+   can provide a default; the CyberPower one uses `100` for `0764:0501`.
+   [issue #3808, PR #3814]
+
  - USB drivers now prefer the longer of conflicting HID report descriptor
    lengths for EcoFlow devices using USB ID `3746:ffff`. This makes the
    complete descriptor available on affected River 3 Plus firmware while
-   retaining the shorter length as a fallback.
+   retaining the shorter length as a fallback. [PR #3568]
 
  - Windows serial compatibility: fixed timeout handling to return data
    already received as a successful short read, while safely canceling
@@ -476,8 +491,8 @@ https://github.com/networkupstools/nut/milestone/13
       from OMRON-authored GPL driver version 1.00 distributed in the Synology
       DSM 7.3-86009 GPL sources and version 1.02 distributed in the QNAP QTS
       5.2.3 GPL sources. Polling and the direct shutdown commands were verified
-      on an unloaded BN150T over USB; other OMRON models and serial connections
-      are untested. [issue #3112, PR #3554]
+      on unloaded BN150T, BW55T and BY50S over USB; other OMRON models and
+      serial connections are untested. [issue #3112, PR #3554]
     * Updated `voltronic` subdriver to support Microtek/Voltronic UPS devices
       that report `QPI` as `(PI71`, such as Microtek GI3KL 3000VA Online UPS.
       [PR #3655]
@@ -517,11 +532,27 @@ https://github.com/networkupstools/nut/milestone/13
      the read command that was sent while the handshake reply was still in
      flight. [issue #3500]
    * Compute `battery.charge` as `raw / 2.55` so a fully charged battery
-     reports exactly 100 % instead of 100.2 %.
+     reports exactly 100 % instead of 100.2 %. [issue #3500, PR #3504]
    * Added a `va` option to override the apparent-power rating when the
      firmware model id is shared between product lines, correcting
      `ups.power.nominal`, `ups.realpower.nominal` and the computed
      `ups.load`. [issue #3500]
+   * Added an optional battery runtime model, enabled by `runtimecal`
+     (same semantics as in `nutdrv_qx`), with `chargetime`, `battery_ah`,
+     `extbatt_ah`, `obload_factor` and `runtime_low` options. The firmware
+     reports no runtime and its charge byte is voltage-based, so the driver
+     now publishes its own `battery.charge` estimate (energy-integrated on
+     battery, recovering along the charge time on mains) and
+     `battery.runtime`, keeps the firmware value in `battery.charge.approx`,
+     raises `LB` below `runtime_low`, and persists the estimate in the state
+     path across driver restarts (`soc_save_interval`, 60 s by default, 0 to
+     disable; see the man page for storage considerations). The saved file
+     is created with a 022 umask. The load behind the runtime figure is
+     averaged over about 5 minutes on mains and 15 seconds on battery.
+     Calibration procedure and values measured on a brand new Easy Pro
+     3200 VA are in the man page. [PR #3716]
+   * Added `test.battery.stop` (the OEM `cancelDischarge` action), gated by
+     `allow_shutdown` like `test.battery.start.deep`. [PR #3716]
 
  - `richcomm_usb` driver updates:
     * Completed support for NUT standard USB configuration options, and fixed
@@ -560,6 +591,12 @@ https://github.com/networkupstools/nut/milestone/13
       broken maximum from HID global state. Both `battery.runtime` and
       `battery.voltage` then read as nonsense; platforms with a 64-bit `long`
       were unaffected. [PR #3555]
+    * `idowell-hid` subdriver now also repairs the Usage Page of two
+      `PresentStatus` flags in those GoldenMate packs: the firmware leaves the
+      Battery System page selected, so the intended `Good` and
+      `ShutdownImminent` bits were decoded as `AtRateTimeToEmpty` and
+      `AverageTimeToEmpty` and ignored. They now feed the `OFF` and `LB`
+      status flags via the existing mappings. [issue #3015, PR #3726]
     * Added the `microdowell-hid` subdriver for the MicroDowell `Enterprise USB`
       interface (USB ID `075d:0201`), as fitted to the B.8 (800 VA). The device
       was previously unsupported, and its report descriptor is broken in three
@@ -590,12 +627,6 @@ https://github.com/networkupstools/nut/milestone/13
       declared length, and that capacity is what gets requested and clamped
       against. Devices already using the tweak (some APC Back-UPS models) now
       receive the intended full-buffer request. [issue #3712, PR #3729]
-    * `idowell-hid` subdriver now also repairs the Usage Page of two
-      `PresentStatus` flags in those GoldenMate packs: the firmware leaves the
-      Battery System page selected, so the intended `Good` and
-      `ShutdownImminent` bits were decoded as `AtRateTimeToEmpty` and
-      `AverageTimeToEmpty` and ignored. They now feed the `OFF` and `LB`
-      status flags via the existing mappings. [issue #3015, PR #3726]
     * `mge-hid` subdriver updated to suppress `CHRG` status on constant-charge
       mode devices when battery is fully charged. [issue #3518, PR #3519]
     * `mge-hid` subdriver: extended the `mge_model_names[]` list for the
@@ -630,6 +661,19 @@ https://github.com/networkupstools/nut/milestone/13
       against its 900 W rating. Note this is a behaviour change for units that
       report a non-zero `ActivePower`: the reading moves from `ups.power` to
       `ups.realpower`. [issue #3580, PR #3581]
+    * `tripplite-hid` subdriver: on Minuteman UPSes with USB ID `05dd:a0a0`
+      (Delta's vendor ID), `tripplite_fix_report_desc()` now also repairs two
+      Report Descriptor defects which left `input.voltage`, `output.voltage`
+      and `battery.voltage` at `0.0` and both frequencies at `870.0`: the
+      16-bit measurement fields declare a Logical Maximum of 255, so their
+      reports were masked to 8 bits, and the values are sent as tenths but
+      declare a Unit Exponent of 1. The fix widens those Logical Maximums to
+      the field size and sets the Unit Exponents which mean tenths (6 for
+      volts, -1 for hertz and amperes). The `delta_ups-hid` subdriver now
+      leaves `05dd:a0a0` to `tripplite-hid` even when the `productid` option
+      is set; it used to claim the device then, without these fixes.
+      Verified on a Minuteman Entrust ETR1500LCD, which now reports 122.3 V
+      input, 123.6 V output, 59.9 Hz and 28.1 V battery. [issue #1852, PR #3764]
     * in `legrand-hid` subdriver the `beeper.disable` instant command now
       sends `AudibleAlarmControl=1` ("disabled") instead of `3` ("muted"),
       so the buzzer stays off across alarms; added `beeper.mute` and
@@ -641,6 +685,12 @@ https://github.com/networkupstools/nut/milestone/13
       so `libhid` scaled a set bit to `0.01`: `ACPresent` never read as true
       and the UPS was reported `OB` while on mains, and `LB` could never be
       raised. It can be turned off with `disable_fix_report_desc`. [PR #3738]
+    * `ecoflow-hid` subdriver: the `battery.runtime` minutes-to-seconds
+      conversion returned a newly allocated string on every call, which the
+      driver never freed; with this quick-polled value the driver leaked
+      128 bytes per poll (about 14 MB per day at `pollinterval=1`). It now
+      uses a static buffer like the other conversion functions. [issue #3787,
+      PR #3788]
     * Added a new `vertiv-hid` subdriver for the Vertiv Liebert GXT5 (USB ID
       `10af:1000`). This device shares the Liebert vendor ID handled by
       `belkin-hid`, but exposes everything under `UPS.PowerSummary` only (no
@@ -655,14 +705,38 @@ https://github.com/networkupstools/nut/milestone/13
       new subdriver is used even when `productid` is set in `ups.conf`.
       Tested against a GXT5 on mains only; on-battery status transitions
       are not yet confirmed. [issue #3613, PR #3730]
-    * `ecoflow-hid` subdriver: the `battery.runtime` minutes-to-seconds
-      conversion returned a newly allocated string on every call, which the
-      driver never freed; with this quick-polled value the driver leaked
-      128 bytes per poll (about 14 MB per day at `pollinterval=1`). It now
-      uses a static buffer like the other conversion functions. [issue #3787,
-      PR #3788]
+    * `liebert-hid` subdriver (Phoenixtec, USB ID `06da:ffff`) now maps
+      `ups.realpower` to `UPS.PowerConverter.Output.ActivePower`, `ups.power`
+      to `UPS.PowerConverter.Output.ApparentPower` and `ups.realpower.nominal`
+      to `UPS.Flow.[4].ConfigActivePower`, beside the already mapped
+      `UPS.Flow.[4].ConfigApparentPower` for `ups.power.nominal` (paths that
+      `salicru-hid` and `ever-hid` already map). Units publishing them, such
+      as the PowerWalker VFI 3000, previously reported only `ups.load` - a
+      percentage of the VA rating, which at low load can be several times the
+      real power. Verified on that unit: `ups.realpower: 41`, `ups.power: 186`,
+      `ups.realpower.nominal: 2700`. [PR #3860]
+    * Added the `ugreen-hid` subdriver for the Ugreen US2000 (72 W DC UPS, USB
+      ID `2b89:ffff`). The device was previously unsupported by any subdriver
+      and no `hid2nut` mapping could reach it: its live telemetry arrives
+      unprompted as 64-byte HID Input reports with report ID `0x71`, which no
+      object in its report descriptor describes. The subdriver keeps the
+      standard PDC feature-report mappings and decodes that frame for
+      `output.current`, `ups.load`, `input.voltage`, `output.voltage`,
+      `battery.current`, `battery.charger.status` and `battery.temperature`.
+      Three feature reports of this firmware are hardcoded dummies (`ups.load`
+      and `input.voltage` always report `1`; `output.voltage` is a coarse
+      integer that reads high) and its `PresentStatus` flags are never set, so
+      `LB` can never be raised from the device; with `battery.charge` live, the
+      core `ignorelb` option plus `battery.charge.low` provides it instead.
+      The frame is decoded only for the product strings the subdriver lists;
+      sibling models on the same USB ID still claim the subdriver to get the
+      standard mappings, but publish no vendor values. [issue #3779]
 
  - `snmp-ups` driver updates:
+    * The `huawei` subdriver now reports output real power and power factor
+      separately for each phase. It reports real power in watts and apparent
+      power in volt-amperes. Unavailable phase power readings are omitted.
+      [PR #3863]
     * Corrected the IETF fallback warning so it is emitted for automatic
       IETF selection rather than vendor-specific mappings. [issue #3585, PR #3767]
     * Fixed a NULL pointer dereference when setting exact outlet mappings
@@ -701,6 +775,9 @@ https://github.com/networkupstools/nut/milestone/13
       [issue #3302, PR #3537]
 
  - common code:
+    * Driver polling now measures intervals with a monotonic clock when
+      available, detects clock jumps and falls back to wall time if the
+      monotonic clock fails. [issue #10, PR #3708]
     * Fixed strict Clang conversion warnings. Process-name lookup now checks
       the symlink size before allocation and retains the full signed byte
       count returned when reading the link. [PR #3770]
@@ -794,6 +871,8 @@ https://github.com/networkupstools/nut/milestone/13
         the same sequence of IDs.
 
  - NUT client libraries:
+    * Development installs now provide pkg-config files for the scanner and
+      C++ client libraries only when those libraries are built. [PR #3866]
     * Fixed strict Clang conversion warnings and isolated an OpenSSL macro
       annotation warning in the C client library. [PR #3770]
     * Introduction of `nutauth.conf` support caused some rearrangement of
@@ -1076,6 +1155,8 @@ https://github.com/networkupstools/nut/milestone/13
       dictionary for verified terms. [PR #3699]
 
  - Recipes, CI and helper script updates not classified above:
+    * Out-of-tree USB builds now find the udev rules template in the source
+      tree and install the rules when the udev directory is detected. [PR #3865]
     * Introduced `AGENTS.md` for AI agents to help in a consistent manner with
       minimal friction. [#3608]
     * Introduced `SECURITY.md` for rules about responsible disclosure of
@@ -1208,6 +1289,19 @@ https://github.com/networkupstools/nut/milestone/13
       too old for NUT, instead of building without USB drivers. An explicit
       `--with-usb=libusb-1.0` still fails in that case.
       [issue #3781, PR #3782]
+    * Windows (MinGW/MSYS2) builds of NUT now support only libusb-1.0 for
+      USB drivers, used with the WinUSB driver. Support for libusb-0.1
+      (libusb-win32 with its `libusb0.sys` driver, or libusb-compat) was
+      removed from Windows builds: `configure --with-usb=libusb-0.1` now
+      fails there, and an auto-detected libusb-0.1 is not used. Tested
+      with `apcmicrolink` and `nut-scanner` on Windows 10.
+      [issue #1507, PR #3791]
+    * The `wdi-simple` USB driver installer for Windows now installs the
+      WinUSB driver (or libusbK, if chosen) instead of `libusb0.sys`,
+      accepts command-line options, and no longer reads past the end of
+      the generated NUT USB device table. Its build instructions were
+      updated for current libwdi.
+      [issue #1507, PR #3791]
     * Portability fixes found with OpenBSD 8.0 (`clang` 22, LibreSSL 4.4)
       and NetBSD 11.0 [PR #3816]:
       - Out-of-tree builds with BSD `make` (seen with OpenBSD `make`) no
